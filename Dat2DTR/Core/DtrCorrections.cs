@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Dat2DTR
 {
     /// <summary>
-    /// What a person typed in by hand for one day of one employee: the four times
+    /// This is what a person typed in by hand for one day of one employee: the four times
     /// (any of them may be empty) and an optional remark such as HOLIDAY or LEAVE.
     /// When a day has a correction, it REPLACES what the biometrics file says for that day.
     /// </summary>
@@ -27,7 +27,7 @@ namespace Dat2DTR
             return (DayCorrection)MemberwiseClone();
         }
 
-        /// <summary>True when both hold the same four times and the same remark.</summary>
+        /// <summary>This is true when both hold the same four times and the same remark.</summary>
         public bool SameAs(DayCorrection other)
         {
             return AmArrival == other.AmArrival && AmDeparture == other.AmDeparture &&
@@ -37,7 +37,7 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// Late and Undertime of one day typed in by hand, in place of what the program computed
+    /// This is the Late and Undertime of one day typed in by hand, in place of what the program computed
     /// (for example when work was suspended at 3:00 PM and everyone went home at 3:00).
     /// null = keep the computed value. The times of the day are not changed.
     /// </summary>
@@ -46,7 +46,7 @@ namespace Dat2DTR
         public int? LateMinutes;
         public int? UndertimeMinutes;
 
-        /// <summary>Why it was changed, e.g. "Work suspended at 3:00 PM". Listed on screen, not printed.</summary>
+        /// <summary>This is why it was changed, e.g. "Work suspended at 3:00 PM". Listed on screen, not printed.</summary>
         public string Reason = "";
 
         public bool IsEmpty
@@ -61,12 +61,12 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// All hand-typed corrections, kept in a small file so they are still there
+    /// This is the list of all hand-typed corrections, kept in a small file so they are still there
     /// the next time the same month is opened. The .dat file itself is never changed.
     /// </summary>
     public sealed class CorrectionStore
     {
-        // "normalized ID|yyyy-MM-dd" -> correction
+        // This is "normalized ID|yyyy-MM-dd" -> correction
         private readonly Dictionary<string, DayCorrection> _items =
             new Dictionary<string, DayCorrection>(StringComparer.OrdinalIgnoreCase);
 
@@ -80,14 +80,14 @@ namespace Dat2DTR
             return EmployeeDirectory.NormalizeId(employeeId) + "|" + date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         }
 
-        /// <summary>The correction for that day, or null when nothing was typed in for it.</summary>
+        /// <summary>This is the correction for that day, or null when nothing was typed in for it.</summary>
         public DayCorrection? Get(string employeeId, DateTime date)
         {
             DayCorrection? correction;
             return _items.TryGetValue(Key(employeeId, date), out correction) ? correction : null;
         }
 
-        /// <summary>Stores a correction. Passing null removes it (the day goes back to the biometrics data).</summary>
+        /// <summary>This is where a correction is stored. Passing null removes it (the day goes back to the biometrics data).</summary>
         public void Set(string employeeId, DateTime date, DayCorrection? correction)
         {
             string key = Key(employeeId, date);
@@ -100,9 +100,9 @@ namespace Dat2DTR
             get { return _items.Count; }
         }
 
-        // ---------------------------------------------------------------- Late / Undertime typed by hand
+        // This is the part with the Late / Undertime typed by hand ---------------------------------------
 
-        // "normalized ID|yyyy-MM-dd" -> Late / Undertime typed by hand
+        // This is "normalized ID|yyyy-MM-dd" -> Late / Undertime typed by hand
         private readonly Dictionary<string, DayAdjustment> _adjustments =
             new Dictionary<string, DayAdjustment>(StringComparer.OrdinalIgnoreCase);
 
@@ -111,14 +111,14 @@ namespace Dat2DTR
             get { return Path.Combine(DtrSettings.DataFolder, "adjustments.csv"); }
         }
 
-        /// <summary>The Late / Undertime typed by hand for that day, or null.</summary>
+        /// <summary>This is the Late / Undertime typed by hand for that day, or null.</summary>
         public DayAdjustment? GetAdjustment(string employeeId, DateTime date)
         {
             DayAdjustment? adjustment;
             return _adjustments.TryGetValue(Key(employeeId, date), out adjustment) ? adjustment : null;
         }
 
-        /// <summary>Stores the Late / Undertime typed by hand. null (or nothing typed) removes it.</summary>
+        /// <summary>This is where the Late / Undertime typed by hand is stored. null (or nothing typed) removes it.</summary>
         public void SetAdjustment(string employeeId, DateTime date, DayAdjustment? adjustment)
         {
             string key = Key(employeeId, date);
@@ -131,8 +131,8 @@ namespace Dat2DTR
             get { return _adjustments.Count; }
         }
 
-        // One line per day:   ID,date,late minutes,undertime minutes,reason   (empty = the computed value)
-        //                e.g. 070126005,2026-09-08,,0,"Work suspended at 3:00 PM"
+        // This is the file: one line per day:   ID,date,late minutes,undertime minutes,reason   (empty = the computed value)
+        //                                    e.g. 070126005,2026-09-08,,0,"Work suspended at 3:00 PM"
 
         public void LoadAdjustments(string path)
         {
@@ -144,7 +144,7 @@ namespace Dat2DTR
                 DateTime date;
                 if (!DateTime.TryParseExact(cells[1].Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture,
                                             DateTimeStyles.None, out date))
-                    continue; // the heading line, or a damaged line
+                    continue; // This is the heading line, or a damaged line
 
                 var adjustment = new DayAdjustment();
                 adjustment.LateMinutes = ReadMinutes(cells[2]);
@@ -182,9 +182,9 @@ namespace Dat2DTR
             return minutes.HasValue ? minutes.Value.ToString(CultureInfo.InvariantCulture) : "";
         }
 
-        // ---------------------------------------------------------------- files
-        // One line per corrected day:   ID,date,AM in,AM out,PM in,PM out,remark
-        //                          e.g. 070126005,2026-09-08,06:55,12:03,12:50,18:05,
+        // This is the part that reads and saves the files -------------------------------------------
+        // This is the file: one line per corrected day:   ID,date,AM in,AM out,PM in,PM out,remark
+        //                                             e.g. 070126005,2026-09-08,06:55,12:03,12:50,18:05,
 
         public static CorrectionStore LoadDefault()
         {
@@ -217,7 +217,7 @@ namespace Dat2DTR
                 DateTime date;
                 if (!DateTime.TryParseExact(cells[1].Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture,
                                             DateTimeStyles.None, out date))
-                    continue; // the heading line, or a damaged line
+                    continue; // This is the heading line, or a damaged line
 
                 var correction = new DayCorrection();
                 correction.AmArrival = ReadTime(cells[2]);
@@ -245,7 +245,7 @@ namespace Dat2DTR
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));
         }
 
-        /// <summary>Removes the "quotes" that Save puts around the remark.</summary>
+        /// <summary>This is where the "quotes" that Save puts around the remark are removed.</summary>
         private static string Unquote(string text)
         {
             text = text.Trim();
@@ -268,7 +268,7 @@ namespace Dat2DTR
         }
     }
 
-    /// <summary>Understands a time the way a person types it: "7", "7:05", "705", "12:30 pm", "18:10".</summary>
+    /// <summary>This is how a time is understood the way a person types it: "7", "7:05", "705", "12:30 pm", "18:10".</summary>
     public static class TimeText
     {
         private static readonly Regex DurationPattern = new Regex(
@@ -276,7 +276,7 @@ namespace Dat2DTR
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         /// <summary>
-        /// Reads a typed length of time for Late or Undertime: "45" (minutes), "1:30", "1h 30m", "2h", "0".
+        /// This is where a typed length of time for Late or Undertime is read: "45" (minutes), "1:30", "1h 30m", "2h", "0".
         /// An empty box gives null (= use what the program computed).
         /// </summary>
         public static bool TryParseDuration(string? text, out int? minutes)
@@ -314,7 +314,7 @@ namespace Dat2DTR
             return true;
         }
 
-        /// <summary>"0:45", "2:00" - how Late / Undertime is shown in the Edit DTR table ("" for none).</summary>
+        /// <summary>This is "0:45", "2:00" - how Late / Undertime is shown in the Edit DTR table ("" for none).</summary>
         public static string FormatDuration(int minutes)
         {
             if (minutes <= 0) return "";
@@ -326,7 +326,7 @@ namespace Dat2DTR
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         /// <summary>
-        /// Reads a typed time. An empty box is fine and gives "no time".
+        /// This is where a typed time is read. An empty box is fine and gives "no time".
         /// column: 0 = A.M. Arrival, 1 = A.M. Departure, 2 = P.M. Arrival, 3 = P.M. Departure.
         /// The column is used to guess AM or PM when the person did not type it:
         /// "6:05" in P.M. Departure means 6:05 PM, "6:05" in A.M. Arrival means 6:05 AM.
@@ -349,7 +349,7 @@ namespace Dat2DTR
 
             if (m.Groups[3].Success)
             {
-                // AM or PM was typed.
+                // This is when AM or PM was typed.
                 if (hour < 1 || hour > 12) return false;
                 bool pm = m.Groups[3].Value.ToLowerInvariant() == "p";
                 if (hour == 12) hour = pm ? 12 : 0;
@@ -357,14 +357,14 @@ namespace Dat2DTR
             }
             else if (hour >= 1 && hour <= 11)
             {
-                // Not typed: guess from the column.
+                // This is when it was not typed: guess from the column.
                 bool afternoon;
                 switch (column)
                 {
-                    case 0: afternoon = false; break;          // arriving in the morning
-                    case 1: afternoon = hour <= 6; break;      // leaving for lunch: 1-6 means PM, 7-11 means AM
-                    case 2: afternoon = hour <= 9; break;      // back from lunch: 10 and 11 mean AM
-                    default: afternoon = true; break;          // going home
+                    case 0: afternoon = false; break;          // This is arriving in the morning
+                    case 1: afternoon = hour <= 6; break;      // This is leaving for lunch: 1-6 means PM, 7-11 means AM
+                    case 2: afternoon = hour <= 9; break;      // This is back from lunch: 10 and 11 mean AM
+                    default: afternoon = true; break;          // This is going home
                 }
                 if (afternoon) hour += 12;
             }

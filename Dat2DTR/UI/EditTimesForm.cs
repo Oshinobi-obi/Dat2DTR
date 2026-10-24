@@ -1,7 +1,7 @@
 namespace Dat2DTR
 {
     /// <summary>
-    /// The "Edit DTR" window: one row per day, where a person can type in a
+    /// This is the "Edit DTR" window: one row per day, where a person can type in a
     /// missing time, correct a wrong one, or add a remark such as HOLIDAY.
     /// The Late and Undertime of a day can also be typed in (for example when work was
     /// suspended at 3:00 PM); a reason is then required, and the computed value stays visible.
@@ -12,24 +12,24 @@ namespace Dat2DTR
     /// </summary>
     internal sealed class EditTimesForm : Form
     {
-        // Column numbers of the table.
+        // This is the column numbers of the table.
         private const int ColDay = 0, ColFirstTime = 1, ColLastTime = 4, ColRemark = 5,
                           ColLateHours = 6, ColLateMinutes = 7, ColUndertimeHours = 8, ColUndertimeMinutes = 9,
                           ColReason = 10, ColResult = 11;
 
-        private readonly DtrSheet _fromFile;        // the DTR made from the scans only
+        private readonly DtrSheet _fromFile;        // This is the DTR made from the scans only
         private readonly WorkSchedule _schedule;
         private readonly DtrSettings _settings;
-        private readonly LeaveStore _leaves;        // filed leaves: a day on leave has no late or undertime
+        private readonly LeaveStore _leaves;        // This is the filed leaves: a day on leave has no late or undertime
         private readonly DateTime _firstCovered, _lastCovered;
 
-        private readonly DayCorrection[] _original; // per day: what the scans say
-        private readonly DayCorrection[] _now;      // per day: what the table shows now
-        private readonly DayAdjustment[] _adjusted; // per day: Late / Undertime typed in by hand (empty = computed)
-        private readonly DayCorrection[] _startNow;       // what the table showed when it opened
-        private readonly DayAdjustment[] _startAdjusted;  //   (to know whether something was changed)
+        private readonly DayCorrection[] _original; // This is per day: what the scans say
+        private readonly DayCorrection[] _now;      // This is per day: what the table shows now
+        private readonly DayAdjustment[] _adjusted; // This is per day: Late / Undertime typed in by hand (empty = computed)
+        private readonly DayCorrection[] _startNow;       // This is what the table showed when it opened
+        private readonly DayAdjustment[] _startAdjusted;  // This is kept to know whether something was changed
 
-        /// <summary>-1 / +1 when the user clicked Previous / Next (after saving), 0 otherwise.</summary>
+        /// <summary>This is -1 / +1 when the user clicked Previous / Next (after saving), 0 otherwise.</summary>
         private int _move;
         private readonly Button _previous = new Button(), _next = new Button();
 
@@ -48,7 +48,7 @@ namespace Dat2DTR
             _firstCovered = firstCovered;
             _lastCovered = lastCovered;
 
-            // Start from what was typed in before; days without that start from the scans.
+            // This is where it starts: from what was typed in before; days without that start from the scans.
             int days = fromFile.Days.Count;
             _original = new DayCorrection[days];
             _now = new DayCorrection[days];
@@ -75,7 +75,7 @@ namespace Dat2DTR
                 _startAdjusted[i] = _adjusted[i].Clone();
             }
 
-            // Same order as a designer-made form, so it scales correctly on 125% / 150% screens.
+            // This is the same order as a designer-made form, so it scales correctly on 125% / 150% screens.
             SuspendLayout();
             Text = "Edit DTR";
             Icon = Theme.GetAppIcon();
@@ -89,7 +89,7 @@ namespace Dat2DTR
             ClientSize = new Size(1260, 660);
             MinimumSize = new Size(980, 460);
 
-            // ---- top: who and how
+            // This is the top: who and how ----
             var title = new Label();
             title.Text = (fromFile.EmployeeName.Length > 0 ? fromFile.EmployeeName : "ID " + fromFile.EmployeeId) +
                          "   -   " + fromFile.MonthText;
@@ -115,9 +115,9 @@ namespace Dat2DTR
             top.BackColor = Color.White;
             top.Controls.Add(title);
             top.Controls.Add(how);
-            GridFit.GrowWithText(this, how, top);   // the instructions are never cut off
+            GridFit.GrowWithText(this, how, top);   // This is so the instructions are never cut off
 
-            // ---- middle: the table
+            // This is the middle: the table ----
             _grid.Dock = DockStyle.Fill;
             _grid.BackgroundColor = Color.White;
             _grid.BorderStyle = BorderStyle.None;
@@ -143,7 +143,7 @@ namespace Dat2DTR
             DataGridViewColumn result = AddColumn("Result", 100, true);
             result.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
 
-            // A.M. Arrival to UNDERTIME Minutes: heading and values centred.
+            // This is the alignment: A.M. Arrival to UNDERTIME Minutes have heading and values centred.
             // Day, Reason and Result: only the heading centred (the values stay on the left).
             _grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             foreach (DataGridViewColumn column in _grid.Columns)
@@ -153,7 +153,7 @@ namespace Dat2DTR
                     column.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             }
 
-            // Headings as tall as needed and columns wide enough on any screen (125%, 150%...).
+            // This is so the headings are as tall as needed and columns wide enough on any screen (125%, 150%...).
             GridFit.Attach(this, _grid);
 
             for (int i = 0; i < days; i++)
@@ -161,7 +161,7 @@ namespace Dat2DTR
 
             _grid.CellEndEdit += Grid_CellEndEdit;
 
-            // ---- bottom: buttons
+            // This is the bottom: buttons ----
             var undoDay = new Button();
             undoDay.Text = "Undo this day";
             undoDay.SetBounds(16, 34, 118, 32);
@@ -254,7 +254,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// What to store for each day, after the user clicked Save:
+        /// This is what to store for each day, after the user clicked Save:
         /// the typed values, or null when the day is the same as the scans (nothing to store).
         /// </summary>
         public Dictionary<DateTime, DayCorrection?> GetChanges()
@@ -266,7 +266,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// The Late / Undertime typed in for each day, after the user clicked Save
+        /// This is the Late / Undertime typed in for each day, after the user clicked Save
         /// (null when the day uses the computed values).
         /// </summary>
         public Dictionary<DateTime, DayAdjustment?> GetAdjustments()
@@ -277,20 +277,20 @@ namespace Dat2DTR
             return changes;
         }
 
-        /// <summary>Switches the Previous / Next buttons on (there is an employee above / below in the list).</summary>
+        /// <summary>This is where the Previous / Next buttons are switched on (there is an employee above / below in the list).</summary>
         public void SetNavigation(bool previous, bool next)
         {
             _previous.Enabled = previous;
             _next.Enabled = next;
         }
 
-        /// <summary>After Save: -1 = go to the previous employee, +1 = the next one, 0 = stay.</summary>
+        /// <summary>This is what to do after Save: -1 = go to the previous employee, +1 = the next one, 0 = stay.</summary>
         public int GetMove()
         {
             return _move;
         }
 
-        /// <summary>Previous / Next: saves (with the same checks as Save), then the main window opens the other employee.</summary>
+        /// <summary>This is Previous / Next: it saves (with the same checks as Save), then the main window opens the other employee.</summary>
         private void SaveAndMove(int move)
         {
             _move = move;
@@ -299,7 +299,7 @@ namespace Dat2DTR
                 _move = 0;
         }
 
-        /// <summary>True when the table is different from what it showed when the window opened.</summary>
+        /// <summary>This is true when the table is different from what it showed when the window opened.</summary>
         internal bool HasChanges()
         {
             _grid.EndEdit();
@@ -313,10 +313,10 @@ namespace Dat2DTR
             return false;
         }
 
-        /// <summary>Asks before throwing away changes (Cancel, Esc or the X of the window).</summary>
+        /// <summary>This is where the user is asked before changes are thrown away (Cancel, Esc or the X of the window).</summary>
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            // Cancel and Esc close with CloseReason.None, the X with UserClosing: ask for both.
+            // This is because Cancel and Esc close with CloseReason.None, the X with UserClosing: ask for both.
             bool byUser = e.CloseReason == CloseReason.UserClosing || e.CloseReason == CloseReason.None;
             if (DialogResult != DialogResult.OK && byUser && HasChanges() &&
                 MessageBox.Show(this, "You changed this DTR.\n\nClose without saving?",
@@ -335,7 +335,7 @@ namespace Dat2DTR
             base.Dispose(disposing);
         }
 
-        // ================================================================ the table
+        // This is the table ================================================================
 
         private DataGridViewColumn AddColumn(string heading, int width, bool readOnly)
         {
@@ -350,7 +350,7 @@ namespace Dat2DTR
             return column;
         }
 
-        /// <summary>A small centred column for the Hours or Minutes of Late / Undertime.</summary>
+        /// <summary>This is a small centred column for the Hours or Minutes of Late / Undertime.</summary>
         private void AddNumberColumn(string heading, int width)
         {
             DataGridViewColumn column = AddColumn(heading, width, false);
@@ -363,7 +363,7 @@ namespace Dat2DTR
             return !_now[i].SameAs(_original[i]);
         }
 
-        /// <summary>The day as the DTR will show it, with the Late / Undertime typed in by hand.</summary>
+        /// <summary>This is the day as the DTR will show it, with the Late / Undertime typed in by hand.</summary>
         private DtrDay Compute(int i)
         {
             DtrDay day = ComputeTimes(i);
@@ -374,7 +374,7 @@ namespace Dat2DTR
             return day;
         }
 
-        /// <summary>The day from the scans, or from the typed times (Late / Undertime as computed).</summary>
+        /// <summary>This is the day from the scans, or from the typed times (Late / Undertime as computed).</summary>
         private DtrDay ComputeTimes(int i)
         {
             DtrDay fromFile = _fromFile.Days[i];
@@ -390,7 +390,7 @@ namespace Dat2DTR
             return day;
         }
 
-        /// <summary>Writes one day into its row and colours the boxes that were changed.</summary>
+        /// <summary>This is where one day is written into its row and the boxes that were changed are coloured.</summary>
         private void ShowRow(int i)
         {
             DataGridViewRow row = _grid.Rows[i];
@@ -412,7 +412,7 @@ namespace Dat2DTR
             row.Cells[ColRemark].Value = _now[i].Remark;
             Mark(row.Cells[ColRemark], _now[i].Remark.Trim().Length > 0, normalBack);
 
-            // Late and Undertime: computed, or typed in by hand (then yellow).
+            // This is Late and Undertime: computed, or typed in by hand (then yellow).
             DayAdjustment adjusted = _adjusted[i];
             bool lateTyped = adjusted.LateMinutes.HasValue, undertimeTyped = adjusted.UndertimeMinutes.HasValue;
             ShowHoursMinutes(row.Cells[ColLateHours], row.Cells[ColLateMinutes], day.LateMinutes, lateTyped, normalBack);
@@ -420,7 +420,7 @@ namespace Dat2DTR
             row.Cells[ColReason].Value = adjusted.Reason;
             Mark(row.Cells[ColReason], adjusted.Reason.Trim().Length > 0, normalBack);
 
-            // The last column says what the day comes to.
+            // This is the last column: it says what the day comes to.
             var parts = new List<string>();
             if (day.IsAbsent) parts.Add("Absent");
             if (day.IsCalendarHoliday)
@@ -440,7 +440,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Writes minutes as Hours and Minutes, the way the DTR prints them (empty for 0).
+        /// This is where minutes are written as Hours and Minutes, the way the DTR prints them (empty for 0).
         /// A typed value shows both boxes, with 0 where it is zero, so the yellow boxes are never empty.
         /// </summary>
         private void ShowHoursMinutes(DataGridViewCell hoursCell, DataGridViewCell minutesCell, int minutes, bool typed, Color normalBack)
@@ -452,7 +452,7 @@ namespace Dat2DTR
             Mark(minutesCell, typed, normalBack);
         }
 
-        /// <summary>Reads an Hours or Minutes box: empty = null, otherwise a whole number up to the given most.</summary>
+        /// <summary>This is where an Hours or Minutes box is read: empty = null, otherwise a whole number up to the given most.</summary>
         private static bool TryReadPart(object? value, int most, out int? number)
         {
             number = null;
@@ -499,7 +499,7 @@ namespace Dat2DTR
             _message.ForeColor = problem ? Theme.Red : Theme.TextMuted;
         }
 
-        /// <summary>The user finished typing in a box.</summary>
+        /// <summary>This is when the user finished typing in a box.</summary>
         private void Grid_CellEndEdit(object? sender, DataGridViewCellEventArgs e)
         {
             int i = e.RowIndex;
@@ -516,7 +516,7 @@ namespace Dat2DTR
             }
             else if (e.ColumnIndex >= ColLateHours && e.ColumnIndex <= ColUndertimeMinutes)
             {
-                // The Hours and the Minutes box of Late (or of Undertime) are read together.
+                // This is where the Hours and the Minutes box of Late (or of Undertime) are read together.
                 bool late = e.ColumnIndex <= ColLateMinutes;
                 DataGridViewRow row = _grid.Rows[i];
                 object? hoursText = row.Cells[late ? ColLateHours : ColUndertimeHours].Value;
@@ -532,7 +532,7 @@ namespace Dat2DTR
                 }
                 else
                 {
-                    // Both boxes empty = back to the computed value. The same as computed = nothing typed in.
+                    // This is the rule: both boxes empty = back to the computed value. The same as computed = nothing typed in.
                     int? total = !hours.HasValue && !minutes.HasValue ? (int?)null : (hours ?? 0) * 60 + (minutes ?? 0);
                     DtrDay computed = ComputeTimes(i);
                     int computedMinutes = late ? computed.LateMinutes : computed.UndertimeMinutes;
@@ -543,7 +543,7 @@ namespace Dat2DTR
             }
             else if (e.ColumnIndex >= ColFirstTime && e.ColumnIndex <= ColLastTime)
             {
-                int which = e.ColumnIndex - ColFirstTime; // 0 = A.M. Arrival ... 3 = P.M. Departure
+                int which = e.ColumnIndex - ColFirstTime; // This is 0 = A.M. Arrival ... 3 = P.M. Departure
                 TimeSpan? time;
                 if (TimeText.TryParse(typed, which, out time))
                 {
@@ -554,7 +554,7 @@ namespace Dat2DTR
                 }
                 else
                 {
-                    // Not a time: the box goes back to what it was, and the reason is shown below the table.
+                    // This is not a time: the box goes back to what it was, and the reason is shown below the table.
                     Say("\"" + typed + "\" is not a time, so Day " + (i + 1) +
                         " was not changed. Type it like  7:05 AM  or  12:30 PM.", true);
                 }
@@ -568,7 +568,7 @@ namespace Dat2DTR
         {
             _grid.EndEdit();
 
-            // The four times of a day must follow each other: arrive, leave, arrive, leave.
+            // This is the order check: the four times of a day must follow each other: arrive, leave, arrive, leave.
             for (int i = 0; i < _now.Length; i++)
             {
                 if (!IsChanged(i)) continue;
@@ -592,7 +592,7 @@ namespace Dat2DTR
                 }
             }
 
-            // Late / Undertime typed in by hand needs a reason, so that anyone can see why it differs.
+            // This is the reason check: Late / Undertime typed in by hand needs a reason, so that anyone can see why it differs.
             for (int i = 0; i < _adjusted.Length; i++)
             {
                 if (_adjusted[i].IsEmpty || _adjusted[i].Reason.Trim().Length > 0) continue;

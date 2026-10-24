@@ -3,14 +3,14 @@ namespace Dat2DTR
     partial class EmployeeNamesForm
     {
         /// <summary>
-        /// Required designer variable.
+        /// This is the required designer variable.
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
         /// <summary>
-        /// Clean up any resources being used.
+        /// This is where any resources being used are cleaned up.
         /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        /// <param name="disposing">This is true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -23,7 +23,7 @@ namespace Dat2DTR
         #region Windows Form Designer generated code
 
         /// <summary>
-        /// Required method for Designer support - do not modify
+        /// This is the required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
@@ -43,7 +43,7 @@ namespace Dat2DTR
             pnlButtons.SuspendLayout();
             SuspendLayout();
             //
-            // lblTip
+            // This is lblTip
             //
             lblTip.BackColor = Color.White;
             lblTip.Dock = DockStyle.Top;
@@ -54,7 +54,7 @@ namespace Dat2DTR
             lblTip.TabIndex = 0;
             lblTip.Text = "Type the name for each biometric ID, the way it should appear on the DTR (example:  DELA CRUZ, JUAN M).\r\nThen choose the work schedule the person follows.\r\nIDs from the opened .dat file are listed automatically. You only need to do this once.";
             //
-            // dgvNames
+            // This is dgvNames
             //
             dgvNames.AllowUserToResizeRows = false;
             dgvNames.BackgroundColor = Color.White;
@@ -73,21 +73,21 @@ namespace Dat2DTR
             dgvNames.CellEndEdit += dgvNames_CellEndEdit;
             dgvNames.DataError += dgvNames_DataError;
             //
-            // colId
+            // This is colId
             //
             colId.HeaderText = "Biometric ID";
             colId.Name = "colId";
             colId.SortMode = DataGridViewColumnSortMode.NotSortable;
             colId.Width = 140;
             //
-            // colName
+            // This is colName
             //
             colName.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             colName.HeaderText = "Name on the DTR";
             colName.Name = "colName";
             colName.SortMode = DataGridViewColumnSortMode.NotSortable;
             //
-            // colSchedule
+            // This is colSchedule
             //
             colSchedule.DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton;
             colSchedule.FlatStyle = FlatStyle.Flat;
@@ -95,7 +95,7 @@ namespace Dat2DTR
             colSchedule.Name = "colSchedule";
             colSchedule.Width = 290;
             //
-            // pnlButtons
+            // This is pnlButtons
             //
             pnlButtons.Controls.Add(btnImport);
             pnlButtons.Controls.Add(btnExport);
@@ -108,7 +108,7 @@ namespace Dat2DTR
             pnlButtons.Size = new Size(800, 52);
             pnlButtons.TabIndex = 2;
             //
-            // btnImport
+            // This is btnImport
             //
             btnImport.Location = new Point(12, 10);
             btnImport.Name = "btnImport";
@@ -118,7 +118,7 @@ namespace Dat2DTR
             btnImport.UseVisualStyleBackColor = true;
             btnImport.Click += btnImport_Click;
             //
-            // btnExport
+            // This is btnExport
             //
             btnExport.Location = new Point(130, 10);
             btnExport.Name = "btnExport";
@@ -128,7 +128,7 @@ namespace Dat2DTR
             btnExport.UseVisualStyleBackColor = true;
             btnExport.Click += btnExport_Click;
             //
-            // lblCount
+            // This is lblCount
             //
             lblCount.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             lblCount.ForeColor = Color.FromArgb(96, 100, 124);
@@ -139,7 +139,7 @@ namespace Dat2DTR
             lblCount.Text = "0 of 0 IDs have a name";
             lblCount.TextAlign = ContentAlignment.MiddleLeft;
             //
-            // btnOk
+            // This is btnOk
             //
             btnOk.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnOk.Location = new Point(590, 10);
@@ -150,7 +150,7 @@ namespace Dat2DTR
             btnOk.UseVisualStyleBackColor = true;
             btnOk.Click += btnOk_Click;
             //
-            // btnCancel
+            // This is btnCancel
             //
             btnCancel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnCancel.DialogResult = DialogResult.Cancel;
@@ -161,7 +161,7 @@ namespace Dat2DTR
             btnCancel.Text = "Cancel";
             btnCancel.UseVisualStyleBackColor = true;
             //
-            // EmployeeNamesForm
+            // This is EmployeeNamesForm (the window itself)
             //
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;

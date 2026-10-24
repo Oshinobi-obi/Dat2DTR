@@ -91,13 +91,15 @@ carried over from month to month automatically.
 | Special Privilege Leave | Not deducted; counted (3 days a year) |
 | Wellness Leave | Not deducted; counted (5 days a year) |
 | CTO | Taken from the CTO given (at most 6 days at a time, each with its own expiry date; unused CTO expires) |
+| Solo Parent Leave | Taken from the Solo Parent Leave given, the same way as CTO (at most 7 days at a time, each with its own expiry date; unused days expire and are taken off the balance) |
 | Holiday | Not a leave: not deducted, not counted; the DTR shows `HOLIDAY` |
 | Suspended (work suspension) | Not a leave: not deducted, not counted; the DTR shows `WORK SUSPENDED` |
 | Official Business (school visit) | Out of the office for work: counted as present, not deducted; the DTR shows `OFFICIAL BUSINESS` |
 
 Two tick boxes go with these: **WFH** (work from home; on a Suspended day the heading reads *Is it WFH?*)
 and **IDLAR**, which can only be ticked after WFH. With IDLAR the day counts as a day at work and the DTR shows
-`WORK FROM HOME` (or `HOLIDAY - WORK FROM HOME`, `SUSPENDED - WORK FROM HOME`). WFH on a day with no leave is an
+`WORK FROM HOME` (or `HOLIDAY - WORK FROM HOME`). A Suspended day with WFH shows `PD - WFH`, and `PD - WFH/IDLAR`
+once IDLAR is ticked. WFH on a day with no leave is an
 ordinary working day worked from home; without IDLAR it stays ABSENT and is listed to check. A Holiday can be
 saved without WFH or IDLAR.
 
@@ -124,10 +126,15 @@ On the DTR, a whole day of leave is printed in place of ABSENT (for example `VAC
 half-day leave, the half on leave is excused: no late or undertime is counted for it.
 
 The **Computation of Leaves** (button above the DTR) shows the leave card of the year - VACATION: Earned,
-Enjoyed, Net, Leave Date/s, SPL, WL, CTO, Late, Undertime; SICK: Earned, Enjoyed, Net, Leave Date/s - and
-how the open month was computed: Vacation and Sick Leave, then Special Privilege Leave, Wellness Leave and CTO.
+Enjoyed, Net, Leave Date/s, SPL, WL, CTO, SOLO, Late, Undertime; SICK: Earned, Enjoyed, Net, Leave Date/s - and
+how the open month was computed: Vacation and Sick Leave, then Special Privilege Leave, Wellness Leave, CTO and
+Solo Parent Leave. Under the table, CTO and SOLO show the days used this year and the balance left. Below a line
+across the page, the **History of Availment of Leave** lists the leaves used in every month, January to December,
+with the days they were used and the total days.
 
 **CTO given...** in Edit Leave keeps the CTO given to the employee: date, days and expiry date.
+**Solo Parent given...** does the same for Solo Parent Leave. In both, typing the date given fills in the
+expiry date by itself: one year (Sep 15, 2026 -> Sep 14, 2027); it can be typed over.
 
 **Print...** and **Save To...** first ask what you want: *DTR only*, *Computation of Leaves only*, or *Both*.
 **Save To...** can also save the scans of the chosen employees and month as a new **.dat file**, line for line
@@ -142,16 +149,18 @@ another *Signature over Printed Name* in the middle below it.
 
 A day that is ABSENT with no leave filed is **not** deducted; it is listed so a person can decide.
 Leaves are kept in `%AppData%\Dat2DTR\leaves.csv` (`ID,Date,Leave,Part,WFH,IDLAR`), the remembered months in `leave-ledger.csv`,
-the CTO given in `cto.csv`.
+the CTO given in `cto.csv`, the Solo Parent Leave given in `solo-parent.csv`.
 
 ## Rules used for Late and Undertime
 
 Shown for Schedule A (7:00 AM - 6:00 PM, lunch 12:00 - 1:00 PM, grace period 15 minutes).
-Schedules B, C and D work the same way with their own times (for example Schedule D: not late up to 9:15 AM, undertime before 6:00 PM).
+Schedules B, C and D work the same way with their own times (for example Schedule D: late after 9:15 AM, undertime before 6:00 PM).
+The grace period can be changed per schedule in **Office Hours...**; "how Late is counted" decides whether late after it counts from Time In.
 
 | | Rule |
 |---|---|
-| Late (morning) | Arriving up to 7:15 AM is not late. From 7:16 AM it is late, counted from 7:00 AM. |
+| Late (morning) | Arriving after 7:15 AM is late, counted from 7:00 AM. |
+| Grace period | Arriving 7:01 - 7:15 AM is not late only if the minutes are made up: arriving 7:14 AM means leaving at 6:14 PM or later. Leaving at 6:08 PM = 14 minutes late (no undertime). Not applied when the afternoon is on leave or suspended. |
 | Late (afternoon) | Coming back from lunch after 1:00 PM, counted from 1:00 PM. |
 | Undertime | Leaving before 12:00 PM in the morning or before 6:00 PM in the afternoon. |
 | Half day | A half day with no scans at all (when the other half has scans) = 5 hours undertime. |
@@ -190,7 +199,7 @@ person can check them. The program does not guess.
 | `Rendering/DtrPageRenderer.cs` | **How the form looks** - used by the preview, the printer and the PDF |
 | `Rendering/LeavePageRenderer.cs` | How the Computation of Leaves page looks |
 | `Export/PdfDocument.cs`, `Export/XlsxWriter.cs` | Write the PDF and Excel files |
-| `UI/` | The other windows (Edit DTR, Edit Leave, Edit Leave for ticked employees, CTO given, Holidays, Office Hours, Employee Names, How it works) |
+| `UI/` | The other windows (Edit DTR, Edit Leave, Edit Leave for ticked employees, CTO / Solo Parent given, Holidays, Office Hours, Employee Names, How it works) |
 | `Assets/` | The logo: `Dat2DTR.ico` (program icon), plus SVG and PNG versions |
 
 ## Making the downloadable .exe

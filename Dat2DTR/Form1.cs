@@ -4,7 +4,7 @@ using System.Drawing.Printing;
 namespace Dat2DTR
 {
     /// <summary>
-    /// The main window. It follows three steps, from left to right:
+    /// This is the main window. It follows three steps, from left to right:
     ///   1. open the .dat file   2. choose the month   3. print or save.
     /// The list on the left shows the employees, the right side shows the DTR.
     ///
@@ -24,40 +24,40 @@ namespace Dat2DTR
         private DtrSettings _settings = new DtrSettings();
         private EmployeeDirectory _names = new EmployeeDirectory();
 
-        /// <summary>Times that were typed in by hand with "Edit DTR".</summary>
+        /// <summary>This is the times that were typed in by hand with "Edit DTR".</summary>
         private CorrectionStore _corrections = new CorrectionStore();
 
-        /// <summary>Leaves that were filed with "Edit Leave".</summary>
+        /// <summary>This is the leaves that were filed with "Edit Leave".</summary>
         private LeaveStore _leaves = new LeaveStore();
 
-        /// <summary>What is remembered of each month, so the leave balance carries over to the next month.</summary>
+        /// <summary>This is what is remembered of each month, so the leave balance carries over to the next month.</summary>
         private LeaveLedger _ledger = new LeaveLedger();
 
-        /// <summary>The CTO given to each employee.</summary>
+        /// <summary>This is the CTO and Solo Parent Leave given to each employee.</summary>
         private CtoStore _cto = new CtoStore();
 
-        /// <summary>The holidays of the year, used for every employee ("Holidays...").</summary>
+        /// <summary>This is the holidays of the year, used for every employee ("Holidays...").</summary>
         private HolidayCalendar _holidays = new HolidayCalendar();
 
-        /// <summary>True when holidays.csv could not be read at start: then it is not written over this session.</summary>
+        /// <summary>This is true when holidays.csv could not be read at start: then it is not written over this session.</summary>
         private bool _holidaysUnreadable;
 
         private AttendanceLog? _log;
 
-        /// <summary>One DTR per employee for the chosen month.</summary>
+        /// <summary>This is one DTR per employee for the chosen month.</summary>
         private List<DtrSheet> _sheets = new List<DtrSheet>();
 
-        /// <summary>The Computation of Leaves of each employee in _sheets, by employee ID.</summary>
+        /// <summary>This is the Computation of Leaves of each employee in _sheets, by employee ID.</summary>
         private readonly Dictionary<string, LeaveCard> _cards =
             new Dictionary<string, LeaveCard>(StringComparer.OrdinalIgnoreCase);
 
-        /// <summary>false = the preview shows the DTR, true = it shows the Computation of Leaves.</summary>
+        /// <summary>This is false when the preview shows the DTR, true when it shows the Computation of Leaves.</summary>
         private bool _showLeave;
 
-        /// <summary>IDs of the employees whose box is ticked.</summary>
+        /// <summary>This is the IDs of the employees whose box is ticked.</summary>
         private readonly HashSet<string> _ticked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        /// <summary>True while the program itself is changing the list (so events are ignored).</summary>
+        /// <summary>This is true while the program itself is changing the list (so events are ignored).</summary>
         private bool _updating;
 
         public Form1()
@@ -65,12 +65,12 @@ namespace Dat2DTR
             InitializeComponent();
             Icon = Theme.GetAppIcon();
 
-            // The DepEd NCR seal and the "One NCR" banner are built into the program.
+            // This is the DepEd NCR seal and the "One NCR" banner, built into the program.
             picSeal.SetImage(Theme.GetImage(Theme.SealImage));
             picBanner.SetImage(Theme.GetImage(Theme.BannerImage));
             preview.SetEmptyImage(Theme.GetImage(Theme.BannerImage));
 
-            // Keep the chosen employee highlighted even while the mouse is used elsewhere.
+            // This is so the chosen employee stays highlighted even while the mouse is used elsewhere.
             lvEmployees.HideSelection = false;
 
             Theme.StylePrimary(btnOpen);
@@ -86,7 +86,7 @@ namespace Dat2DTR
 #endif
         }
 
-        // ================================================================ start-up
+        // This is the start-up ================================================================
 
         private void Form1_Load(object? sender, EventArgs e)
         {
@@ -100,7 +100,7 @@ namespace Dat2DTR
             _holidaysUnreadable = _holidays.LoadFailed;
             cboFilter.SelectedIndex = 0;
 
-            // If the saved leaves cannot be read (the file is open in Excel, for example), nothing
+            // This is for saved leaves that cannot be read (the file is open in Excel, for example): nothing
             // is saved over them in this session. Otherwise they would be replaced by an empty list.
             if (_holidays.LoadFailed)
                 MessageBox.Show(this,
@@ -122,7 +122,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Makes the narrow columns of the employee list just wide enough for their text.
+        /// This is where the narrow columns of the employee list are made just wide enough for their text.
         /// Measuring the text (instead of fixed numbers) keeps it right on any screen scaling.
         /// </summary>
         private void SizeListColumns()
@@ -141,7 +141,7 @@ namespace Dat2DTR
             lvEmployees_Resize(lvEmployees, EventArgs.Empty);
         }
 
-        /// <summary>Puts the two work schedules into the "Work schedule" list above the DTR.</summary>
+        /// <summary>This is where the work schedules are put into the "Work schedule" list above the DTR.</summary>
         private void ShowRules()
         {
             _updating = true;
@@ -151,7 +151,7 @@ namespace Dat2DTR
             _updating = false;
         }
 
-        // ================================================================ step 1: open the file
+        // This is step 1: open the file ================================================================
 
         private void btnOpen_Click(object? sender, EventArgs e)
         {
@@ -220,7 +220,7 @@ namespace Dat2DTR
             lblFile.ForeColor = Theme.TextStrong;
             toolTip.SetToolTip(lblFile, path);
 
-            // Fill the month list and pick the most likely month.
+            // This is where the month list is filled and the most likely month is picked.
             DateTime suggested = log.SuggestMonth();
             _updating = true;
             cboMonth.Items.Clear();
@@ -244,7 +244,7 @@ namespace Dat2DTR
                 : "File opened. " + log.SkippedLineCount + " line(s) that were not attendance records were skipped.";
         }
 
-        // ================================================================ step 2: month and employees
+        // This is step 2: month and employees ================================================================
 
         private void cboMonth_SelectedIndexChanged(object? sender, EventArgs e)
         {
@@ -253,30 +253,30 @@ namespace Dat2DTR
             BuildSheets();
         }
 
-        /// <summary>Computes the DTR and the Computation of Leaves of every employee for the chosen month.</summary>
+        /// <summary>This is where the DTR and the Computation of Leaves of every employee are computed for the chosen month.</summary>
         private void BuildSheets()
         {
-            _leaves.Holidays = _holidays;   // the holiday calendar is used for everyone
+            _leaves.Holidays = _holidays;   // This is the holiday calendar, used for everyone
             _sheets = new List<DtrSheet>();
             _cards.Clear();
             var chosen = cboMonth.SelectedItem as MonthItem;
 
             if (_log != null && chosen != null)
             {
-                // The last day of the chosen month that the file covers.
+                // This is the last day of the chosen month that the file covers.
                 DateTime monthEnd = chosen.Month.AddMonths(1).AddDays(-1);
                 DateTime dataThrough = _log.LastDate < monthEnd ? _log.LastDate.Date : monthEnd;
                 bool ledgerChanged = false;
 
                 foreach (string id in GetIdsToList(_log, chosen.Month))
                 {
-                    // Each employee follows Schedule A, B, C or D (chosen above the DTR or in "Employee Names").
+                    // This is the schedule: each employee follows Schedule A, B, C or D (chosen above the DTR or in "Employee Names").
                     WorkSchedule schedule = _settings.GetSchedule(_names.GetSchedule(id));
                     DtrSheet sheet = DtrBuilder.Build(_log, id, _names.GetName(id), chosen.Month,
                                                       schedule, _settings, _corrections, _leaves);
                     _sheets.Add(sheet);
 
-                    // Remember the late and undertime of this month, so that next month
+                    // This is where the late and undertime of this month are remembered, so that next month
                     // the leave balance can be carried over without opening this file again.
                     // (Not for someone with no scans and no leave at all: there is nothing to remember.
                     //  The ledger itself refuses a file that holds only part of the month.)
@@ -293,7 +293,7 @@ namespace Dat2DTR
                 if (ledgerChanged)
                     SaveLeaveFiles(false);
 
-                // People with a name first (A to Z), then the IDs that have no name yet.
+                // This is the order: people with a name first (A to Z), then the IDs that have no name yet.
                 _sheets.Sort((a, b) =>
                 {
                     bool aNamed = a.EmployeeName.Length > 0, bNamed = b.EmployeeName.Length > 0;
@@ -311,7 +311,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// The employees to list for the month: everyone who scanned at least once, and everyone
+        /// This is the list of employees for the month: everyone who scanned at least once, and everyone
         /// who has a leave filed in the month (someone on leave for the whole month does not scan).
         /// With "Also show employees with no scans" ticked, everyone the program knows is listed.
         /// </summary>
@@ -322,7 +322,7 @@ namespace Dat2DTR
             foreach (string id in ids)
                 listed.Add(EmployeeDirectory.NormalizeId(id));
 
-            // How each ID is written in full. (The leave files keep IDs without leading zeros.)
+            // This is how each ID is written in full. (The leave files keep IDs without leading zeros.)
             var written = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (string id in log.GetAllEmployeeIds())
                 written[EmployeeDirectory.NormalizeId(id)] = id;
@@ -347,14 +347,14 @@ namespace Dat2DTR
             return ids;
         }
 
-        /// <summary>The tick box "Also show employees with no scans this month".</summary>
+        /// <summary>This is the tick box "Also show employees with no scans this month".</summary>
         private void chkNoScans_CheckedChanged(object? sender, EventArgs e)
         {
             if (_updating) return;
             BuildSheets();
         }
 
-        /// <summary>Fills the list on the left (only the employees that match the search box).</summary>
+        /// <summary>This is where the list on the left is filled (only the employees that match the search box).</summary>
         private void ShowEmployeeList()
         {
             string search = txtSearch.Text.Trim();
@@ -378,7 +378,7 @@ namespace Dat2DTR
                 bool wasEdited = sheet.EditedDays.Count > 0 || sheet.AdjustedDays.Count > 0;
                 bool hasLeave = sheet.LeaveDays.Count > 0;
 
-                // The list above the names: everyone, or only the ones with  !  *  or  L.
+                // This is the list above the names: everyone, or only the ones with  !  *  or  L.
                 int filter = cboFilter.SelectedIndex;
                 if ((filter == 1 && !needsCheck) || (filter == 2 && !wasEdited) || (filter == 3 && !hasLeave))
                     continue;
@@ -388,7 +388,7 @@ namespace Dat2DTR
                 item.SubItems.Add(sheet.ScheduleShort);
                 item.SubItems.Add(DtrSheet.FormatDuration(sheet.TotalLateMinutes));
                 item.SubItems.Add(DtrSheet.FormatDuration(sheet.TotalUndertimeMinutes));
-                item.SubItems.Add((needsCheck ? "!" : "") + (wasEdited ? "*" : "") + (hasLeave ? "L" : ""));  // ! = check,  * = typed in by hand,  L = on leave
+                item.SubItems.Add((needsCheck ? "!" : "") + (wasEdited ? "*" : "") + (hasLeave ? "L" : ""));  // This is ! = check,  * = typed in by hand,  L = on leave
                 item.Tag = sheet;
                 item.Checked = _ticked.Contains(sheet.EmployeeId);
                 if (!hasName)
@@ -418,7 +418,7 @@ namespace Dat2DTR
             ShowCurrentSheet();
         }
 
-        /// <summary>The DTR of the employee that is selected in the list (or null).</summary>
+        /// <summary>This is the DTR of the employee that is selected in the list (or null).</summary>
         private DtrSheet? GetCurrentSheet()
         {
             if (lvEmployees.SelectedItems.Count == 0) return null;
@@ -427,7 +427,7 @@ namespace Dat2DTR
 
         private void lvEmployees_SelectedIndexChanged(object? sender, EventArgs e)
         {
-            // When the user clicks another name, Windows first reports "nothing selected"
+            // This is because, when the user clicks another name, Windows first reports "nothing selected"
             // and then the new selection. Ignoring the first one avoids a flicker.
             if (_updating || lvEmployees.SelectedItems.Count == 0) return;
             ShowCurrentSheet();
@@ -447,7 +447,7 @@ namespace Dat2DTR
 
         private void lvEmployees_Resize(object? sender, EventArgs e)
         {
-            // Let the Name column use whatever width is left over.
+            // This is so the Name column uses whatever width is left over.
             int others = colId.Width + colSchedule.Width + colLate.Width + colUndertime.Width + colCheck.Width;
             int width = lvEmployees.ClientSize.Width - others - SystemInformation.VerticalScrollBarWidth;
             colName.Width = Math.Max(140, width);
@@ -458,7 +458,7 @@ namespace Dat2DTR
             ShowEmployeeList();
         }
 
-        /// <summary>The list above the names: show everyone, or only the ones that need checking, were typed in, or have a leave.</summary>
+        /// <summary>This is the list above the names: show everyone, or only the ones that need checking, were typed in, or have a leave.</summary>
         private void cboFilter_SelectedIndexChanged(object? sender, EventArgs e)
         {
             ShowEmployeeList();
@@ -476,7 +476,7 @@ namespace Dat2DTR
             SetAllTicks(false);
         }
 
-        /// <summary>Ticks or unticks every employee that is currently shown in the list.</summary>
+        /// <summary>This is where every employee that is currently shown in the list is ticked or unticked.</summary>
         private void SetAllTicks(bool ticked)
         {
             _updating = true;
@@ -491,7 +491,7 @@ namespace Dat2DTR
             ShowCounts();
         }
 
-        /// <summary>Shows the selected employee's DTR and switches the buttons on or off.</summary>
+        /// <summary>This is where the selected employee's DTR is shown and the buttons are switched on or off.</summary>
         private void ShowCurrentSheet()
         {
             DtrSheet? sheet = GetCurrentSheet();
@@ -500,7 +500,7 @@ namespace Dat2DTR
                 _cards.TryGetValue(sheet.EmployeeId, out card);
             preview.ShowPages(sheet, card, _showLeave);
 
-            // The yellow bar: days a person should double-check, days typed in by hand, and days on leave.
+            // This is the yellow bar: days a person should double-check, days typed in by hand, and days on leave.
             var notices = new List<string>();
             if (sheet != null && sheet.DaysToCheck.Count > 0)
                 notices.Add("Please check (use Edit DTR or Edit Leave to fix):   " +
@@ -527,7 +527,7 @@ namespace Dat2DTR
             toolTip.SetToolTip(lblNotice, string.Join("\n\n", notices.ToArray()).Replace(";   ", "\n"));
             lblNotice.Visible = notices.Count > 0;
 
-            // The "Work schedule" list and the status bar show the schedule of this employee.
+            // This is the "Work schedule" list and the status bar: they show the schedule of this employee.
             _updating = true;
             cboSchedule.SelectedIndex = sheet == null ? -1 : sheet.ScheduleIndex;
             _updating = false;
@@ -542,12 +542,12 @@ namespace Dat2DTR
             }
             else
             {
-                // All the schedules, short: "A  7-6 Mon to Thu   |   B  8-5 Mon to Fri ..."
+                // This is all the schedules, short: "A  7-6 Mon to Thu   |   B  8-5 Mon to Fri ..."
                 lblRules.Text = string.Join("   |   ",
                     _settings.Schedules.Select(x => x.Letter + "  " + x.ShortText + " " + x.WorkDaysText).ToArray());
             }
 
-            // The words in the middle of the empty preview.
+            // This is the words in the middle of the empty preview.
             if (_log == null)
                 preview.SetEmptyMessage("Start with Step 1",
                     "Click \"Open .dat File...\" at the top left,\nor drag the .dat file from the biometrics device into this window.");
@@ -579,9 +579,9 @@ namespace Dat2DTR
             lblEmployees.Text = text;
         }
 
-        // ================================================================ work schedule, Edit DTR and Edit Leave
+        // This is the work schedule, Edit DTR and Edit Leave ================================================================
 
-        /// <summary>The user picked a schedule (A to D) in the list above the DTR.</summary>
+        /// <summary>This is when the user picked a schedule (A to D) in the list above the DTR.</summary>
         private void cboSchedule_SelectionChangeCommitted(object? sender, EventArgs e)
         {
             DtrSheet? current = GetCurrentSheet();
@@ -589,7 +589,7 @@ namespace Dat2DTR
             if (_updating || current == null || chosen < 0)
                 return;
 
-            // With ticked employees, ask whether the change is for this one, the ticked ones or everyone.
+            // This is for ticked employees: ask whether the change is for this one, the ticked ones or everyone.
             var who = new List<DtrSheet> { current };
             if (_ticked.Count > 0)
                 who = AskWhichSheets("Whose work schedule do you want to change?");
@@ -600,7 +600,7 @@ namespace Dat2DTR
             if (who.Count > 0)
                 SaveEmployeeList();
 
-            BuildSheets(); // also puts the list back to the saved schedule if the question was cancelled
+            BuildSheets(); // This is also what puts the list back to the saved schedule if the question was cancelled
         }
 
         private void SaveEmployeeList()
@@ -617,7 +617,7 @@ namespace Dat2DTR
             }
         }
 
-        /// <summary>e.g. "undertime 1h -> none (Work suspended at 3:00 PM)" for the yellow notice.</summary>
+        /// <summary>This is the text for the yellow notice, e.g. "undertime 1h -> none (Work suspended at 3:00 PM)".</summary>
         private static string AdjustedText(DtrDay day)
         {
             var parts = new List<string>();
@@ -633,10 +633,10 @@ namespace Dat2DTR
             return minutes == 0 ? "none" : DtrSheet.FormatDuration(minutes);
         }
 
-        /// <summary>Opens the table where the times of the shown employee can be typed in or corrected.</summary>
+        /// <summary>This is where the table opens in which the times of the shown employee can be typed in or corrected.</summary>
         private void btnEdit_Click(object? sender, EventArgs e)
         {
-            // "Next >" and "< Previous" in the window save and go on with the employee below / above.
+            // This is "Next >" and "< Previous" in the window: they save and go on with the employee below / above.
             DtrSheet? current = GetCurrentSheet();
             while (current != null && _log != null)
             {
@@ -649,12 +649,12 @@ namespace Dat2DTR
             }
         }
 
-        /// <summary>Edit DTR for one employee. Returns -1 / +1 to go on with the previous / next one, else 0.</summary>
+        /// <summary>This is Edit DTR for one employee. Returns -1 / +1 to go on with the previous / next one, else 0.</summary>
         private int EditDtrOf(DtrSheet current, AttendanceLog log)
         {
             WorkSchedule schedule = _settings.GetSchedule(current.ScheduleIndex);
 
-            // What the biometrics file says, without anything typed in by hand.
+            // This is what the biometrics file says, without anything typed in by hand.
             DtrSheet fromFile = DtrBuilder.Build(log, current.EmployeeId, current.EmployeeName, current.Month,
                                                  schedule, _settings, null, _leaves);
 
@@ -689,7 +689,7 @@ namespace Dat2DTR
             return move;
         }
 
-        /// <summary>True when the list (as it is shown now) has an employee above (-1) or below (+1) this one.</summary>
+        /// <summary>This is true when the list (as it is shown now) has an employee above (-1) or below (+1) this one.</summary>
         private bool HasNeighbour(string employeeId, int move)
         {
             int index = IndexInList(employeeId);
@@ -704,7 +704,7 @@ namespace Dat2DTR
             return -1;
         }
 
-        /// <summary>The ID of the employee above (-1) or below (+1) the given place in the list, or null.</summary>
+        /// <summary>This is the ID of the employee above (-1) or below (+1) the given place in the list, or null.</summary>
         private string? NeighbourId(int index, int move)
         {
             int other = index + move;
@@ -713,7 +713,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// After Next / Previous (the list was made again by then): selects the employee that was below / above,
+        /// This is for after Next / Previous (the list was made again by then): selects the employee that was below / above,
         /// and returns the DTR, or null at the end of the list. If the edited employee is not in the list any
         /// more (for example the filter "Needs checking" and the day was fixed), the one now at its place is next.
         /// </summary>
@@ -721,7 +721,7 @@ namespace Dat2DTR
         {
             int index = targetId == null ? -1 : IndexInList(targetId);
             if (index < 0 && IndexInList(editedId) < 0 && oldIndex >= 0)
-                index = move > 0 ? oldIndex : oldIndex - 1;   // the edited one dropped out of the list
+                index = move > 0 ? oldIndex : oldIndex - 1;   // This is when the edited one dropped out of the list
             if (index < 0 || index >= lvEmployees.Items.Count)
             {
                 lblStatus.Text = move > 0 ? "That was the last employee in the list." : "That was the first employee in the list.";
@@ -734,14 +734,14 @@ namespace Dat2DTR
             return GetCurrentSheet();
         }
 
-        /// <summary>Selects the employee above (-1) or below (+1) in the list and returns the DTR, or null at the end.</summary>
+        /// <summary>This is where the employee above (-1) or below (+1) in the list is selected; returns the DTR, or null at the end.</summary>
         private DtrSheet? SelectNeighbour(string employeeId, int move)
         {
             int index = IndexInList(employeeId);
             return MoveAfterEdit(employeeId, index, NeighbourId(index, move), move);
         }
 
-        /// <summary>Opens the table where a leave can be filed for the shown employee.</summary>
+        /// <summary>This is where the table opens in which a leave can be filed for the shown employee.</summary>
         private void btnLeave_Click(object? sender, EventArgs e)
         {
             DtrSheet? current = GetCurrentSheet();
@@ -749,7 +749,7 @@ namespace Dat2DTR
             if (current == null || log == null)
                 return;
 
-            // With employees ticked: this one only, or the same leave for all the ticked ones?
+            // This is for employees ticked: this one only, or the same leave for all the ticked ones?
             List<DtrSheet> ticked = _sheets.Where(s => _ticked.Contains(s.EmployeeId)).ToList();
             if (ticked.Count > 1 || (ticked.Count == 1 && ticked[0] != current))
             {
@@ -768,7 +768,7 @@ namespace Dat2DTR
                 }
             }
 
-            // "Next >" and "< Previous" in the window save and go on with the employee below / above.
+            // This is "Next >" and "< Previous" in the window: they save and go on with the employee below / above.
             DtrSheet? next = current;
             while (next != null)
             {
@@ -781,16 +781,16 @@ namespace Dat2DTR
             }
         }
 
-        /// <summary>Edit Leave for one employee. Returns -1 / +1 to go on with the previous / next one, else 0.</summary>
+        /// <summary>This is Edit Leave for one employee. Returns -1 / +1 to go on with the previous / next one, else 0.</summary>
         private int EditLeaveOf(DtrSheet current, AttendanceLog log)
         {
             WorkSchedule schedule = _settings.GetSchedule(current.ScheduleIndex);
 
-            // The DTR without any leave: what the person scanned (or what was typed in by hand).
+            // This is the DTR without any leave: what the person scanned (or what was typed in by hand).
             DtrSheet attendance = DtrBuilder.Build(log, current.EmployeeId, current.EmployeeName, current.Month,
                                                    schedule, _settings, _corrections, null);
 
-            // The window works on copies. This is how it asks for the computation while the user is choosing.
+            // This is how the window asks for the computation while the user is choosing (the window works on copies).
             Func<LeaveStore, LeaveLedger, CtoStore, LeaveCard> compute = (leaves, ledger, cto) =>
             {
                 DtrSheet sheet = DtrBuilder.Build(log, current.EmployeeId, current.EmployeeName, current.Month,
@@ -813,7 +813,7 @@ namespace Dat2DTR
 
             SaveLeaveFiles(true);
 
-            _showLeave = true;      // show the result right away
+            _showLeave = true;      // This is to show the result right away
             ShowViewButtons();
             BuildSheets();
             lblStatus.Text = "Leave updated for " + current.NameLine;
@@ -821,7 +821,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// The same leave (for example Holiday or Suspended) for a range of days, for all the
+        /// This is the same leave (for example Holiday or Suspended) for a range of days, for all the
         /// ticked employees. Days that are not working days in an employee's schedule are skipped.
         /// </summary>
         private void EditTickedLeave(List<DtrSheet> ticked, DateTime month)
@@ -838,7 +838,7 @@ namespace Dat2DTR
                 entry = dialog.GetEntry();
             }
 
-            // Days that already have something else filed: replace them, or leave them as they are?
+            // This is for days that already have something else filed: replace them, or leave them as they are?
             int different = 0;
             foreach (DtrSheet sheet in ticked)
             {
@@ -868,7 +868,7 @@ namespace Dat2DTR
                 ticked.Select(s => _settings.GetSchedule(s.ScheduleIndex)).ToList(), from, to, entry, replace);
 
             SaveLeaveFiles(true);
-            _showLeave = false;     // a holiday or a suspension is seen on the DTR
+            _showLeave = false;     // This is so a holiday or a suspension is seen on the DTR
             ShowViewButtons();
             BuildSheets();
             lblStatus.Text = (entry == null ? "Leave removed" : (entry.Type == LeaveType.WorkFromHome ? "Work from home" : entry.Kind.Name) +
@@ -877,10 +877,10 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Files one leave (or removes what is filed, when entry is null) on every working day
+        /// This is where one leave is filed (or what is filed is removed, when entry is null) on every working day
         /// from..to for each of the employees. Returns how many days were changed.
         /// </summary>
-        /// <param name="replace">false = keep a different leave that is already filed on a day.</param>
+        /// <param name="replace">This is false to keep a different leave that is already filed on a day.</param>
         internal static int ApplyLeaveToMany(LeaveStore leaves, List<string> ids, List<WorkSchedule> schedules,
                                              DateTime from, DateTime to, LeaveEntry? entry, bool replace)
         {
@@ -903,11 +903,11 @@ namespace Dat2DTR
             return changed;
         }
 
-        /// <summary>Saves the filed leaves and the remembered months.</summary>
-        /// <param name="tellUser">true = show a message when the files cannot be written.</param>
+        /// <summary>This is where the filed leaves and the remembered months are saved.</summary>
+        /// <param name="tellUser">This is true to show a message when the files cannot be written.</param>
         private void SaveLeaveFiles(bool tellUser)
         {
-            // The saved files could not be read when the program started (see Form1_Load).
+            // This is for saved files that could not be read when the program started (see Form1_Load).
             // Writing now would replace them with an almost empty list, so nothing is written.
             if (_leaves.LoadFailed || _ledger.LoadFailed || _cto.LoadFailed)
             {
@@ -935,7 +935,7 @@ namespace Dat2DTR
             }
         }
 
-        // ================================================================ DTR or Computation of Leaves
+        // This is the DTR or Computation of Leaves buttons ================================================================
 
         private void btnViewDtr_Click(object? sender, EventArgs e)
         {
@@ -951,7 +951,7 @@ namespace Dat2DTR
             ShowCurrentSheet();
         }
 
-        /// <summary>Makes the two buttons above the preview look like tabs: the chosen one is navy.</summary>
+        /// <summary>This is where the two buttons above the preview are made to look like tabs: the chosen one is navy.</summary>
         private void ShowViewButtons()
         {
             StyleViewButton(btnViewDtr, !_showLeave);
@@ -970,7 +970,7 @@ namespace Dat2DTR
             button.Cursor = Cursors.Hand;
         }
 
-        /// <summary>Asks what to print or save: the DTR, the Computation of Leaves, or both.</summary>
+        /// <summary>This is where the user is asked what to print or save: the DTR, the Computation of Leaves, or both.</summary>
         private DtrPages AskWhichPages(string question, bool offerDatFile = false)
         {
             using (var dialog = new PagesDialog(question, offerDatFile))
@@ -981,7 +981,7 @@ namespace Dat2DTR
             }
         }
 
-        /// <summary>"DTR", "Computation of Leaves" or "DTR and Computation of Leaves" - for file names and messages.</summary>
+        /// <summary>This is "DTR", "Computation of Leaves" or "DTR and Computation of Leaves" - for file names and messages.</summary>
         private static string PagesName(DtrPages pages)
         {
             if (pages == DtrPages.LeaveOnly) return "Computation of Leaves";
@@ -989,7 +989,7 @@ namespace Dat2DTR
             return "DTR";
         }
 
-        /// <summary>The Computation of Leaves of each of these DTRs, in the same order.</summary>
+        /// <summary>This is the Computation of Leaves of each of these DTRs, in the same order.</summary>
         private List<LeaveCard> GetCards(List<DtrSheet> sheets)
         {
             var cards = new List<LeaveCard>();
@@ -998,9 +998,9 @@ namespace Dat2DTR
             return cards;
         }
 
-        // ================================================================ names, office hours, help
+        // This is names, office hours, help ================================================================
 
-        /// <summary>Opens the holiday calendar (used for every employee).</summary>
+        /// <summary>This is where the holiday calendar (used for every employee) is opened.</summary>
         private void btnHolidays_Click(object? sender, EventArgs e)
         {
             var chosen = cboMonth.SelectedItem as MonthItem;
@@ -1079,10 +1079,10 @@ namespace Dat2DTR
             else if (e.KeyCode == Keys.S) { e.SuppressKeyPress = true; btnSave.PerformClick(); }
         }
 
-        // ================================================================ step 3: print and save
+        // This is step 3: print and save ================================================================
 
         /// <summary>
-        /// Asks whose DTR is wanted (this one / the ticked ones / everyone).
+        /// This is where the user is asked whose DTR is wanted (this one / the ticked ones / everyone).
         /// Returns an empty list when the user cancels.
         /// </summary>
         private List<DtrSheet> AskWhichSheets(string question)
@@ -1145,7 +1145,7 @@ namespace Dat2DTR
                     document.DocumentName = PagesName(what) + " " + sheets[0].MonthText;
                     SelectPaper(document);
 
-                    // The pages in the order they are printed: for each employee the DTR,
+                    // This is the pages in the order they are printed: for each employee the DTR,
                     // the Computation of Leaves, or the DTR followed by the Computation of Leaves.
                     var pages = new List<object>();
                     foreach (DtrSheet sheet in sheets)
@@ -1156,7 +1156,7 @@ namespace Dat2DTR
                             pages.Add(_cards[sheet.EmployeeId]);
                     }
 
-                    int next = 0; // which page is printed next
+                    int next = 0; // This is which page is printed next
                     document.BeginPrint += (s, args) => next = 0;
                     document.PrintPage += (s, args) =>
                     {
@@ -1188,7 +1188,7 @@ namespace Dat2DTR
             }
         }
 
-        /// <summary>Asks the printer for the paper size chosen in "Office Hours", if it has that size.</summary>
+        /// <summary>This is where the printer is asked for the paper size chosen in "Office Hours", if it has that size.</summary>
         private void SelectPaper(PrintDocument document)
         {
             PaperKind wanted;
@@ -1210,12 +1210,12 @@ namespace Dat2DTR
             }
         }
 
-        /// <param name="page">A DtrSheet (the DTR) or a LeaveCard (the Computation of Leaves).</param>
+        /// <param name="page">This is a DtrSheet (the DTR) or a LeaveCard (the Computation of Leaves).</param>
         private static void PrintOnePage(PrintPageEventArgs e, object page)
         {
             Graphics g = e.Graphics!;
 
-            // The printer measures in 1/100 inch; the DTR page is laid out in points (1/72 inch).
+            // This is the printer's unit: 1/100 inch; the DTR page is laid out in points (1/72 inch).
             // A printer cannot print on the very edge of the paper, and its drawing area
             // starts after that edge ("hard margin"), so we shift back by that amount.
             g.PageUnit = GraphicsUnit.Display;
@@ -1271,7 +1271,7 @@ namespace Dat2DTR
                 if (dialog.ShowDialog(this) != DialogResult.OK)
                     return;
 
-                // Decide the file type from the ending the user chose.
+                // This is where the file type is decided from the ending the user chose.
                 string path = dialog.FileName;
                 string extension = Path.GetExtension(path).ToLowerInvariant();
                 if (extension != ".pdf" && extension != ".xlsx")
@@ -1283,7 +1283,7 @@ namespace Dat2DTR
                 try
                 {
                     Cursor = Cursors.WaitCursor;
-                    // DTR only: no leave cards.  Computation of Leaves only: no DTRs.  Both: each DTR, then its leave card.
+                    // This is DTR only: no leave cards.  Computation of Leaves only: no DTRs.  Both: each DTR, then its leave card.
                     List<LeaveCard>? cards = what == DtrPages.DtrOnly ? null : GetCards(sheets);
                     bool withDtr = what != DtrPages.LeaveOnly;
                     if (extension == ".xlsx")
@@ -1319,7 +1319,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Saves the scans of the chosen employees in the chosen month as a new .dat file,
+        /// This is where the scans of the chosen employees in the chosen month are saved as a new .dat file,
         /// line for line the same as in the opened file.
         /// </summary>
         private void SaveDatFile()
@@ -1354,7 +1354,7 @@ namespace Dat2DTR
                 if (!path.EndsWith(".dat", StringComparison.OrdinalIgnoreCase))
                     path += ".dat";
 
-                // Never write over the file that is open right now.
+                // This is the rule: never write over the file that is open right now.
                 if (_log.FilePath.Length > 0 &&
                     string.Equals(Path.GetFullPath(path), Path.GetFullPath(_log.FilePath), StringComparison.OrdinalIgnoreCase))
                 {
@@ -1391,7 +1391,7 @@ namespace Dat2DTR
             try
             {
                 var start = new ProcessStartInfo(path);
-                start.UseShellExecute = true; // let Windows pick the program (Excel, PDF reader, ...)
+                start.UseShellExecute = true; // This is to let Windows pick the program (Excel, PDF reader, ...)
                 Process.Start(start);
             }
             catch (Exception ex) when (ex is System.ComponentModel.Win32Exception || ex is InvalidOperationException)
@@ -1402,7 +1402,7 @@ namespace Dat2DTR
             }
         }
 
-        /// <summary>Removes characters that Windows does not allow in a file name.</summary>
+        /// <summary>This is where characters that Windows does not allow in a file name are removed.</summary>
         private static string CleanFileName(string name)
         {
             foreach (char c in Path.GetInvalidFileNameChars())
@@ -1410,7 +1410,7 @@ namespace Dat2DTR
             return name.Trim();
         }
 
-        /// <summary>An entry of the month list. ToString() is what the list shows.</summary>
+        /// <summary>This is an entry of the month list. ToString() is what the list shows.</summary>
         private sealed class MonthItem
         {
             public MonthItem(DateTime month)

@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Dat2DTR
 {
     /// <summary>
-    /// Reads the .dat file exported by the biometrics device.
+    /// This is the reader of the .dat file exported by the biometrics device.
     ///
     /// Each line of the file looks like this (the gaps are TAB characters):
     ///
@@ -19,27 +19,27 @@ namespace Dat2DTR
             @"^\s*(\S+)\s+(\d{4})[-/](\d{1,2})[-/](\d{1,2})[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        // ID -> every scan of that employee, sorted by time.
+        // This is ID -> every scan of that employee, sorted by time.
         private readonly Dictionary<string, List<DateTime>> _scans =
             new Dictionary<string, List<DateTime>>(StringComparer.OrdinalIgnoreCase);
 
-        // Every line of the file that was understood as a scan, exactly as it was written,
+        // This is every line of the file that was understood as a scan, exactly as it was written,
         // so a part of the file can be saved again as a .dat file (see SaveDat).
         private readonly List<KeyValuePair<DateTime, KeyValuePair<string, string>>> _lines =
-            new List<KeyValuePair<DateTime, KeyValuePair<string, string>>>();   // time -> (ID, line)
+            new List<KeyValuePair<DateTime, KeyValuePair<string, string>>>();   // This is time -> (ID, line)
 
         public string FilePath { get; private set; } = "";
 
-        /// <summary>How many lines were understood as a scan.</summary>
+        /// <summary>This is how many lines were understood as a scan.</summary>
         public int RecordCount { get; private set; }
 
-        /// <summary>How many non-empty lines could not be understood.</summary>
+        /// <summary>This is how many non-empty lines could not be understood.</summary>
         public int SkippedLineCount { get; private set; }
 
-        /// <summary>Date of the earliest scan in the file.</summary>
+        /// <summary>This is the date of the earliest scan in the file.</summary>
         public DateTime FirstDate { get; private set; }
 
-        /// <summary>Date of the latest scan in the file.</summary>
+        /// <summary>This is the date of the latest scan in the file.</summary>
         public DateTime LastDate { get; private set; }
 
         public int EmployeeCount
@@ -52,7 +52,7 @@ namespace Dat2DTR
             var log = new AttendanceLog();
             log.FilePath = path;
 
-            // FileShare.ReadWrite lets us read the file even if another program has it open.
+            // This is FileShare.ReadWrite: it lets us read the file even if another program has it open.
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (var reader = new StreamReader(stream))
             {
@@ -77,7 +77,7 @@ namespace Dat2DTR
             return log;
         }
 
-        /// <summary>Builds a log from scans that are already in memory (used for testing).</summary>
+        /// <summary>This is where a log is built from scans that are already in memory (used for testing).</summary>
         public static AttendanceLog FromScans(IEnumerable<KeyValuePair<string, DateTime>> scans)
         {
             var log = new AttendanceLog();
@@ -106,14 +106,14 @@ namespace Dat2DTR
             }
             catch (ArgumentOutOfRangeException)
             {
-                return false; // for example month 13 or hour 25
+                return false; // This is for impossible dates, for example month 13 or hour 25
             }
 
             id = m.Groups[1].Value;
             return true;
         }
 
-        /// <summary>A line the way the biometrics device writes it:  ID, date and time, then 1 0 1 0.</summary>
+        /// <summary>This is a line the way the biometrics device writes it:  ID, date and time, then 1 0 1 0.</summary>
         public static string MakeLine(string id, DateTime time)
         {
             return id + "\t" + time.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture) +
@@ -121,7 +121,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Saves the scans of some employees in one month as a new .dat file, in time order.
+        /// This is where the scans of some employees in one month are saved as a new .dat file, in time order.
         /// The lines are copied exactly as they were in the opened file. Times typed in by hand
         /// and leaves are NOT written, because they are not scans of the device.
         /// Returns how many lines were written.
@@ -161,7 +161,7 @@ namespace Dat2DTR
             RecordCount++;
         }
 
-        /// <summary>Every month that has at least one scan, newest first (as the 1st day of the month).</summary>
+        /// <summary>This is every month that has at least one scan, newest first (as the 1st day of the month).</summary>
         public List<DateTime> GetMonths()
         {
             var months = new HashSet<DateTime>();
@@ -176,7 +176,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// The month the user most likely wants. The file is usually exported a few days
+        /// This is the month the user most likely wants. The file is usually exported a few days
         /// AFTER the month ends, so if the newest month only has its first week in it,
         /// we suggest the month before.
         /// </summary>
@@ -192,7 +192,7 @@ namespace Dat2DTR
             return months[0];
         }
 
-        /// <summary>IDs of everyone who scanned at least once in the given month.</summary>
+        /// <summary>This is the list of IDs of everyone who scanned at least once in the given month.</summary>
         public List<string> GetEmployeeIds(DateTime month)
         {
             var ids = new List<string>();
@@ -218,7 +218,7 @@ namespace Dat2DTR
             return ids;
         }
 
-        /// <summary>All scans of one employee on one date, earliest first.</summary>
+        /// <summary>This is all the scans of one employee on one date, earliest first.</summary>
         public List<DateTime> GetScans(string employeeId, DateTime date)
         {
             var result = new List<DateTime>();
@@ -232,7 +232,7 @@ namespace Dat2DTR
             return result;
         }
 
-        /// <summary>Sorts IDs like numbers (93 before 135) when they are numbers.</summary>
+        /// <summary>This is how IDs are sorted: like numbers (93 before 135) when they are numbers.</summary>
         public static int CompareIds(string a, string b)
         {
             long x, y;

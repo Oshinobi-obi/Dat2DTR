@@ -1,7 +1,7 @@
 namespace Dat2DTR
 {
     /// <summary>
-    /// Makes a table fit the screen it is shown on. Column widths and heights typed in pixels
+    /// This is what makes a table fit the screen it is shown on. Column widths and heights typed in pixels
     /// are too small when Windows shows text bigger (display scaling 125%, 150%...), so the
     /// headings get cut off ("NDERTIME"). After the window has opened, this measures the real
     /// text and makes:
@@ -16,7 +16,7 @@ namespace Dat2DTR
     internal static class GridFit
     {
         /// <summary>
-        /// Put this in a column's Tag for a column of free text (remarks, reasons, results):
+        /// This is what to put in a column's Tag for a column of free text (remarks, reasons, results):
         /// it only has to fit its heading, not its values.
         /// </summary>
         public const string FreeText = "free-text";
@@ -27,22 +27,22 @@ namespace Dat2DTR
             grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             form.Load += (sender, e) => { KeepOnScreen(form); Later(grid, true); };
             grid.FontChanged += (sender, e) => Later(grid, true);
-            // A wider or narrower column wraps its heading differently.
+            // This is because a wider or narrower column wraps its heading differently.
             grid.ColumnWidthChanged += (sender, e) => Later(grid, false);
             grid.Resize += (sender, e) => Later(grid, false);
         }
 
-        // Tables that already have a fitting waiting to be done (so it is not queued many times):
+        // This is the tables that already have a fitting waiting to be done (so it is not queued many times):
         // true = the whole fitting, false = only the heading height.
         private static readonly Dictionary<DataGridView, bool> Waiting = new Dictionary<DataGridView, bool>();
 
         /// <summary>
-        /// Runs the fitting a moment later, when the table has finished what it is doing.
+        /// This is where the fitting is run a moment later, when the table has finished what it is doing.
         /// Windows does not allow the heading height or a column width to be changed while the
         /// table is still stretching its "fill" column ("This operation cannot be performed while
         /// an auto-filled column is being resized"), so it is never done in the middle of that.
         /// </summary>
-        /// <param name="whole">true = the whole fitting (Fit), false = only the heading height.</param>
+        /// <param name="whole">This is true for the whole fitting (Fit), false for only the heading height.</param>
         private static void Later(DataGridView grid, bool whole)
         {
             if (!grid.IsHandleCreated || grid.IsDisposed)
@@ -50,7 +50,7 @@ namespace Dat2DTR
             bool queuedWhole;
             if (Waiting.TryGetValue(grid, out queuedWhole))
             {
-                // Already queued: that one will see the newest sizes. Make it the whole fitting if needed.
+                // This is when it is already queued: that one will see the newest sizes. Make it the whole fitting if needed.
                 if (whole && !queuedWhole) Waiting[grid] = true;
                 return;
             }
@@ -67,14 +67,14 @@ namespace Dat2DTR
                 }
                 catch (InvalidOperationException)
                 {
-                    // The table was busy after all: the sizes stay as they are. Nothing is lost,
+                    // This is when the table was busy after all: the sizes stay as they are. Nothing is lost,
                     // the next resize fits it again.
                 }
             }));
         }
 
         /// <summary>
-        /// Makes an instruction label as tall as its (wrapped) text, and the panel it sits in tall
+        /// This is where an instruction label is made as tall as its (wrapped) text, and the panel it sits in tall
         /// enough to show it all - also after the window is made narrower or the text bigger.
         /// </summary>
         public static void GrowWithText(Form form, Label label, Control panel)
@@ -93,7 +93,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// A window made for a big screen can be wider than a small laptop screen once Windows makes the
+        /// This is for a window made for a big screen: it can be wider than a small laptop screen once Windows makes the
         /// text bigger. Then it is made as big as the screen allows and put back in the middle of it.
         /// </summary>
         public static void KeepOnScreen(Form form)
@@ -105,7 +105,7 @@ namespace Dat2DTR
             form.Location = new Point(area.Left + (area.Width - form.Width) / 2, area.Top + (area.Height - form.Height) / 2);
         }
 
-        /// <summary>Makes the heading row as tall as the tallest heading, wrapped to its column width.</summary>
+        /// <summary>This is where the heading row is made as tall as the tallest heading, wrapped to its column width.</summary>
         public static void FitHeadingHeight(DataGridView grid)
         {
             Font headerFont = grid.ColumnHeadersDefaultCellStyle.Font ?? grid.Font;
@@ -129,7 +129,7 @@ namespace Dat2DTR
             }
             catch (InvalidOperationException)
             {
-                // The table is busy stretching a column: try again once it is done.
+                // This is when the table is busy stretching a column: try again once it is done.
                 Later(grid, false);
             }
         }
@@ -138,14 +138,14 @@ namespace Dat2DTR
         {
             Font headerFont = grid.ColumnHeadersDefaultCellStyle.Font ?? grid.Font;
             Font cellFont = grid.DefaultCellStyle.Font ?? grid.Font;
-            using (var bold = new Font(cellFont, FontStyle.Bold))   // changed boxes are bold
+            using (var bold = new Font(cellFont, FontStyle.Bold))   // This is because changed boxes are bold
             {
-                int padding = TextRenderer.MeasureText("MM", cellFont).Width;   // grows with the text size
+                int padding = TextRenderer.MeasureText("MM", cellFont).Width;   // This is a gap that grows with the text size
                 int listArrow = SystemInformation.VerticalScrollBarWidth;
 
                 foreach (DataGridViewColumn column in grid.Columns)
                 {
-                    // The longest word of the heading must fit (a heading wraps between words, not inside one).
+                    // This is the longest word of the heading: it must fit (a heading wraps between words, not inside one).
                     int need = 0;
                     foreach (string word in column.HeaderText.Split(new[] { ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
                         need = Math.Max(need, TextRenderer.MeasureText(word, headerFont).Width);
@@ -159,7 +159,7 @@ namespace Dat2DTR
                     }
                     else if (column is DataGridViewComboBoxColumn)
                     {
-                        // Every choice in the list, plus the arrow.
+                        // This is every choice in the list, plus the arrow.
                         var list = (DataGridViewComboBoxColumn)column;
                         foreach (object item in list.Items)
                             need = Math.Max(need, TextRenderer.MeasureText(Convert.ToString(item) ?? "", bold).Width + padding + listArrow);
@@ -181,7 +181,7 @@ namespace Dat2DTR
 
                 FitHeadingHeight(grid);
 
-                // Rows tall enough for the text.
+                // This is rows tall enough for the text.
                 int rowHeight = Math.Max(grid.RowTemplate.Height, TextRenderer.MeasureText("Ag", bold).Height + padding / 3);
                 grid.RowTemplate.Height = rowHeight;
                 foreach (DataGridViewRow row in grid.Rows)

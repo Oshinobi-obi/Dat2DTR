@@ -7,32 +7,32 @@ namespace Dat2DTR
     {
         A4,
         Letter,
-        Long,   // 8.5 x 13 inches ("long bond paper")
-        Legal   // 8.5 x 14 inches
+        Long,   // This is 8.5 x 13 inches ("long bond paper")
+        Legal   // This is 8.5 x 14 inches
     }
 
     /// <summary>
-    /// The office rules used to compute Late and Undertime: the four work schedules
+    /// This is the set of office rules used to compute Late and Undertime: the four work schedules
     /// and how Late is counted. They are saved in a small text file so the user
     /// only sets them once.
     /// </summary>
     public sealed class DtrSettings
     {
-        /// <summary>Schedule A (index 0), B (1), C (2) and D (3).</summary>
+        /// <summary>This is Schedule A (index 0), B (1), C (2) and D (3).</summary>
         public WorkSchedule[] Schedules = WorkSchedule.Defaults();
 
         /// <summary>
-        /// true  = once past the grace period, late is counted from Time In   (7:20 -> 20 minutes late)
-        /// false = late is counted only after the grace period                (7:20 ->  5 minutes late)
+        /// This is true  = once past the grace period, late is counted from Time In   (7:20 -> 20 minutes late)
+        ///      false = late is counted only after the grace period                (7:20 ->  5 minutes late)
         /// </summary>
         public bool CountLateFromOfficialTime = true;
 
         public DtrPaper Paper = DtrPaper.A4;
 
-        /// <summary>Folder that was used last time, so the Open/Save windows start there.</summary>
+        /// <summary>This is the folder that was used last time, so the Open/Save windows start there.</summary>
         public string LastFolder = "";
 
-        /// <summary>Schedule 0 = A, 1 = B, 2 = C, 3 = D. Any other number gives Schedule A.</summary>
+        /// <summary>This is how a number becomes a schedule: 0 = A, 1 = B, 2 = C, 3 = D. Any other number gives Schedule A.</summary>
         public WorkSchedule GetSchedule(int index)
         {
             return index >= 0 && index < Schedules.Length ? Schedules[index] : Schedules[0];
@@ -50,7 +50,7 @@ namespace Dat2DTR
             return copy;
         }
 
-        /// <summary>Returns a message if a schedule is not sensible, or "" if everything is fine.</summary>
+        /// <summary>This is the check of the schedules: a message if one is not sensible, or "" if everything is fine.</summary>
         public string Validate()
         {
             foreach (WorkSchedule schedule in Schedules)
@@ -62,9 +62,9 @@ namespace Dat2DTR
             return "";
         }
 
-        // ---------------------------------------------------------------- saving
+        // This is the saving part ----------------------------------------------------------------
 
-        /// <summary>Folder where the app keeps its settings, the employee list, the hand-typed corrections and the leaves.</summary>
+        /// <summary>This is the folder where the app keeps its settings, the employee list, the hand-typed corrections and the leaves.</summary>
         public static string DataFolder
         {
             get
@@ -81,11 +81,15 @@ namespace Dat2DTR
             get { return Path.Combine(DataFolder, "settings.ini"); }
         }
 
-        // The file has one "name=value" per line. Schedule lines start with the
+        // This is the file: one "name=value" per line. Schedule lines start with the
         // schedule letter, for example:   A.TimeIn=07:00     B.WorkDays=0111110
+        /// <summary>This is version 3 = 15-minute grace period again (version 2 had briefly changed the default to none).</summary>
+        private const int SettingsVersion = 3;
+
         public static DtrSettings Load()
         {
             var s = new DtrSettings();
+            int version = 1;
             try
             {
                 if (!File.Exists(SettingsPath))
@@ -114,10 +118,18 @@ namespace Dat2DTR
                             if (Enum.TryParse(value, out paper)) s.Paper = paper;
                             break;
                         case "LastFolder": s.LastFolder = value; break;
+                        case "Version": int.TryParse(value, out version); break;
                     }
                 }
 
-                // If the file was edited into nonsense, fall back to the default schedules.
+                // This is for version 2 files: version 2 changed the 15-minute grace period to none. The office rule is 15 minutes that
+                // must be made up at the end of the day, so a version-2 file with no grace period gets its
+                // 15 minutes back, once. (Version 1 files already have 15.)
+                if (version == 2)
+                    foreach (WorkSchedule schedule in s.Schedules)
+                        if (schedule.GraceMinutes == 0) schedule.GraceMinutes = 15;
+
+                // This is the fallback: if the file was edited into nonsense, the default schedules are used.
                 if (s.Validate().Length > 0)
                     s.Schedules = WorkSchedule.Defaults();
             }
@@ -161,13 +173,14 @@ namespace Dat2DTR
             sb.AppendLine("CountLateFromOfficialTime=" + (CountLateFromOfficialTime ? "1" : "0"));
             sb.AppendLine("Paper=" + Paper);
             sb.AppendLine("LastFolder=" + LastFolder);
+            sb.AppendLine("Version=" + SettingsVersion);
 
             try
             {
                 File.WriteAllText(SettingsPath, sb.ToString());
             }
-            catch (IOException) { }                 // not being able to save settings
-            catch (UnauthorizedAccessException) { } // should never stop the user from working
+            catch (IOException) { }                 // This is on purpose: not being able to save settings
+            catch (UnauthorizedAccessException) { } // This is because it should never stop the user from working
         }
 
         private static TimeSpan ParseTime(string text, TimeSpan fallback)

@@ -5,7 +5,7 @@ using System.Text;
 namespace Dat2DTR
 {
     /// <summary>
-    /// A very small PDF writer: pages with straight lines and Helvetica text.
+    /// This is a very small PDF writer: pages with straight lines and Helvetica text.
     /// That is everything the DTR form needs, so the app does not depend on any
     /// PDF library and works fully offline.
     /// </summary>
@@ -28,7 +28,7 @@ namespace Dat2DTR
 
         public void Save(Stream output, string title)
         {
-            // A PDF is a list of numbered "objects" followed by a table that says
+            // This is how a PDF is built: a list of numbered "objects" followed by a table that says
             // at which byte each object starts.
             //   1 = catalog, 2 = page list, 3 = regular font, 4 = bold font, 5 = document info,
             //   then two objects per page: the page itself and its drawing commands.
@@ -92,7 +92,7 @@ namespace Dat2DTR
             write("startxref\n" + tableStart + "\n%%EOF\n");
         }
 
-        /// <summary>Compresses data the way PDF expects it ("zlib" format).</summary>
+        /// <summary>This is where data is compressed the way PDF expects it ("zlib" format).</summary>
         private static byte[] Compress(byte[] data)
         {
             using (var result = new MemoryStream())
@@ -103,7 +103,7 @@ namespace Dat2DTR
                 using (var deflate = new DeflateStream(result, CompressionMode.Compress, true))
                     deflate.Write(data, 0, data.Length);
 
-                // zlib ends with a checksum of the original data (Adler-32).
+                // This is the checksum zlib ends with: a checksum of the original data (Adler-32).
                 uint a = 1, b = 0;
                 foreach (byte value in data)
                 {
@@ -121,7 +121,7 @@ namespace Dat2DTR
         }
     }
 
-    /// <summary>One PDF page. The DTR is drawn on it through <see cref="IDtrCanvas"/>.</summary>
+    /// <summary>This is one PDF page. The DTR is drawn on it through <see cref="IDtrCanvas"/>.</summary>
     public sealed class PdfPage : IDtrCanvas
     {
         private readonly StringBuilder _content = new StringBuilder();
@@ -130,7 +130,7 @@ namespace Dat2DTR
         {
             Width = width;
             Height = height;
-            _content.Append("2 J\n"); // square line ends, so table corners meet cleanly
+            _content.Append("2 J\n"); // This is square line ends, so table corners meet cleanly
         }
 
         public double Width { get; private set; }
@@ -141,7 +141,7 @@ namespace Dat2DTR
             get { return _content.ToString(); }
         }
 
-        // Note: PDF measures "y" from the BOTTOM of the page, so every y is flipped.
+        // This is a note: PDF measures "y" from the BOTTOM of the page, so every y is flipped.
 
         public void DrawLine(double x1, double y1, double x2, double y2, double thickness)
         {
@@ -181,7 +181,7 @@ namespace Dat2DTR
             return value.ToString("0.###", CultureInfo.InvariantCulture);
         }
 
-        /// <summary>Writes text the way PDF wants it: (inside brackets, with special characters escaped).</summary>
+        /// <summary>This is where text is written the way PDF wants it: (inside brackets, with special characters escaped).</summary>
         internal static string Literal(string text)
         {
             var sb = new StringBuilder("(");

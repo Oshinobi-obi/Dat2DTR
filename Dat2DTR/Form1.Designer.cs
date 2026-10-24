@@ -3,14 +3,14 @@
     partial class Form1
     {
         /// <summary>
-        ///  Required designer variable.
+        /// This is the required designer variable.
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
         /// <summary>
-        ///  Clean up any resources being used.
+        /// This is where any resources being used are cleaned up.
         /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        /// <param name="disposing">This is true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -23,7 +23,7 @@
         #region Windows Form Designer generated code
 
         /// <summary>
-        ///  Required method for Designer support - do not modify
+        /// This is the required method for Designer support - do not modify
         ///  the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
@@ -106,7 +106,7 @@
             statusStrip.SuspendLayout();
             SuspendLayout();
             // 
-            // pnlHeader
+            // This is pnlHeader
             // 
             pnlHeader.BackColor = Color.FromArgb(0, 0, 128);
             pnlHeader.Controls.Add(picSeal);
@@ -122,7 +122,7 @@
             pnlHeader.Size = new Size(1417, 85);
             pnlHeader.TabIndex = 0;
             // 
-            // picSeal
+            // This is picSeal
             // 
             picSeal.Location = new Point(16, 8);
             picSeal.Name = "picSeal";
@@ -130,7 +130,7 @@
             picSeal.TabIndex = 4;
             picSeal.TabStop = false;
             // 
-            // picBanner
+            // This is picBanner
             // 
             picBanner.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             picBanner.Location = new Point(887, 9);
@@ -139,7 +139,7 @@
             picBanner.TabIndex = 5;
             picBanner.TabStop = false;
             // 
-            // lblTitle
+            // This is lblTitle
             // 
             lblTitle.AutoSize = true;
             lblTitle.Font = new Font("Segoe UI", 15.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
@@ -150,7 +150,7 @@
             lblTitle.TabIndex = 0;
             lblTitle.Text = "Dat2DTR";
             // 
-            // lblSubtitle
+            // This is lblSubtitle
             // 
             lblSubtitle.AutoSize = true;
             lblSubtitle.ForeColor = Color.FromArgb(255, 240, 170);
@@ -160,7 +160,7 @@
             lblSubtitle.TabIndex = 1;
             lblSubtitle.Text = "Turns the biometrics .dat file into a Daily Time Record (CS Form No. 48)";
             // 
-            // btnSettings
+            // This is btnSettings
             // 
             btnSettings.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnSettings.Location = new Point(1099, 20);
@@ -173,7 +173,7 @@
             btnSettings.UseVisualStyleBackColor = false;
             btnSettings.Click += btnSettings_Click;
             // 
-            // btnHelp
+            // This is btnHelp
             // 
             btnHelp.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnHelp.Cursor = Cursors.Help;
@@ -187,7 +187,7 @@
             btnHelp.UseVisualStyleBackColor = false;
             btnHelp.Click += btnHelp_Click;
             // 
-            // pnlHeaderLine
+            // This is pnlHeaderLine
             // 
             pnlHeaderLine.BackColor = Color.FromArgb(255, 223, 0);
             pnlHeaderLine.Dock = DockStyle.Top;
@@ -196,7 +196,7 @@
             pnlHeaderLine.Size = new Size(1417, 4);
             pnlHeaderLine.TabIndex = 7;
             // 
-            // pnlSteps
+            // This is pnlSteps
             // 
             pnlSteps.BackColor = Color.White;
             pnlSteps.Controls.Add(tlpSteps);
@@ -208,7 +208,7 @@
             pnlSteps.Size = new Size(1417, 149);
             pnlSteps.TabIndex = 1;
             // 
-            // tlpSteps
+            // This is tlpSteps
             // 
             tlpSteps.ColumnCount = 3;
             tlpSteps.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 44F));
@@ -226,7 +226,7 @@
             tlpSteps.Size = new Size(1385, 120);
             tlpSteps.TabIndex = 0;
             // 
-            // pnlStep1
+            // This is pnlStep1
             // 
             pnlStep1.Controls.Add(badge1);
             pnlStep1.Controls.Add(lblStep1);
@@ -239,7 +239,7 @@
             pnlStep1.Size = new Size(609, 120);
             pnlStep1.TabIndex = 0;
             // 
-            // badge1
+            // This is badge1
             // 
             badge1.Cursor = Cursors.Help;
             badge1.Location = new Point(0, 0);
@@ -250,7 +250,7 @@
             badge1.TabStop = false;
             badge1.Text = "1";
             // 
-            // lblStep1
+            // This is lblStep1
             // 
             lblStep1.AutoSize = true;
             lblStep1.Font = new Font("Segoe UI", 11.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
@@ -261,7 +261,7 @@
             lblStep1.TabIndex = 1;
             lblStep1.Text = "Open the biometrics file";
             // 
-            // btnOpen
+            // This is btnOpen
             // 
             btnOpen.Font = new Font("Segoe UI", 10.5F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnOpen.Location = new Point(43, 53);
@@ -274,7 +274,7 @@
             btnOpen.UseVisualStyleBackColor = false;
             btnOpen.Click += btnOpen_Click;
             // 
-            // lblFile
+            // This is lblFile
             // 
             lblFile.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             lblFile.AutoEllipsis = true;
@@ -286,7 +286,7 @@
             lblFile.Text = "No file opened yet.\r\nYou can also drag the file into this window.";
             lblFile.TextAlign = ContentAlignment.MiddleLeft;
             // 
-            // pnlStep2
+            // This is pnlStep2
             // 
             pnlStep2.Controls.Add(badge2);
             pnlStep2.Controls.Add(lblStep2);
@@ -298,7 +298,7 @@
             pnlStep2.Size = new Size(318, 120);
             pnlStep2.TabIndex = 1;
             // 
-            // badge2
+            // This is badge2
             // 
             badge2.Location = new Point(0, 0);
             badge2.Margin = new Padding(3, 4, 3, 4);
@@ -308,7 +308,7 @@
             badge2.TabStop = false;
             badge2.Text = "2";
             // 
-            // lblStep2
+            // This is lblStep2
             // 
             lblStep2.AutoSize = true;
             lblStep2.Font = new Font("Segoe UI", 11.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
@@ -319,7 +319,7 @@
             lblStep2.TabIndex = 1;
             lblStep2.Text = "Choose the month";
             // 
-            // cboMonth
+            // This is cboMonth
             // 
             cboMonth.DropDownStyle = ComboBoxStyle.DropDownList;
             cboMonth.Enabled = false;
@@ -332,7 +332,7 @@
             cboMonth.TabIndex = 2;
             cboMonth.SelectedIndexChanged += cboMonth_SelectedIndexChanged;
             // 
-            // pnlStep3
+            // This is pnlStep3
             // 
             pnlStep3.Controls.Add(badge3);
             pnlStep3.Controls.Add(lblStep3);
@@ -345,7 +345,7 @@
             pnlStep3.Size = new Size(458, 120);
             pnlStep3.TabIndex = 2;
             // 
-            // badge3
+            // This is badge3
             // 
             badge3.Location = new Point(0, 0);
             badge3.Margin = new Padding(3, 4, 3, 4);
@@ -355,7 +355,7 @@
             badge3.TabStop = false;
             badge3.Text = "3";
             // 
-            // lblStep3
+            // This is lblStep3
             // 
             lblStep3.AutoSize = true;
             lblStep3.Font = new Font("Segoe UI", 11.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
@@ -366,7 +366,7 @@
             lblStep3.TabIndex = 1;
             lblStep3.Text = "Print or save the DTR";
             // 
-            // btnPrint
+            // This is btnPrint
             // 
             btnPrint.Enabled = false;
             btnPrint.Font = new Font("Segoe UI", 10.5F, FontStyle.Bold, GraphicsUnit.Point, 0);
@@ -380,7 +380,7 @@
             btnPrint.UseVisualStyleBackColor = false;
             btnPrint.Click += btnPrint_Click;
             // 
-            // btnSave
+            // This is btnSave
             // 
             btnSave.Enabled = false;
             btnSave.Font = new Font("Segoe UI", 10.5F, FontStyle.Bold, GraphicsUnit.Point, 0);
@@ -394,7 +394,7 @@
             btnSave.UseVisualStyleBackColor = false;
             btnSave.Click += btnSave_Click;
             // 
-            // pnlStepsLine
+            // This is pnlStepsLine
             // 
             pnlStepsLine.BackColor = Color.FromArgb(208, 210, 226);
             pnlStepsLine.Dock = DockStyle.Top;
@@ -404,7 +404,7 @@
             pnlStepsLine.Size = new Size(1417, 1);
             pnlStepsLine.TabIndex = 2;
             // 
-            // pnlLeft
+            // This is pnlLeft
             // 
             pnlLeft.BackColor = Color.FromArgb(246, 246, 251);
             pnlLeft.Controls.Add(lvEmployees);
@@ -419,7 +419,7 @@
             pnlLeft.Size = new Size(566, 642);
             pnlLeft.TabIndex = 3;
             // 
-            // lvEmployees
+            // This is lvEmployees
             // 
             lvEmployees.CheckBoxes = true;
             lvEmployees.Columns.AddRange(new ColumnHeader[] { colName, colId, colSchedule, colLate, colUndertime, colCheck });
@@ -440,36 +440,36 @@
             lvEmployees.SelectedIndexChanged += lvEmployees_SelectedIndexChanged;
             lvEmployees.Resize += lvEmployees_Resize;
             // 
-            // colName
+            // This is colName
             // 
             colName.Text = "Name";
             colName.Width = 168;
             // 
-            // colId
+            // This is colId
             // 
             colId.Text = "ID";
             colId.Width = 82;
             // 
-            // colSchedule
+            // This is colSchedule
             // 
             colSchedule.Text = "Hours";
             colSchedule.Width = 56;
             // 
-            // colLate
+            // This is colLate
             // 
             colLate.Text = "Late";
             // 
-            // colUndertime
+            // This is colUndertime
             // 
             colUndertime.Text = "Undertime";
             colUndertime.Width = 84;
             // 
-            // colCheck
+            // This is colCheck
             // 
             colCheck.Text = "!";
             colCheck.Width = 24;
             // 
-            // pnlLeftBottom
+            // This is pnlLeftBottom
             // 
             pnlLeftBottom.Controls.Add(btnTickAll);
             pnlLeftBottom.Controls.Add(btnUntickAll);
@@ -484,7 +484,7 @@
             pnlLeftBottom.Size = new Size(538, 145);
             pnlLeftBottom.TabIndex = 3;
             // 
-            // btnTickAll
+            // This is btnTickAll
             // 
             btnTickAll.Enabled = false;
             btnTickAll.Location = new Point(0, 11);
@@ -496,7 +496,7 @@
             btnTickAll.UseVisualStyleBackColor = true;
             btnTickAll.Click += btnTickAll_Click;
             // 
-            // btnUntickAll
+            // This is btnUntickAll
             // 
             btnUntickAll.Enabled = false;
             btnUntickAll.Location = new Point(103, 11);
@@ -508,7 +508,7 @@
             btnUntickAll.UseVisualStyleBackColor = true;
             btnUntickAll.Click += btnUntickAll_Click;
             // 
-            // btnNames
+            // This is btnNames
             // 
             btnNames.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnNames.Location = new Point(367, 11);
@@ -521,7 +521,7 @@
             btnNames.UseVisualStyleBackColor = true;
             btnNames.Click += btnNames_Click;
             // 
-            // btnHolidays
+            // This is btnHolidays
             // 
             btnHolidays.Location = new Point(206, 11);
             btnHolidays.Margin = new Padding(3, 4, 3, 4);
@@ -533,7 +533,7 @@
             btnHolidays.UseVisualStyleBackColor = true;
             btnHolidays.Click += btnHolidays_Click;
             // 
-            // chkNoScans
+            // This is chkNoScans
             // 
             chkNoScans.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             chkNoScans.ForeColor = Color.FromArgb(0, 0, 128);
@@ -546,7 +546,7 @@
             chkNoScans.UseVisualStyleBackColor = true;
             chkNoScans.CheckedChanged += chkNoScans_CheckedChanged;
             // 
-            // lblHint
+            // This is lblHint
             // 
             lblHint.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             lblHint.ForeColor = Color.FromArgb(96, 100, 124);
@@ -556,7 +556,7 @@
             lblHint.TabIndex = 4;
             lblHint.Text = "Click a name to see the DTR.\r\nTick the boxes to print or save several at once.";
             // 
-            // pnlSearch
+            // This is pnlSearch
             // 
             pnlSearch.Controls.Add(txtSearch);
             pnlSearch.Controls.Add(pnlFilterGap);
@@ -568,7 +568,7 @@
             pnlSearch.Size = new Size(538, 43);
             pnlSearch.TabIndex = 1;
             // 
-            // txtSearch
+            // This is txtSearch
             // 
             txtSearch.Dock = DockStyle.Fill;
             txtSearch.Font = new Font("Segoe UI", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -580,7 +580,7 @@
             toolTip.SetToolTip(txtSearch, "Type part of a name or an ID number to find an employee");
             txtSearch.TextChanged += txtSearch_TextChanged;
             // 
-            // pnlFilterGap
+            // This is pnlFilterGap
             // 
             pnlFilterGap.Dock = DockStyle.Right;
             pnlFilterGap.Location = new Point(320, 0);
@@ -588,7 +588,7 @@
             pnlFilterGap.Size = new Size(8, 43);
             pnlFilterGap.TabIndex = 2;
             // 
-            // cboFilter
+            // This is cboFilter
             // 
             cboFilter.Dock = DockStyle.Right;
             cboFilter.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -603,7 +603,7 @@
             toolTip.SetToolTip(cboFilter, "Show only the employees that need checking, were typed in by hand, or have a leave");
             cboFilter.SelectedIndexChanged += cboFilter_SelectedIndexChanged;
             // 
-            // lblEmployees
+            // This is lblEmployees
             // 
             lblEmployees.Dock = DockStyle.Top;
             lblEmployees.Font = new Font("Segoe UI", 10.5F, FontStyle.Bold, GraphicsUnit.Point, 0);
@@ -614,7 +614,7 @@
             lblEmployees.TabIndex = 0;
             lblEmployees.Text = "Employees";
             // 
-            // pnlLeftLine
+            // This is pnlLeftLine
             // 
             pnlLeftLine.BackColor = Color.FromArgb(208, 210, 226);
             pnlLeftLine.Dock = DockStyle.Left;
@@ -624,7 +624,7 @@
             pnlLeftLine.Size = new Size(1, 642);
             pnlLeftLine.TabIndex = 4;
             // 
-            // pnlCenter
+            // This is pnlCenter
             // 
             pnlCenter.Controls.Add(preview);
             pnlCenter.Controls.Add(lblNotice);
@@ -638,7 +638,7 @@
             pnlCenter.Size = new Size(850, 642);
             pnlCenter.TabIndex = 5;
             // 
-            // preview
+            // This is preview
             // 
             preview.AutoScroll = true;
             preview.BackColor = Color.FromArgb(226, 227, 236);
@@ -649,7 +649,7 @@
             preview.Size = new Size(850, 480);
             preview.TabIndex = 1;
             // 
-            // lblNotice
+            // This is lblNotice
             // 
             lblNotice.AutoEllipsis = true;
             lblNotice.BackColor = Color.FromArgb(255, 241, 173);
@@ -664,7 +664,7 @@
             lblNotice.TextAlign = ContentAlignment.MiddleLeft;
             lblNotice.Visible = false;
             // 
-            // pnlView
+            // This is pnlView
             // 
             pnlView.BackColor = Color.FromArgb(246, 246, 251);
             pnlView.Controls.Add(btnViewDtr);
@@ -675,7 +675,7 @@
             pnlView.Size = new Size(850, 48);
             pnlView.TabIndex = 4;
             // 
-            // btnViewDtr
+            // This is btnViewDtr
             // 
             btnViewDtr.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnViewDtr.Location = new Point(14, 8);
@@ -687,7 +687,7 @@
             btnViewDtr.UseVisualStyleBackColor = false;
             btnViewDtr.Click += btnViewDtr_Click;
             // 
-            // btnViewLeave
+            // This is btnViewLeave
             // 
             btnViewLeave.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnViewLeave.Location = new Point(102, 8);
@@ -699,7 +699,7 @@
             btnViewLeave.UseVisualStyleBackColor = false;
             btnViewLeave.Click += btnViewLeave_Click;
             // 
-            // pnlToolsLine
+            // This is pnlToolsLine
             // 
             pnlToolsLine.BackColor = Color.FromArgb(208, 210, 226);
             pnlToolsLine.Dock = DockStyle.Top;
@@ -708,7 +708,7 @@
             pnlToolsLine.Size = new Size(850, 1);
             pnlToolsLine.TabIndex = 3;
             // 
-            // pnlTools
+            // This is pnlTools
             // 
             pnlTools.BackColor = Color.White;
             pnlTools.Controls.Add(lblSchedule);
@@ -721,7 +721,7 @@
             pnlTools.Size = new Size(850, 60);
             pnlTools.TabIndex = 2;
             // 
-            // lblSchedule
+            // This is lblSchedule
             // 
             lblSchedule.AutoSize = true;
             lblSchedule.ForeColor = Color.FromArgb(0, 0, 128);
@@ -731,7 +731,7 @@
             lblSchedule.TabIndex = 0;
             lblSchedule.Text = "Work schedule:";
             // 
-            // cboSchedule
+            // This is cboSchedule
             // 
             cboSchedule.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             cboSchedule.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -745,7 +745,7 @@
             toolTip.SetToolTip(cboSchedule, "The office hours this employee follows. Change the hours themselves in Office Hours.");
             cboSchedule.SelectionChangeCommitted += cboSchedule_SelectionChangeCommitted;
             // 
-            // btnLeave
+            // This is btnLeave
             // 
             btnLeave.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnLeave.Enabled = false;
@@ -759,7 +759,7 @@
             btnLeave.UseVisualStyleBackColor = false;
             btnLeave.Click += btnLeave_Click;
             // 
-            // btnEdit
+            // This is btnEdit
             // 
             btnEdit.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnEdit.Enabled = false;
@@ -773,7 +773,7 @@
             btnEdit.UseVisualStyleBackColor = false;
             btnEdit.Click += btnEdit_Click;
             // 
-            // statusStrip
+            // This is statusStrip
             // 
             statusStrip.ImageScalingSize = new Size(20, 20);
             statusStrip.Items.AddRange(new ToolStripItem[] { lblStatus, lblRules });
@@ -784,7 +784,7 @@
             statusStrip.TabIndex = 6;
             statusStrip.ItemClicked += statusStrip_ItemClicked;
             // 
-            // lblStatus
+            // This is lblStatus
             // 
             lblStatus.Name = "lblStatus";
             lblStatus.Size = new Size(1311, 20);
@@ -792,13 +792,13 @@
             lblStatus.Text = "Ready";
             lblStatus.TextAlign = ContentAlignment.MiddleLeft;
             // 
-            // lblRules
+            // This is lblRules
             // 
             lblRules.Name = "lblRules";
             lblRules.Size = new Size(89, 20);
             lblRules.Text = "Office hours";
             // 
-            // Form1
+            // This is Form1 (the window itself)
             // 
             AllowDrop = true;
             AutoScaleDimensions = new SizeF(8F, 20F);

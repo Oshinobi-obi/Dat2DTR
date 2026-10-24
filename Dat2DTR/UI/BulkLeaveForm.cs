@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Dat2DTR
 {
     /// <summary>
-    /// "Edit Leave" for several employees at once (the ones ticked in the list): one kind of
+    /// This is "Edit Leave" for several employees at once (the ones ticked in the list): one kind of
     /// leave - for example Holiday or Suspended - for a range of days, for everyone ticked.
     /// Days that are not working days in an employee's schedule are skipped for that employee.
     /// Choosing "(no leave)" without WFH removes what is filed on those days.
@@ -18,21 +18,21 @@ namespace Dat2DTR
 
         private readonly DateTimePicker _from = new DateTimePicker(), _to = new DateTimePicker();
         private readonly ComboBox _leave = new ComboBox(), _part = new ComboBox();
-        private readonly DateTimePicker _time = new DateTimePicker();   // "From a time": the time work was suspended
+        private readonly DateTimePicker _time = new DateTimePicker();   // This is for "From a time": the time work was suspended
         private readonly CheckBox _wfh = new CheckBox(), _idlar = new CheckBox();
         private readonly Label _what = new Label();
         private readonly DateTime _month;
 
-        /// <param name="month">First day of the month on screen.</param>
-        /// <param name="names">The names (or IDs) of the ticked employees.</param>
-        /// <param name="firstDay">The day the dates start on (the day shown, or the 1st).</param>
+        /// <param name="month">This is the first day of the month on screen.</param>
+        /// <param name="names">This is the names (or IDs) of the ticked employees.</param>
+        /// <param name="firstDay">This is the day the dates start on (the day shown, or the 1st).</param>
         public BulkLeaveForm(DateTime month, List<string> names, DateTime firstDay)
         {
             _month = new DateTime(month.Year, month.Month, 1);
             DateTime last = _month.AddMonths(1).AddDays(-1);
             if (firstDay < _month || firstDay > last) firstDay = _month;
 
-            // Same order as a designer-made form, so it scales correctly on 125% / 150% screens.
+            // This is the same order as a designer-made form, so it scales correctly on 125% / 150% screens.
             SuspendLayout();
             Text = "Edit Leave - ticked employees";
             Icon = Theme.GetAppIcon();
@@ -93,7 +93,7 @@ namespace Dat2DTR
             _time.Format = DateTimePickerFormat.Custom;
             _time.CustomFormat = "h:mm tt";
             _time.ShowUpDown = true;
-            _time.Value = DateTime.Today.AddHours(15);      // 3:00 PM, the usual time
+            _time.Value = DateTime.Today.AddHours(15);      // This is 3:00 PM, the usual time
             _time.SetBounds(boxLeft + 270, y, 110, 23);
             _time.ValueChanged += (sender, e) => ShowBoxes();
             Controls.Add(_time);
@@ -145,19 +145,19 @@ namespace Dat2DTR
             ShowBoxes();
         }
 
-        /// <summary>The first day to change.</summary>
+        /// <summary>This is the first day to change.</summary>
         public DateTime GetFrom()
         {
             return _from.Value.Date;
         }
 
-        /// <summary>The last day to change.</summary>
+        /// <summary>This is the last day to change.</summary>
         public DateTime GetTo()
         {
             return _to.Value.Date;
         }
 
-        /// <summary>What to file on each of those days, or null to remove what is filed.</summary>
+        /// <summary>This is what to file on each of those days, or null to remove what is filed.</summary>
         public LeaveEntry? GetEntry()
         {
             bool fromATime = (_part.SelectedItem as string) == FromATime;
@@ -176,7 +176,7 @@ namespace Dat2DTR
             return null;
         }
 
-        /// <summary>For the self test: chooses what the person would choose.</summary>
+        /// <summary>This is for the self test: it chooses what the person would choose.</summary>
         internal void Choose(int fromDay, int toDay, LeaveType type, bool wfh, bool idlar)
         {
             _from.Value = new DateTime(_month.Year, _month.Month, fromDay);
@@ -186,7 +186,7 @@ namespace Dat2DTR
             _idlar.Checked = idlar;
         }
 
-        /// <summary>For the self test: Suspended from a time.</summary>
+        /// <summary>This is for the self test: Suspended from a time.</summary>
         internal void ChooseSuspendedFrom(int fromDay, int toDay, TimeSpan time)
         {
             Choose(fromDay, toDay, LeaveType.Suspended, false, false);
@@ -194,7 +194,7 @@ namespace Dat2DTR
             _time.Value = DateTime.Today.Add(time);
         }
 
-        /// <summary>For the self test: the text of the WFH box, and whether IDLAR can be ticked.</summary>
+        /// <summary>This is for the self test: the text of the WFH box, and whether IDLAR can be ticked.</summary>
         internal string GetWfhText()
         {
             return _wfh.Text + (_idlar.Enabled ? " / IDLAR on" : " / IDLAR off");
@@ -221,7 +221,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// WFH can go with "no leave", Holiday or Suspended (on a Suspended day it asks
+        /// This is the rule for the boxes: WFH can go with "no leave", Holiday or Suspended (on a Suspended day it asks
         /// "Is it WFH?"); IDLAR can only be ticked after WFH.
         /// </summary>
         private void ShowBoxes()
@@ -237,7 +237,7 @@ namespace Dat2DTR
             if (!_wfh.Checked) _idlar.Checked = false;
             _part.Enabled = kind != null || _wfh.Checked;
 
-            // "From a time" is only for Suspended.
+            // This is because "From a time" is only for Suspended.
             if (suspended && !_part.Items.Contains(FromATime))
                 _part.Items.Add(FromATime);
             else if (!suspended && _part.Items.Contains(FromATime))
@@ -248,7 +248,7 @@ namespace Dat2DTR
             _time.Visible = (_part.SelectedItem as string) == FromATime;
             if (_time.Visible)
             {
-                // WFH / IDLAR do not go with a suspension from a time.
+                // This is because WFH / IDLAR do not go with a suspension from a time.
                 _wfh.Checked = false;
                 _wfh.Enabled = false;
                 _idlar.Enabled = false;

@@ -9,14 +9,14 @@
     <Product>Dat2DTR</Product>
     <AssemblyTitle>Dat2DTR - Daily Time Record Maker</AssemblyTitle>
     <Version>1.0.0</Version>
-    <!-- The logo shown on Dat2DTR.exe in Windows Explorer and on the taskbar -->
+    <!-- This is the logo shown on Dat2DTR.exe in Windows Explorer and on the taskbar -->
     <ApplicationIcon>Assets\Dat2DTR.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The same logo, built into the program so every window can show it (see Theme.GetAppIcon) -->
+    <!-- This is the same logo, built into the program so every window can show it (see Theme.GetAppIcon) -->
     <EmbeddedResource Include="Assets\Dat2DTR.ico" LogicalName="Dat2DTR.ico" />
-    <!-- The DepEd NCR seal and the "One NCR, Stronger Together" banner shown in the program (see Theme.GetImage) -->
+    <!-- This is the DepEd NCR seal and the "One NCR, Stronger Together" banner shown in the program (see Theme.GetImage) -->
     <EmbeddedResource Include="Assets\DepEd-NCR-seal.png" LogicalName="DepEd-NCR-seal.png" />
     <EmbeddedResource Include="Assets\One-NCR-banner-plate.png" LogicalName="One-NCR-banner-plate.png" />
   </ItemGroup>

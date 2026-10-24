@@ -3,7 +3,7 @@ using System.Drawing.Drawing2D;
 namespace Dat2DTR
 {
     /// <summary>
-    /// Draws the DTR page with Windows graphics. Used for the preview on screen
+    /// This is where the DTR page is drawn with Windows graphics. Used for the preview on screen
     /// and for printing. (The PDF uses <see cref="PdfPage"/> instead.)
     ///
     /// The Graphics object must already be set up so that 1 unit = 1 point.
@@ -21,7 +21,7 @@ namespace Dat2DTR
         {
             _graphics = graphics;
 
-            // Arial has the same letter widths as the Helvetica font used in the PDF.
+            // This is Arial: it has the same letter widths as the Helvetica font used in the PDF.
             try
             {
                 _family = new FontFamily("Arial");
@@ -32,7 +32,7 @@ namespace Dat2DTR
                 _family = FontFamily.GenericSansSerif;
             }
 
-            // "Typographic" = no extra padding around the text, so positions are exact.
+            // This is "Typographic" = no extra padding around the text, so positions are exact.
             _format = new StringFormat(StringFormat.GenericTypographic);
             _format.FormatFlags |= StringFormatFlags.NoWrap | StringFormatFlags.NoClip |
                                    StringFormatFlags.MeasureTrailingSpaces;
@@ -61,7 +61,7 @@ namespace Dat2DTR
             FontStyle style = bold ? FontStyle.Bold : FontStyle.Regular;
             Font font = GetFont(size, style);
 
-            // DrawString wants the TOP of the text, the page layout gives the BASELINE.
+            // This is because DrawString wants the TOP of the text, and the page layout gives the BASELINE.
             // "Ascent" is the distance between the two.
             double ascent = size * _family.GetCellAscent(style) / _family.GetEmHeight(style);
 
@@ -74,7 +74,7 @@ namespace Dat2DTR
             Font? font;
             if (!_fonts.TryGetValue(key, out font))
             {
-                // GraphicsUnit.World = the size follows the scaling of the Graphics object,
+                // This is GraphicsUnit.World = the size follows the scaling of the Graphics object,
                 // so the same code works for the screen and for any printer resolution.
                 font = new Font(_family, (float)size, style, GraphicsUnit.World);
                 _fonts[key] = font;

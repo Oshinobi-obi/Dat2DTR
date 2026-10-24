@@ -3,9 +3,9 @@ using System.Globalization;
 namespace Dat2DTR
 {
     /// <summary>
-    /// The "Edit Leave" window: one row per day, where a person chooses the kind of
+    /// This is the "Edit Leave" window: one row per day, where a person chooses the kind of
     /// leave that was filed for that day (Vacation, Sick, Forced, Special Privilege,
-    /// Wellness, CTO - or Holiday / Suspended, which are not deducted) and whether it was
+    /// Wellness, CTO, Solo Parent - or Holiday / Suspended, which are not deducted) and whether it was
     /// a whole day or half a day.
     ///
     /// The WFH and IDLAR boxes: WFH = worked from home. On a Suspended day the heading reads
@@ -20,7 +20,7 @@ namespace Dat2DTR
     /// </summary>
     internal sealed class EditLeaveForm : Form
     {
-        // Column numbers of the table.
+        // This is the column numbers of the table.
         private const int ColDay = 0, ColDtr = 1, ColLeave = 2, ColPart = 3, ColWfh = 4, ColIdlar = 5, ColCharge = 6;
 
         private const string WfhHeading = "WFH", SuspendedWfhHeading = "Is it WFH?";
@@ -28,14 +28,14 @@ namespace Dat2DTR
         private const string NoLeave = "(no leave)";
         private static readonly string[] PartTexts = { "Whole day", "Half day - morning", "Half day - afternoon" };
 
-        /// <summary>"From 3:00 PM" in "How long" = work suspended from that time (Suspended only).</summary>
+        /// <summary>This is "From 3:00 PM" in "How long" = work suspended from that time (Suspended only).</summary>
         private const string FromPrefix = "From ";
 
-        private readonly DtrSheet _attendance;      // the DTR without any leave: what the person scanned
+        private readonly DtrSheet _attendance;      // This is the DTR without any leave: what the person scanned
         private readonly WorkSchedule _schedule;
-        private readonly LeaveStore _leaves;        // working copy of the filed leaves
-        private readonly LeaveLedger _ledger;       // working copy of the remembered months
-        private readonly CtoStore _cto;             // working copy of the CTO given
+        private readonly LeaveStore _leaves;        // This is the working copy of the filed leaves
+        private readonly LeaveLedger _ledger;       // This is the working copy of the remembered months
+        private readonly CtoStore _cto;             // This is the working copy of the CTO and Solo Parent Leave given
         private readonly Func<LeaveStore, LeaveLedger, CtoStore, LeaveCard> _compute;
 
         private readonly DataGridView _grid = new DataGridView();
@@ -47,18 +47,18 @@ namespace Dat2DTR
         private readonly Label _message = new Label();
         private readonly Font _boldFont;
 
-        /// <summary>True while the program itself is filling the table or the boxes (so events are ignored).</summary>
+        /// <summary>This is true while the program itself is filling the table or the boxes (so events are ignored).</summary>
         private bool _filling;
 
-        /// <summary>True once the user changed something (for the "discard your changes?" question).</summary>
+        /// <summary>This is true once the user changed something (for the "discard your changes?" question).</summary>
         private bool _changed;
 
-        /// <summary>-1 / +1 when the user clicked Previous / Next (after saving), 0 otherwise.</summary>
+        /// <summary>This is -1 / +1 when the user clicked Previous / Next (after saving), 0 otherwise.</summary>
         private int _move;
         private readonly Button _previous = new Button(), _next = new Button();
 
-        /// <param name="attendance">The DTR of the employee made WITHOUT any leave.</param>
-        /// <param name="compute">Works out the Computation of Leaves from the given (copied) leave data.</param>
+        /// <param name="attendance">This is the DTR of the employee made WITHOUT any leave.</param>
+        /// <param name="compute">This is what works out the Computation of Leaves from the given (copied) leave data.</param>
         public EditLeaveForm(DtrSheet attendance, WorkSchedule schedule, LeaveStore leaves, LeaveLedger ledger,
                              CtoStore cto, Func<LeaveStore, LeaveLedger, CtoStore, LeaveCard> compute)
         {
@@ -72,7 +72,7 @@ namespace Dat2DTR
             string previousMonth = attendance.Month.AddMonths(-1).ToString("MMMM yyyy", CultureInfo.InvariantCulture);
             decimal dayCharge = LeaveRules.DayCharge(schedule);
 
-            // Same order as a designer-made form, so it scales correctly on 125% / 150% screens.
+            // This is the same order as a designer-made form, so it scales correctly on 125% / 150% screens.
             SuspendLayout();
             Text = "Edit Leave";
             Icon = Theme.GetAppIcon();
@@ -86,7 +86,7 @@ namespace Dat2DTR
             ClientSize = new Size(1200, 670);
             MinimumSize = new Size(1100, 560);
 
-            // ---- top: who and how
+            // This is the top: who and how ----
             var title = new Label();
             title.Text = (attendance.EmployeeName.Length > 0 ? attendance.EmployeeName : "ID " + attendance.EmployeeId) +
                          "   -   " + attendance.MonthText;
@@ -111,9 +111,9 @@ namespace Dat2DTR
             top.BackColor = Color.White;
             top.Controls.Add(title);
             top.Controls.Add(how);
-            GridFit.GrowWithText(this, how, top);   // the instructions are never cut off
+            GridFit.GrowWithText(this, how, top);   // This is so the instructions are never cut off
 
-            // ---- left: the table, one row per day
+            // This is the left: the table, one row per day ----
             _grid.Dock = DockStyle.Fill;
             _grid.BackgroundColor = Color.White;
             _grid.BorderStyle = BorderStyle.None;
@@ -123,7 +123,7 @@ namespace Dat2DTR
             _grid.RowHeadersVisible = false;
             _grid.MultiSelect = false;
             _grid.SelectionMode = DataGridViewSelectionMode.CellSelect;
-            _grid.EditMode = DataGridViewEditMode.EditOnEnter;   // one click opens the list
+            _grid.EditMode = DataGridViewEditMode.EditOnEnter;   // This is so one click opens the list
             _grid.RowTemplate.Height = 25;
 
             AddTextColumn(_grid, "Day", 70);
@@ -132,13 +132,13 @@ namespace Dat2DTR
             DataGridViewComboBoxColumn leaveColumn = AddListColumn("Leave", 196);
             leaveColumn.Items.Add(NoLeave);
             foreach (LeaveKind kind in LeaveKinds.All)
-                if (kind.Type != LeaveType.WorkFromHome)    // that one is "(no leave)" with WFH ticked
+                if (kind.Type != LeaveType.WorkFromHome)    // This is because that one is "(no leave)" with WFH ticked
                     leaveColumn.Items.Add(kind.Name);
 
             DataGridViewComboBoxColumn partColumn = AddListColumn("How long", 140);
             foreach (string text in PartTexts)
                 partColumn.Items.Add(text);
-            // For Suspended: work suspended from a time, every half hour of the working day
+            // This is for Suspended: work suspended from a time, every half hour of the working day
             // (and any other time already filed this month).
             var times = new List<TimeSpan>();
             for (TimeSpan t = schedule.TimeIn.Add(TimeSpan.FromMinutes(30)); t < schedule.TimeOut; t = t.Add(TimeSpan.FromMinutes(30)))
@@ -155,7 +155,7 @@ namespace Dat2DTR
             DataGridViewColumn charge = AddTextColumn(_grid, "Deducted", 100);
             charge.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
 
-            // Headings as tall as needed and columns wide enough on any screen (125%, 150%...).
+            // This is so the headings are as tall as needed and columns wide enough on any screen (125%, 150%...).
             GridFit.Attach(this, _grid);
 
             for (int i = 0; i < attendance.Days.Count; i++)
@@ -166,7 +166,7 @@ namespace Dat2DTR
             _grid.CurrentCellChanged += (sender, e) => ShowWfhHeading();
             _grid.DataError += (sender, e) => e.ThrowException = false;
 
-            // ---- right: the balance and the computation
+            // This is the right: the balance and the computation ----
             var side = new Panel();
             side.Dock = DockStyle.Right;
             side.Size = new Size(420, 520);
@@ -198,7 +198,7 @@ namespace Dat2DTR
             _summary.MultiSelect = false;
             _summary.CellBorderStyle = DataGridViewCellBorderStyle.None;
             _summary.RowTemplate.Height = 19;
-            _summary.DefaultCellStyle.SelectionBackColor = Color.White;       // no blue "selected" bar
+            _summary.DefaultCellStyle.SelectionBackColor = Color.White;       // This is so there is no blue "selected" bar
             _summary.DefaultCellStyle.SelectionForeColor = Theme.TextStrong;
             _summary.DefaultCellStyle.ForeColor = Theme.TextStrong;
             _summary.TabStop = false;
@@ -208,7 +208,7 @@ namespace Dat2DTR
             DataGridViewColumn amount = AddTextColumn(_summary, "", 104);
             amount.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
             side.Controls.Add(_summary);
-            GridFit.Attach(this, _summary);     // rows tall enough for the text on any screen
+            GridFit.Attach(this, _summary);     // This is so the rows are tall enough for the text on any screen
 
             _notes.Multiline = true;
             _notes.ReadOnly = true;
@@ -219,7 +219,7 @@ namespace Dat2DTR
             _notes.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             side.Controls.Add(_notes);
 
-            // ---- bottom: buttons
+            // This is the bottom: buttons ----
             _previous.Text = "< Previous";
             _previous.SetBounds(1200 - 16 - 96 - 8 - 96 - 16 - 96 - 8 - 110, 34, 110, 32);
             _previous.Anchor = AnchorStyles.Top | AnchorStyles.Right;
@@ -240,7 +240,12 @@ namespace Dat2DTR
             var ctoGiven = new Button();
             ctoGiven.Text = "CTO given...";
             ctoGiven.SetBounds(224, 34, 120, 32);
-            ctoGiven.Click += CtoGiven_Click;
+            ctoGiven.Click += (sender, e) => Given_Click(LeaveType.Cto);
+
+            var soloGiven = new Button();
+            soloGiven.Text = "Solo Parent given...";
+            soloGiven.SetBounds(352, 34, 150, 32);
+            soloGiven.Click += (sender, e) => Given_Click(LeaveType.SoloParent);
 
             _message.AutoEllipsis = true;
             _message.SetBounds(16, 6, 1168, 22);
@@ -266,6 +271,7 @@ namespace Dat2DTR
             bottom.Controls.Add(_message);
             bottom.Controls.Add(removeAll);
             bottom.Controls.Add(ctoGiven);
+            bottom.Controls.Add(soloGiven);
             bottom.Controls.Add(_previous);
             bottom.Controls.Add(_next);
             bottom.Controls.Add(save);
@@ -285,7 +291,7 @@ namespace Dat2DTR
             ResumeLayout(false);
             PerformLayout();
 
-            // ---- fill everything in
+            // This is where everything is filled in ----
             _filling = true;
             LedgerMonth? month = _ledger.Get(attendance.EmployeeId, attendance.Month.Year, attendance.Month.Month);
             _openingVl.Text = month != null && month.OpeningVl.HasValue ? LeaveRules.FormatShort(month.OpeningVl.Value) : "";
@@ -303,38 +309,38 @@ namespace Dat2DTR
             Recompute();
         }
 
-        /// <summary>The filed leaves after the user clicked Save.</summary>
+        /// <summary>This is the filed leaves after the user clicked Save.</summary>
         public LeaveStore GetLeaves()
         {
             return _leaves;
         }
 
-        /// <summary>The remembered months (with the typed balance) after the user clicked Save.</summary>
+        /// <summary>This is the remembered months (with the typed balance) after the user clicked Save.</summary>
         public LeaveLedger GetLedger()
         {
             return _ledger;
         }
 
-        /// <summary>The CTO given (changed with "CTO given...") after the user clicked Save.</summary>
+        /// <summary>This is the CTO and Solo Parent Leave given (changed with "CTO given..." / "Solo Parent given...") after the user clicked Save.</summary>
         public CtoStore GetCto()
         {
             return _cto;
         }
 
-        /// <summary>Switches the Previous / Next buttons on (there is an employee above / below in the list).</summary>
+        /// <summary>This is where the Previous / Next buttons are switched on (there is an employee above / below in the list).</summary>
         public void SetNavigation(bool previous, bool next)
         {
             _previous.Enabled = previous;
             _next.Enabled = next;
         }
 
-        /// <summary>After Save: -1 = go to the previous employee, +1 = the next one, 0 = stay.</summary>
+        /// <summary>This is what to do after Save: -1 = go to the previous employee, +1 = the next one, 0 = stay.</summary>
         public int GetMove()
         {
             return _move;
         }
 
-        /// <summary>Previous / Next: saves (with the same checks as Save), then the main window opens the other employee.</summary>
+        /// <summary>This is Previous / Next: it saves (with the same checks as Save), then the main window opens the other employee.</summary>
         private void SaveAndMove(int move)
         {
             _move = move;
@@ -343,10 +349,10 @@ namespace Dat2DTR
                 _move = 0;
         }
 
-        /// <summary>Asks before throwing away changes (Cancel, Esc or the X of the window).</summary>
+        /// <summary>This is where the user is asked before changes are thrown away (Cancel, Esc or the X of the window).</summary>
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            // Cancel and Esc close with CloseReason.None, the X with UserClosing: ask for both.
+            // This is because Cancel and Esc close with CloseReason.None, the X with UserClosing: ask for both.
             bool byUser = e.CloseReason == CloseReason.UserClosing || e.CloseReason == CloseReason.None;
             if (DialogResult != DialogResult.OK && _changed && byUser &&
                 MessageBox.Show(this, "You changed the leave of this employee.\n\nClose without saving?",
@@ -370,7 +376,7 @@ namespace Dat2DTR
             base.Dispose(disposing);
         }
 
-        // ================================================================ building the window
+        // This is building the window ================================================================
 
         private static DataGridViewColumn AddTextColumn(DataGridView grid, string heading, int width)
         {
@@ -383,7 +389,7 @@ namespace Dat2DTR
             return column;
         }
 
-        /// <summary>A column where each box is a list to choose from.</summary>
+        /// <summary>This is a column where each box is a list to choose from.</summary>
         private DataGridViewComboBoxColumn AddListColumn(string heading, int width)
         {
             var column = new DataGridViewComboBoxColumn();
@@ -396,7 +402,7 @@ namespace Dat2DTR
             return column;
         }
 
-        /// <summary>A column of tick boxes (WFH, IDLAR).</summary>
+        /// <summary>This is a column of tick boxes (WFH, IDLAR).</summary>
         private void AddCheckColumn(string heading, int width)
         {
             var column = new DataGridViewCheckBoxColumn();
@@ -418,7 +424,7 @@ namespace Dat2DTR
             return label;
         }
 
-        /// <summary>One line with two boxes:  Vacation Leave [    ]   Sick Leave [    ]</summary>
+        /// <summary>This is one line with two boxes:  Vacation Leave [    ]   Sick Leave [    ]</summary>
         private static void AddBoxRow(Panel side, int y, TextBox vacation, TextBox sick)
         {
             var vacationLabel = new Label();
@@ -445,14 +451,14 @@ namespace Dat2DTR
             side.Controls.Add(sick);
         }
 
-        // ================================================================ the table of days
+        // This is the table of days ================================================================
 
         private LeaveEntry? LeaveOf(int i)
         {
             return _leaves.Get(_attendance.EmployeeId, _attendance.Days[i].Date);
         }
 
-        /// <summary>What the DTR shows for the day when no leave is filed.</summary>
+        /// <summary>This is what the DTR shows for the day when no leave is filed.</summary>
         private string DtrText(DtrDay day)
         {
             if (day.HasTimes)
@@ -473,7 +479,7 @@ namespace Dat2DTR
             return "";
         }
 
-        /// <summary>Writes one day into its row.</summary>
+        /// <summary>This is where one day is written into its row.</summary>
         private void ShowRow(int i)
         {
             DtrDay day = _attendance.Days[i];
@@ -492,7 +498,7 @@ namespace Dat2DTR
             row.Cells[ColIdlar].Value = leave != null && leave.Idlar;
             _filling = false;
 
-            // "How long" only matters when something is filed. WFH only goes with no leave, Holiday
+            // This is the locking rule: "How long" only matters when something is filed. WFH only goes with no leave, Holiday
             // or Suspended, on a working day; IDLAR only after WFH. (The box that is being changed
             // is never locked here: locking only follows from changing another box of the row.)
             bool wfhAllowed = !restDay && (leave == null || LeaveKinds.IsNotALeave(leave.Type));
@@ -515,7 +521,7 @@ namespace Dat2DTR
                 ShowWfhHeading();
         }
 
-        /// <summary>The WFH heading reads "Is it WFH?" while the chosen day is a Suspended day.</summary>
+        /// <summary>This is the WFH heading: it reads "Is it WFH?" while the chosen day is a Suspended day.</summary>
         private void ShowWfhHeading()
         {
             bool suspended = false;
@@ -529,14 +535,14 @@ namespace Dat2DTR
                 _grid.Columns[ColWfh].HeaderText = heading;
         }
 
-        /// <summary>The WFH heading as it is now (for the self test).</summary>
+        /// <summary>This is the WFH heading as it is now (for the self test).</summary>
         internal string GetWfhHeading()
         {
             return _grid.Columns[ColWfh].HeaderText;
         }
 
         /// <summary>
-        /// A leave cannot be filed on a day that is not a working day. (A leave that is already
+        /// This is because a leave cannot be filed on a day that is not a working day. (A leave that is already
         /// there can still be removed.) This is decided when the window opens and after
         /// "Remove all" - never while a box is being changed, because locking a box in the
         /// middle of a change confuses the table.
@@ -550,14 +556,14 @@ namespace Dat2DTR
             }
         }
 
-        /// <summary>Commits a choice as soon as it is picked from the list (not only when leaving the box).</summary>
+        /// <summary>This is what commits a choice as soon as it is picked from the list (not only when leaving the box).</summary>
         private void Grid_CurrentCellDirtyStateChanged(object? sender, EventArgs e)
         {
             if (_grid.IsCurrentCellDirty)
                 _grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
         }
 
-        /// <summary>The user picked something in "Leave" or "How long".</summary>
+        /// <summary>This is when the user picked something in "Leave" or "How long".</summary>
         private void Grid_CellValueChanged(object? sender, DataGridViewCellEventArgs e)
         {
             if (_filling || e.RowIndex < 0 ||
@@ -574,7 +580,7 @@ namespace Dat2DTR
             LeaveKind? kind = LeaveKinds.All.FirstOrDefault(k => k.Name == leaveText && k.Type != LeaveType.WorkFromHome);
             int part = Math.Max(0, Array.IndexOf(PartTexts, partText));
 
-            // "From 3:00 PM" = Suspended from that time (for any other leave it means a whole day).
+            // This is "From 3:00 PM" = Suspended from that time (for any other leave it means a whole day).
             TimeSpan? from = null;
             DateTime parsed;
             if (partText.StartsWith(FromPrefix, StringComparison.Ordinal) &&
@@ -582,7 +588,7 @@ namespace Dat2DTR
                                        DateTimeStyles.None, out parsed))
                 from = parsed.TimeOfDay;
 
-            // "(no leave)" with WFH ticked = an ordinary working day worked from home.
+            // This is "(no leave)" with WFH ticked = an ordinary working day worked from home.
             LeaveEntry? entry = null;
             if (kind != null) entry = new LeaveEntry(kind.Type, (LeavePart)part, wfh, idlar);
             else if (wfh) entry = new LeaveEntry(LeaveType.WorkFromHome, (LeavePart)part, true, idlar);
@@ -590,7 +596,7 @@ namespace Dat2DTR
             if (entry != null && from.HasValue && !fromIgnored)
             {
                 entry.From = from;
-                entry.Wfh = false;      // WFH / IDLAR do not go with a suspension from a time
+                entry.Wfh = false;      // This is because WFH / IDLAR do not go with a suspension from a time
                 entry.Idlar = false;
             }
 
@@ -610,23 +616,23 @@ namespace Dat2DTR
             return value is bool && (bool)value;
         }
 
-        /// <summary>Opens the table of CTO given to this employee.</summary>
-        private void CtoGiven_Click(object? sender, EventArgs e)
+        /// <summary>This is where the table of CTO (or Solo Parent Leave) given to this employee is opened.</summary>
+        private void Given_Click(LeaveType type)
         {
             _grid.EndEdit();
             string id = _attendance.EmployeeId;
             string who = _attendance.EmployeeName.Length > 0 ? _attendance.EmployeeName : "ID " + id;
 
-            using (var dialog = new CtoForm(who, _cto.Get(id), _leaves.GetAllOfKind(id, LeaveType.Cto)))
+            using (var dialog = new CtoForm(who, _cto.Get(id, type), _leaves.GetAllOfKind(id, type), type))
             {
                 if (dialog.ShowDialog(this) != DialogResult.OK)
                     return;
-                _cto.Set(id, dialog.GetGrants());
+                _cto.Set(id, type, dialog.GetGrants());
                 _changed = true;
             }
 
             Recompute();
-            Say("The CTO given was changed. Click Save to keep it.", false);
+            Say("The " + (type == LeaveType.SoloParent ? "Solo Parent Leave" : "CTO") + " given was changed. Click Save to keep it.", false);
         }
 
         private void RemoveAll_Click(object? sender, EventArgs e)
@@ -643,9 +649,9 @@ namespace Dat2DTR
             Say("Every leave of this month was removed. Click Save to keep it that way.", false);
         }
 
-        // ================================================================ the balance boxes
+        // This is the balance boxes ================================================================
 
-        /// <summary>Reads the four boxes. Returns the name of the first box that is not a number, or "".</summary>
+        /// <summary>This is where the four boxes are read. Returns the name of the first box that is not a number, or "".</summary>
         private string ReadBoxes()
         {
             string problem = "";
@@ -658,7 +664,7 @@ namespace Dat2DTR
             if (Check(_openingSl, out value)) month.OpeningSl = value;
             else if (problem.Length == 0) problem = "the Sick Leave balance";
 
-            // An empty box, or the usual 1.25, means "nothing special typed".
+            // This is the rule: an empty box, or the usual 1.25, means "nothing special typed".
             if (Check(_earnedVl, out value)) month.EarnedVl = value == LeaveRules.MonthlyCredit ? null : value;
             else if (problem.Length == 0) problem = "the Vacation Leave credits earned";
 
@@ -668,7 +674,7 @@ namespace Dat2DTR
             return problem;
         }
 
-        /// <summary>Reads one box and turns it pale red when it does not hold a number.</summary>
+        /// <summary>This is where one box is read, and turned pale red when it does not hold a number.</summary>
         private static bool Check(TextBox box, out decimal? value)
         {
             bool ok = LeaveRules.TryParseCredits(box.Text, out value);
@@ -689,15 +695,15 @@ namespace Dat2DTR
             Recompute();
         }
 
-        // ================================================================ the computation on the right
+        // This is the computation on the right ================================================================
 
-        /// <summary>Works everything out again and shows it.</summary>
+        /// <summary>This is where everything is worked out again and shown.</summary>
         private void Recompute()
         {
             LeaveCard card = _compute(_leaves, _ledger, _cto);
             LeaveMonth month = card.Current;
 
-            // ---- the "Deducted" column of the table
+            // This is the "Deducted" column of the table ----
             for (int i = 0; i < _attendance.Days.Count; i++)
             {
                 LeaveEntry? leave = LeaveOf(i);
@@ -713,8 +719,8 @@ namespace Dat2DTR
                         text = (kind.Type == LeaveType.WorkFromHome ? "" : "not deducted") +
                                (!leave.Wfh ? "" : (kind.Type == LeaveType.WorkFromHome ? "" : ", ") +
                                                   (leave.Idlar ? "WFH - present" : "WFH - no IDLAR yet"));
-                    else if (kind.Type == LeaveType.Cto)
-                        text = "- " + LeaveRules.FormatShort(leave.Days) + "  CTO";
+                    else if (LeaveKinds.IsGiven(kind.Type))
+                        text = "- " + LeaveRules.FormatShort(leave.Days) + "  " + kind.Code;
                     else if (kind.Charge == LeaveCharge.NotCharged)
                         text = "not deducted";
                     else
@@ -724,7 +730,7 @@ namespace Dat2DTR
                 _grid.Rows[i].Cells[ColCharge].Value = text;
             }
 
-            // ---- where the starting balance comes from
+            // This is where the starting balance comes from ----
             _carried.Text =
                 "Vacation Leave: " + StartText(month.VlStart, month.VlStartTyped) + "      " +
                 "Sick Leave: " + StartText(month.SlStart, month.SlStartTyped) + "\r\n" +
@@ -732,7 +738,7 @@ namespace Dat2DTR
                     ? "Type a number above only if the balance has to be corrected."
                     : "Type it once, from the employee's leave card.");
 
-            // ---- the computation, line by line
+            // This is the computation, line by line ----
             _summary.Rows.Clear();
             foreach (LeaveLine line in card.Breakdown)
             {
@@ -753,7 +759,7 @@ namespace Dat2DTR
             }
             _summary.ClearSelection();
 
-            // ---- things to check
+            // This is the things to check ----
             _notes.Text = string.Join("\r\n\r\n", card.Notes.Select(n => "- " + n).ToArray());
             _notes.BackColor = card.Notes.Count > 0 ? Theme.NoticeBack : Theme.Panel;
         }
@@ -784,7 +790,7 @@ namespace Dat2DTR
                 return;
             }
 
-            // Worked from home but no IDLAR yet (not for a Holiday, which needs neither): ask once.
+            // This is worked from home but no IDLAR yet (not for a Holiday, which needs neither): ask once.
             List<string> waiting = new List<string>();
             for (int i = 0; i < _attendance.Days.Count; i++)
             {

@@ -1,11 +1,11 @@
 namespace Dat2DTR
 {
     /// <summary>
-    /// Turns the raw scans of one employee into a Daily Time Record and
+    /// This is where the raw scans of one employee are turned into a Daily Time Record, and where it
     /// computes Late and Undertime.
     ///
     /// THE RULES (shown here for Schedule A: 7:00 AM - 6:00 PM, lunch 12:00 - 1:00 PM,
-    /// 15 minutes grace period. Schedules B, C and D work the same way with their own times.)
+    /// grace period 15 minutes. Schedules B, C and D work the same way with their own times.)
     ///
     ///  1. Which scan goes in which column
     ///       - first scan of the day  -> A.M. Arrival   (P.M. Arrival if it is already past 12:00)
@@ -14,7 +14,12 @@ namespace Dat2DTR
     ///       - two scans within one minute of each other count as one (double scan)
     ///
     ///  2. LATE
-    ///       - A.M. Arrival up to 7:15 is NOT late. From 7:16 it is late, counted from 7:00.
+    ///       - A.M. Arrival up to 7:15 is NOT late, IF the minutes are made up at the end of the day:
+    ///         arriving 7:14 means leaving at 6:14 PM or later. Leaving earlier (6:08 PM, or with no
+    ///         P.M. Departure scan) loses the grace period: 14 minutes late. Undertime is still only
+    ///         counted before 6:00 PM. (With the afternoon on leave or suspended there is nothing to
+    ///         make up, so the grace period simply applies.)
+    ///       - From 7:16 it is late, counted from 7:00.
     ///       - P.M. Arrival after 1:00 PM is late, counted from 1:00 PM.
     ///
     ///  3. UNDERTIME
@@ -51,9 +56,9 @@ namespace Dat2DTR
     /// </summary>
     public static class DtrBuilder
     {
-        /// <param name="schedule">The office hours this employee follows.</param>
-        /// <param name="corrections">Hand-typed days, or null to use only the biometrics data.</param>
-        /// <param name="leaves">Filed leaves, or null to make the DTR without any leave.</param>
+        /// <param name="schedule">This is the office hours this employee follows.</param>
+        /// <param name="corrections">This is the hand-typed days, or null to use only the biometrics data.</param>
+        /// <param name="leaves">This is the filed leaves, or null to make the DTR without any leave.</param>
         public static DtrSheet Build(AttendanceLog log, string employeeId, string employeeName, DateTime month,
                                      WorkSchedule schedule, DtrSettings settings, CorrectionStore? corrections,
                                      LeaveStore? leaves = null)
@@ -76,11 +81,11 @@ namespace Dat2DTR
                 if (day.Date.DayOfWeek == DayOfWeek.Saturday) day.Remark = "Sat";
                 if (day.Date.DayOfWeek == DayOfWeek.Sunday) day.Remark = "Sun";
 
-                // Only dates the file actually covers can be ABSENT. Days before the first
+                // This is why only dates the file actually covers can be ABSENT: days before the first
                 // scan or after the last scan in the file are unknown, so they stay blank.
                 bool coveredByFile = day.Date >= log.FirstDate && day.Date <= log.LastDate;
 
-                // Work from home without the IDLAR does not count yet: the day is shown as if nothing was filed.
+                // This is for work from home without the IDLAR: it does not count yet, so the day is shown as if nothing was filed.
                 LeaveEntry? filed = leaves == null ? null : leaves.GetForDtr(employeeId, day.Date, schedule);
                 LeaveEntry? leave = filed != null && filed.Excuses ? filed : null;
                 DayCorrection? typed = corrections == null ? null : corrections.Get(employeeId, day.Date);
@@ -100,7 +105,7 @@ namespace Dat2DTR
                     FinishDay(day, schedule, settings, coveredByFile, leave);
                 }
 
-                // Late / Undertime typed in by hand (Edit DTR) replaces what was computed.
+                // This is the Late / Undertime typed in by hand (Edit DTR): it replaces what was computed.
                 DayAdjustment? adjustment = corrections == null ? null : corrections.GetAdjustment(employeeId, day.Date);
                 if (adjustment != null)
                     ApplyAdjustment(day, adjustment);
@@ -120,7 +125,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Rule 8: Late and Undertime typed in by hand (for example when work was suspended at
+        /// This is Rule 8: Late and Undertime typed in by hand (for example when work was suspended at
         /// 3:00 PM) replace the computed ones. The computed ones are kept to show beside them.
         /// </summary>
         public static void ApplyAdjustment(DtrDay day, DayAdjustment adjustment)
@@ -134,7 +139,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Rule 6: fills one day from hand-typed times and computes its Late and Undertime.
+        /// This is Rule 6: it fills one day from hand-typed times and computes its Late and Undertime.
         /// Also used by the Edit DTR window to show the result while the person types.
         /// </summary>
         public static void FillDay(DtrDay day, DayCorrection typed, WorkSchedule schedule,
@@ -151,12 +156,12 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Rule 7, half-day leave with one arrival and one departure scan: both scans belong to
+        /// This is Rule 7, half-day leave with one arrival and one departure scan: both scans belong to
         /// the half that was worked. Without this, leaving at 12:05 PM on a day with the afternoon
         /// on leave would be shown as "P.M. Departure" instead of "A.M. Departure".
         /// </summary>
         /// <remarks>
-        /// A scan is only moved when its time fits: leaving in the first half of the afternoon,
+        /// This is when a scan is moved: only when its time fits: leaving in the first half of the afternoon,
         /// or arriving in the second half of the morning. Otherwise the person was clearly at work
         /// in the half that is on leave; the times stay where they are and the day gets a warning.
         /// </remarks>
@@ -169,18 +174,18 @@ namespace Dat2DTR
 
             if (leave.Part == LeavePart.Afternoon && day.PmDeparture!.Value < Middle(s.LunchEnd, s.TimeOut))
             {
-                day.AmDeparture = day.PmDeparture;   // worked the morning, went home around lunch time
+                day.AmDeparture = day.PmDeparture;   // This is someone who worked the morning and went home around lunch time
                 day.PmDeparture = null;
             }
             else if (leave.Part == LeavePart.Morning && day.AmArrival!.Value >= Middle(s.TimeIn, s.LunchStart))
             {
-                day.PmArrival = day.AmArrival;       // came in late in the morning, for the afternoon
+                day.PmArrival = day.AmArrival;       // This is someone who came in late in the morning, for the afternoon
                 day.AmArrival = null;
             }
         }
 
         /// <summary>
-        /// Rules 2, 3, 4 and 7 for one day whose four times are already filled in:
+        /// This is Rules 2, 3, 4 and 7 for one day whose four times are already filled in:
         /// absent or not, late, undertime, and what a filed leave changes.
         /// </summary>
         private static void FinishDay(DtrDay day, WorkSchedule schedule, DtrSettings settings,
@@ -193,7 +198,7 @@ namespace Dat2DTR
             day.IsCalendarHoliday = leave != null && leave.FromCalendar;
             day.HolidayName = leave != null ? leave.HolidayName : "";
 
-            // Rule 9: work suspended FROM a time. Before that time it is an ordinary working day
+            // This is Rule 9: work suspended FROM a time. Before that time it is an ordinary working day
             // (late, undertime, absent as usual); after it nothing is counted. From the start of the
             // day = the whole day is suspended.
             WorkSchedule hours = schedule;
@@ -215,7 +220,7 @@ namespace Dat2DTR
                         else if (from < schedule.LunchEnd) afternoonOff = true;
                         else hours.TimeOut = from;
                     }
-                    leave = null;   // the day itself is not a leave
+                    leave = null;   // This is because the day itself is not a leave
                 }
             }
 
@@ -225,15 +230,15 @@ namespace Dat2DTR
 
             bool isWorkDay = schedule.IsWorkDay(day.Date.DayOfWeek);
 
-            // ---- a whole day of leave: nothing to compute
+            // This is a whole day of leave: nothing to compute ----
             if (leave != null && leave.Part == LeavePart.WholeDay)
             {
-                if (day.ScanCount > 0 && !leave.FromCalendar)   // working on a holiday of the calendar is fine
+                if (day.ScanCount > 0 && !leave.FromCalendar)   // This is because working on a holiday of the calendar is fine
                     day.Warning = "filed as " + leave.Kind.Name + ", but there are times on this day";
                 return;
             }
 
-            // ---- no times at all
+            // This is a day with no times at all ----
             if (day.ScanCount == 0)
             {
                 if (leave != null)
@@ -243,19 +248,20 @@ namespace Dat2DTR
                     return;
                 }
 
-                // No times and no remark on a working day (or any Monday to Friday) = absent.
+                // This is the absent rule: no times and no remark on a working day (or any Monday to Friday) = absent.
                 // A remark (HOLIDAY...) explains the day instead.
                 day.IsAbsent = day.Note.Length == 0 && schedule.ShowsAbsent(day.Date.DayOfWeek) && coveredByFile;
                 return;
             }
 
-            // ---- there are times: late and undertime (the half that is on leave is excused)
+            // This is a day with times: late and undertime (the half that is on leave is excused) ----
             if (isWorkDay)
                 ComputeLateAndUndertime(day, hours, settings.CountLateFromOfficialTime,
                     leave != null && leave.Part == LeavePart.Morning,
-                    afternoonOff || (leave != null && leave.Part == LeavePart.Afternoon));
+                    afternoonOff || (leave != null && leave.Part == LeavePart.Afternoon),
+                    !day.SuspendedFrom.HasValue);   // This is false when released early by a suspension: nothing to make up
 
-            // ---- a half-day leave, but the person was at work in that half: someone should check
+            // This is a half-day leave, but the person was at work in that half: someone should check ----
             if (leave != null)
             {
                 bool morning = leave.Part == LeavePart.Morning;
@@ -273,8 +279,8 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Drops the seconds (the form only shows hours and minutes) and removes
-        /// double scans: a scan within one minute of the previous one is ignored.
+        /// This is where the seconds are dropped (the form only shows hours and minutes) and
+        /// double scans are removed: a scan within one minute of the previous one is ignored.
         /// </summary>
         internal static List<TimeSpan> CleanScans(List<DateTime> scans)
         {
@@ -289,7 +295,7 @@ namespace Dat2DTR
             return result;
         }
 
-        /// <summary>Rule 1: decides which scan goes into which of the four columns.</summary>
+        /// <summary>This is Rule 1: it decides which scan goes into which of the four columns.</summary>
         internal static void AssignScans(List<TimeSpan> scans, DtrDay day, WorkSchedule s)
         {
             TimeSpan noon = s.LunchStart;
@@ -316,7 +322,7 @@ namespace Dat2DTR
             if (n == 2)
                 return;
 
-            // From here on there are scans in between the first and the last one.
+            // This is the part where there are scans in between the first and the last one.
             bool worksBothHalves = first < noon && last >= noon;
             TimeSpan windowStart = s.LunchStart - TimeSpan.FromHours(1);
             TimeSpan windowEnd = s.LunchEnd + TimeSpan.FromHours(1);
@@ -341,7 +347,7 @@ namespace Dat2DTR
                 return;
             }
 
-            // 4 or more scans: use the pair of neighbouring scans that best surrounds lunch time.
+            // This is for 4 or more scans: use the pair of neighbouring scans that best surrounds lunch time.
             int best = -1;
             double bestDistance = double.MaxValue;
             for (int i = 1; i <= n - 3; i++)
@@ -371,27 +377,38 @@ namespace Dat2DTR
                 day.Warning = n + " scans, the extra ones were ignored";
         }
 
-        /// <summary>Rules 2 and 3.</summary>
-        /// <param name="morningOnLeave">Half-day leave in the morning: nothing is counted for the morning.</param>
-        /// <param name="afternoonOnLeave">Half-day leave in the afternoon: nothing is counted for the afternoon.</param>
+        /// <summary>This is Rules 2 and 3.</summary>
+        /// <param name="morningOnLeave">This is a half-day leave in the morning: nothing is counted for the morning.</param>
+        /// <param name="afternoonOnLeave">This is a half-day leave in the afternoon: nothing is counted for the afternoon.</param>
+        /// <param name="graceMustBeMadeUp">This is false on a day work was suspended from a time: arriving inside the
+        /// grace period is then simply not late.</param>
         internal static void ComputeLateAndUndertime(DtrDay day, WorkSchedule s, bool countLateFromOfficialTime,
-                                                     bool morningOnLeave = false, bool afternoonOnLeave = false)
+                                                     bool morningOnLeave = false, bool afternoonOnLeave = false,
+                                                     bool graceMustBeMadeUp = true)
         {
             TimeSpan late = TimeSpan.Zero;
             TimeSpan undertime = TimeSpan.Zero;
             TimeSpan graceEnd = s.TimeIn + TimeSpan.FromMinutes(s.GraceMinutes);
 
-            // A half day with no scans at all counts as undertime. With only one scan we cannot
+            // This is the half-day rule: a half day with no scans at all counts as undertime. With only one scan we cannot
             // tell a half day from a forgotten scan, so that case is left for a person to check.
             bool canJudgeHalfDays = day.ScanCount >= 2;
 
-            // ---- the morning
+            // This is the morning ----
             if (!morningOnLeave)
             {
                 if (day.AmArrival.HasValue && day.AmArrival.Value > graceEnd)
                 {
                     TimeSpan countFrom = countLateFromOfficialTime ? s.TimeIn : graceEnd;
                     late += Earlier(day.AmArrival.Value, s.LunchStart) - countFrom;
+                }
+                else if (graceMustBeMadeUp && !afternoonOnLeave && day.AmArrival.HasValue && day.AmArrival.Value > s.TimeIn)
+                {
+                    // This is inside the grace period: the minutes must be made up at the end of the day
+                    // (7:14 in -> out at 6:14 PM or later). Otherwise they are late.
+                    TimeSpan minutes = day.AmArrival.Value - s.TimeIn;
+                    bool madeUp = day.PmDeparture.HasValue && day.PmDeparture.Value >= s.TimeOut + minutes;
+                    if (!madeUp) late += minutes;
                 }
 
                 if (day.AmDeparture.HasValue && day.AmDeparture.Value < s.LunchStart)
@@ -401,7 +418,7 @@ namespace Dat2DTR
                     undertime += s.LunchStart - s.TimeIn;
             }
 
-            // ---- the afternoon
+            // This is the afternoon ----
             if (!afternoonOnLeave)
             {
                 if (day.PmArrival.HasValue && day.PmArrival.Value > s.LunchEnd)

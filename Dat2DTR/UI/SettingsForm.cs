@@ -1,7 +1,7 @@
 namespace Dat2DTR
 {
     /// <summary>
-    /// The "Office Hours" window: the work schedules (A, B, C and D) and how Late is counted.
+    /// This is the "Office Hours" window: the work schedules (A, B, C and D) and how Late is counted.
     ///
     /// The list at the top chooses which schedule is shown. The time boxes, the
     /// grace period and the working days belong to that schedule. The "how is Late
@@ -9,10 +9,10 @@ namespace Dat2DTR
     /// </summary>
     public partial class SettingsForm : Form
     {
-        private DtrSettings _settings;          // the copy being edited
-        private int _showing;                   // which schedule the boxes show: 0 = A ... 3 = D
-        private bool _loading;                  // true while the program fills the boxes itself
-        private readonly CheckBox[] _dayBoxes;  // index = DayOfWeek (0 = Sunday)
+        private DtrSettings _settings;          // This is the copy being edited
+        private int _showing;                   // This is which schedule the boxes show: 0 = A ... 3 = D
+        private bool _loading;                  // This is true while the program fills the boxes itself
+        private readonly CheckBox[] _dayBoxes;  // This is index = DayOfWeek (0 = Sunday)
 
         public SettingsForm(DtrSettings current)
         {
@@ -29,13 +29,13 @@ namespace Dat2DTR
             ShowSettings();
         }
 
-        /// <summary>The settings the user chose. Call after ShowDialog() returned OK.</summary>
+        /// <summary>This is the settings the user chose. Call after ShowDialog() returned OK.</summary>
         public DtrSettings GetSettings()
         {
             return _settings;
         }
 
-        /// <summary>Fills every box from _settings.</summary>
+        /// <summary>This is where every box is filled from _settings.</summary>
         private void ShowSettings()
         {
             _loading = true;
@@ -48,7 +48,7 @@ namespace Dat2DTR
             ShowSchedule();
         }
 
-        /// <summary>Refreshes the list at the top, so its words match the times that were typed.</summary>
+        /// <summary>This is where the list at the top is refreshed, so its words match the times that were typed.</summary>
         private void ShowScheduleList()
         {
             _loading = true;
@@ -59,7 +59,7 @@ namespace Dat2DTR
             _loading = false;
         }
 
-        /// <summary>Fills the schedule boxes from the schedule that is chosen at the top.</summary>
+        /// <summary>This is where the schedule boxes are filled from the schedule that is chosen at the top.</summary>
         private void ShowSchedule()
         {
             WorkSchedule s = _settings.Schedules[_showing];
@@ -79,7 +79,7 @@ namespace Dat2DTR
             UpdateExamples();
         }
 
-        /// <summary>Copies what is in the boxes into _settings.</summary>
+        /// <summary>This is where what is in the boxes is copied into _settings.</summary>
         private void ReadBoxes()
         {
             WorkSchedule s = _settings.Schedules[_showing];
@@ -100,7 +100,7 @@ namespace Dat2DTR
             return new TimeSpan(picker.Value.Hour, picker.Value.Minute, 0);
         }
 
-        /// <summary>Keeps the "(arriving 7:20 AM = 20 minutes late)" examples in step with what is typed.</summary>
+        /// <summary>This is what keeps the "(arriving 7:20 AM = 20 minutes late)" examples in step with what is typed.</summary>
         private void UpdateExamples()
         {
             TimeSpan timeIn = TimeOf(dtpTimeIn);
@@ -117,13 +117,13 @@ namespace Dat2DTR
                 UpdateExamples();
         }
 
-        /// <summary>The user picked the other schedule in the list at the top.</summary>
+        /// <summary>This is when the user picked the other schedule in the list at the top.</summary>
         private void cboWhich_SelectedIndexChanged(object? sender, EventArgs e)
         {
             if (_loading || cboWhich.SelectedIndex < 0)
                 return;
 
-            ReadBoxes();                        // keep what was typed for the schedule we are leaving
+            ReadBoxes();                        // This is to keep what was typed for the schedule we are leaving
             _showing = cboWhich.SelectedIndex;
             ShowScheduleList();
             ShowSchedule();

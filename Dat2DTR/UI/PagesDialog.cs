@@ -6,11 +6,11 @@ namespace Dat2DTR
         DtrOnly,
         LeaveOnly,
         Both,
-        DatFile         // the scans of the month, saved again as a .dat file (Save To only)
+        DatFile         // This is the scans of the month, saved again as a .dat file (Save To only)
     }
 
     /// <summary>
-    /// The small window that asks "What do you want to print?" (or save):
+    /// This is the small window that asks "What do you want to print?" (or save):
     /// only the DTR, only the Computation of Leaves, or both - and, when saving,
     /// also the scans as a .dat file.
     /// </summary>
@@ -18,11 +18,11 @@ namespace Dat2DTR
     {
         private DtrPages _choice = DtrPages.Cancel;
 
-        /// <param name="questionText">The question at the top, e.g. "What do you want to print?"</param>
-        /// <param name="offerDatFile">true = also offer "Biometrics file (.dat)" (for Save To).</param>
+        /// <param name="questionText">This is the question at the top, e.g. "What do you want to print?"</param>
+        /// <param name="offerDatFile">This is true to also offer "Biometrics file (.dat)" (for Save To).</param>
         public PagesDialog(string questionText, bool offerDatFile = false)
         {
-            // Same order as a designer-made form, so it scales correctly on 125% / 150% screens.
+            // This is the same order as a designer-made form, so it scales correctly on 125% / 150% screens.
             SuspendLayout();
             Text = "Dat2DTR";
             Icon = Theme.GetAppIcon();
@@ -68,7 +68,7 @@ namespace Dat2DTR
             PerformLayout();
         }
 
-        /// <summary>What the user picked. Call after ShowDialog().</summary>
+        /// <summary>This is what the user picked. Call after ShowDialog().</summary>
         public DtrPages GetChoice()
         {
             return _choice;

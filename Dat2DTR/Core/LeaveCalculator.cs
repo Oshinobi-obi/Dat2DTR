@@ -3,15 +3,15 @@ using System.Globalization;
 namespace Dat2DTR
 {
     /// <summary>
-    /// The numbers used to compute leave. They follow the Civil Service Commission
+    /// This is the set of numbers used to compute leave. They follow the Civil Service Commission
     /// rules on leave (Omnibus Rules on Leave, CSC MC No. 41 s. 1998 as amended).
     /// </summary>
     public static class LeaveRules
     {
-        /// <summary>Vacation Leave and Sick Leave credits earned in one month (15 days a year each).</summary>
+        /// <summary>This is the Vacation Leave and Sick Leave credits earned in one month (15 days a year each).</summary>
         public const decimal MonthlyCredit = 1.25m;
 
-        // The CSC table "Conversion of working hours/minutes into fractions of a day"
+        // This is the CSC table "Conversion of working hours/minutes into fractions of a day"
         // (based on an 8-hour day). Position = minutes, value = thousandths of a day.
         //   1 minute = .002     30 minutes = .062     60 minutes (1 hour) = .125     8 hours = 1.000
         private static readonly int[] MinuteTable =
@@ -25,7 +25,7 @@ namespace Dat2DTR
             125
         };
 
-        // The CSC "Table of computation - for leave without pay": the leave credits earned in a month
+        // This is the CSC "Table of computation - for leave without pay": the leave credits earned in a month
         // by an employee who has no Vacation Leave credits left, by days without pay.
         // Position i = (i + 1) / 2 days without pay  (0.5, 1.0, 1.5 ... 30.0), value = thousandths of a day.
         private static readonly int[] EarnedWithoutPayTable =
@@ -38,7 +38,7 @@ namespace Dat2DTR
              187,  167,  146,  125,  104,   83,   62,   42,   21,    0
         };
 
-        // The CSC "Table of computation - for leave with pay": leave credits earned for days of service
+        // This is the CSC "Table of computation - for leave with pay": leave credits earned for days of service
         // (used for an employee who started or left in the middle of a month). Position = days - 1.
         private static readonly int[] EarnedPerDayTable =
         {
@@ -48,7 +48,7 @@ namespace Dat2DTR
         };
 
         /// <summary>
-        /// Credits earned in a month with that many days without pay (whole and half days;
+        /// This is the credits earned in a month with that many days without pay (whole and half days;
         /// anything in between is rounded down to the half day). 0 days = the usual 1.25.
         /// </summary>
         public static decimal EarnedWithoutPay(decimal daysWithoutPay)
@@ -59,7 +59,7 @@ namespace Dat2DTR
             return EarnedWithoutPayTable[halves - 1] / 1000m;
         }
 
-        /// <summary>Credits earned for days of service in a month (1 to 30 days).</summary>
+        /// <summary>This is the credits earned for days of service in a month (1 to 30 days).</summary>
         public static decimal EarnedForDays(int days)
         {
             if (days <= 0) return 0m;
@@ -68,7 +68,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Turns late or undertime minutes into a fraction of a day, the way it is
+        /// This is where late or undertime minutes are turned into a fraction of a day, the way it is
         /// written on the leave card. Example: 3 hours 15 minutes = .375 + .031 = .406
         /// </summary>
         public static decimal MinutesToDays(int minutes)
@@ -79,7 +79,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// How many leave credits ONE whole day of leave costs for this schedule.
+        /// This is how many leave credits ONE whole day of leave costs for this schedule.
         /// A day of leave is counted in 8-hour days, so a 10-hour working day
         /// (Schedule A, 7:00 AM - 6:00 PM) costs 1.25 and an 8-hour day costs 1.
         /// </summary>
@@ -90,19 +90,19 @@ namespace Dat2DTR
             return charge < 1m ? 1m : charge;
         }
 
-        /// <summary>"1.250" - the way leave credits are written.</summary>
+        /// <summary>This is "1.250" - the way leave credits are written.</summary>
         public static string Format(decimal credits)
         {
             return credits.ToString("0.000", CultureInfo.InvariantCulture);
         }
 
-        /// <summary>"1.25" or "1" - a number without useless zeros.</summary>
+        /// <summary>This is "1.25" or "1" - a number without useless zeros.</summary>
         public static string FormatShort(decimal number)
         {
             return number.ToString("0.###", CultureInfo.InvariantCulture);
         }
 
-        /// <summary>"1 day", "1/2 day", "2.5 days"</summary>
+        /// <summary>This is a number of days as text: "1 day", "1/2 day", "2.5 days"</summary>
         public static string FormatDays(decimal days)
         {
             if (days == 0.5m) return "1/2 day";
@@ -110,7 +110,7 @@ namespace Dat2DTR
             return FormatShort(days) + " days";
         }
 
-        /// <summary>"3 h 15 min", "5 h", "26 min"</summary>
+        /// <summary>This is minutes as text: "3 h 15 min", "5 h", "26 min"</summary>
         public static string FormatMinutes(int minutes)
         {
             int h = minutes / 60, m = minutes % 60;
@@ -119,7 +119,7 @@ namespace Dat2DTR
             return h + " h " + m + " min";
         }
 
-        /// <summary>Reads a typed number such as "20.027" (a comma is also accepted). Empty gives null.</summary>
+        /// <summary>This is where a typed number such as "20.027" is read (a comma is also accepted). Empty gives null.</summary>
         public static bool TryParseCredits(string? text, out decimal? value)
         {
             value = null;
@@ -139,56 +139,63 @@ namespace Dat2DTR
         }
     }
 
-    /// <summary>One month of the leave card of one employee (one row of the card).</summary>
+    /// <summary>This is one month of the leave card of one employee (one row of the card).</summary>
     public sealed class LeaveMonth
     {
         public int Year, Month;
 
-        /// <summary>True for the month that is open now; false for a month the program remembers.</summary>
+        /// <summary>This is true for the month that is open now; false for a month the program remembers.</summary>
         public bool IsCurrent;
 
-        /// <summary>Leave credits that one whole day of leave costs (1.25 for a 10-hour day).</summary>
+        /// <summary>This is the leave credits that one whole day of leave costs (1.25 for a 10-hour day).</summary>
         public decimal DayCharge = 1m;
 
         public decimal VlEarned = LeaveRules.MonthlyCredit, SlEarned = LeaveRules.MonthlyCredit;
 
-        /// <summary>True when a person typed the credits earned; otherwise they come from the CSC tables.</summary>
+        /// <summary>This is true when a person typed the credits earned; otherwise they come from the CSC tables.</summary>
         public bool VlEarnedTyped, SlEarnedTyped;
 
-        /// <summary>Days without pay used to look up the credits earned (0 = the usual 1.25 was earned).</summary>
+        /// <summary>This is the days without pay used to look up the credits earned (0 = the usual 1.25 was earned).</summary>
         public decimal WithoutPayDays;
 
         public int LateMinutes, UndertimeMinutes;
         public decimal LateDays, UndertimeDays;
 
-        /// <summary>Days of each kind of leave in the month (1 = whole day, 0.5 = half day).</summary>
-        public decimal VacationDays, ForcedDays, SickDays, SplDays, WellnessDays, CtoDays;
+        /// <summary>This is the days of each kind of leave in the month (1 = whole day, 0.5 = half day).</summary>
+        public decimal VacationDays, ForcedDays, SickDays, SplDays, WellnessDays, CtoDays, SoloDays;
 
-        /// <summary>Credits wanted from Vacation Leave for Vacation and Forced leave, and from Sick Leave.</summary>
+        /// <summary>This is the credits wanted from Vacation Leave for Vacation and Forced leave, and from Sick Leave.</summary>
         public decimal VlLeave, SlLeave;
 
-        /// <summary>The part of the sick leave that was charged to Vacation Leave because Sick Leave ran out.</summary>
+        /// <summary>This is the part of the sick leave that was charged to Vacation Leave because Sick Leave ran out.</summary>
         public decimal SlToVl;
 
-        /// <summary>What was really taken from the credits ("Enjoyed" on the leave card).</summary>
+        /// <summary>This is what was really taken from the credits ("Enjoyed" on the leave card).</summary>
         public decimal VlEnjoyed, SlEnjoyed;
 
-        /// <summary>Days without pay: what the Vacation Leave credits could not cover.</summary>
+        /// <summary>This is the days without pay: what the Vacation Leave credits could not cover.</summary>
         public decimal Lwop;
 
-        /// <summary>Balance at the start and at the end ("Net") of the month. null = not known.</summary>
+        /// <summary>This is the balance at the start and at the end ("Net") of the month. null = not known.</summary>
         public decimal? VlStart, SlStart, VlNet, SlNet;
 
-        /// <summary>True when a person typed the starting balance (instead of it being carried over).</summary>
+        /// <summary>This is true when a person typed the starting balance (instead of it being carried over).</summary>
         public bool VlStartTyped, SlStartTyped;
 
-        /// <summary>The last date the .dat file covered when this month was computed.</summary>
+        /// <summary>This is the last date the .dat file covered when this month was computed.</summary>
         public DateTime? DataThrough;
 
-        /// <summary>The days of leave, e.g. "21, 22, 25 (1/2)" - one text per kind.</summary>
-        public string VacationDates = "", ForcedDates = "", SickDates = "", SplDates = "", WellnessDates = "", CtoDates = "";
+        /// <summary>This is the days of leave, e.g. "21, 22, 25 (1/2)" - one text per kind.</summary>
+        public string VacationDates = "", ForcedDates = "", SickDates = "", SplDates = "", WellnessDates = "", CtoDates = "",
+                      SoloDates = "";
 
-        /// <summary>What goes in "Leave Date/s" of the VACATION part: vacation and forced leave together.</summary>
+        /// <summary>This is all the days of leave of the month together (whole day = 1, half day = 0.5).</summary>
+        public decimal AllLeaveDays
+        {
+            get { return VacationDays + ForcedDays + SickDays + SplDays + WellnessDays + CtoDays + SoloDays; }
+        }
+
+        /// <summary>This is what goes in "Leave Date/s" of the VACATION part: vacation and forced leave together.</summary>
         public string VlDatesText
         {
             get
@@ -209,14 +216,14 @@ namespace Dat2DTR
             get { return FirstDay.ToString("MMMM", CultureInfo.InvariantCulture); }
         }
 
-        /// <summary>True when the .dat file may not have covered the whole month.</summary>
+        /// <summary>This is true when the .dat file may not have covered the whole month.</summary>
         public bool MayBeIncomplete
         {
             get
             {
                 if (!DataThrough.HasValue) return false;
 
-                // The last Monday-to-Friday of the month. One day earlier is still fine:
+                // This is the last Monday-to-Friday of the month. One day earlier is still fine:
                 // in a Monday-to-Thursday office nobody scans on a Friday.
                 var last = new DateTime(Year, Month, DateTime.DaysInMonth(Year, Month));
                 while (last.DayOfWeek == DayOfWeek.Saturday || last.DayOfWeek == DayOfWeek.Sunday)
@@ -233,7 +240,7 @@ namespace Dat2DTR
         Total
     }
 
-    /// <summary>One line of the written-out computation ("Late, 3 h 15 min ..... - 0.406").</summary>
+    /// <summary>This is one line of the written-out computation ("Late, 3 h 15 min ..... - 0.406").</summary>
     public sealed class LeaveLine
     {
         public LeaveLine(LeaveLineKind kind, string text, string value)
@@ -249,7 +256,7 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// The "Computation of Leaves" of one employee: the leave card of the year
+    /// This is the "Computation of Leaves" of one employee: the leave card of the year
     /// (one row per month) and the written-out computation of the open month.
     /// </summary>
     public sealed class LeaveCard
@@ -257,25 +264,34 @@ namespace Dat2DTR
         public string EmployeeId = "";
         public string EmployeeName = "";
 
-        /// <summary>First day of the open month.</summary>
+        /// <summary>This is the first day of the open month.</summary>
         public DateTime MonthStart;
 
-        /// <summary>January to December of the year. null = the program knows nothing about that month.</summary>
+        /// <summary>This is January to December of the year. null = the program knows nothing about that month.</summary>
         public LeaveMonth?[] Months = new LeaveMonth?[12];
 
-        /// <summary>Days used from January up to the open month.</summary>
-        public decimal SplUsed, ForcedUsed, WellnessUsed, CtoUsed;
+        /// <summary>This is the days used from January up to the open month.</summary>
+        public decimal SplUsed, ForcedUsed, WellnessUsed, CtoUsed, SoloUsed;
 
-        /// <summary>The CTO of the open month: given, used, expired, and what is left.</summary>
+        /// <summary>This is the CTO of the open month: given, used, expired, and what is left.</summary>
         public CtoMonth Cto = new CtoMonth();
 
-        /// <summary>e.g. "Schedule A:  7:00 AM - 6:00 PM, Mon to Thu"</summary>
+        /// <summary>This is the Solo Parent Leave of the open month: given, used, expired, and what is left.</summary>
+        public CtoMonth Solo = new CtoMonth();
+
+        /// <summary>
+        /// This is the History of Availment of Leave: the leaves filed in each month of the year, January to
+        /// December (index 0 = January), with the days they were used. Only the days and dates are filled in.
+        /// </summary>
+        public LeaveMonth[] History = new LeaveMonth[12];
+
+        /// <summary>This is the schedule as text, e.g. "Schedule A:  7:00 AM - 6:00 PM, Mon to Thu"</summary>
         public string ScheduleText = "";
 
-        /// <summary>The computation of the open month, line by line.</summary>
+        /// <summary>This is the computation of the open month, line by line.</summary>
         public List<LeaveLine> Breakdown = new List<LeaveLine>();
 
-        /// <summary>Things a person should know or check.</summary>
+        /// <summary>This is the list of things a person should know or check.</summary>
         public List<string> Notes = new List<string>();
 
         public int Year
@@ -283,7 +299,7 @@ namespace Dat2DTR
             get { return MonthStart.Year; }
         }
 
-        /// <summary>The open month. It always exists.</summary>
+        /// <summary>This is the open month. It always exists.</summary>
         public LeaveMonth Current
         {
             get { return Months[MonthStart.Month - 1]!; }
@@ -304,7 +320,7 @@ namespace Dat2DTR
             get { return MonthStart.AddMonths(-1).ToString("MMMM yyyy", CultureInfo.InvariantCulture); }
         }
 
-        /// <summary>"One whole day of leave = 1.25 days of leave credits."</summary>
+        /// <summary>This is "One whole day of leave = 1.25 days of leave credits."</summary>
         public string DayChargeText
         {
             get
@@ -316,38 +332,39 @@ namespace Dat2DTR
         }
     }
 
-    /// <summary>The CTO of one employee in one month.</summary>
+    /// <summary>This is the CTO (or Solo Parent Leave) of one employee in one month.</summary>
     public sealed class CtoMonth
     {
-        /// <summary>CTO left from before the month, that can still be used in it.</summary>
+        /// <summary>This is the CTO left from before the month, that can still be used in it.</summary>
         public decimal Start;
 
-        /// <summary>CTO given in the month.</summary>
+        /// <summary>This is the CTO given in the month.</summary>
         public decimal Given;
 
-        /// <summary>CTO used in the month (and covered by CTO that was given).</summary>
+        /// <summary>This is the CTO used in the month (and covered by CTO that was given).</summary>
         public decimal Used;
 
-        /// <summary>CTO that expired in the month without being used.</summary>
+        /// <summary>This is the CTO that expired in the month without being used.</summary>
         public decimal Expired;
 
-        /// <summary>CTO left after the month.</summary>
+        /// <summary>This is the CTO left after the month.</summary>
         public decimal End;
 
-        /// <summary>CTO filed in the month for which there was no CTO left.</summary>
+        /// <summary>This is the CTO filed in the month for which there was no CTO left.</summary>
         public decimal NotCovered;
 
-        /// <summary>What is left after the month: days, and the date they expire, the soonest first.</summary>
+        /// <summary>This is what is left after the month: days, and the date they expire, the soonest first.</summary>
         public List<KeyValuePair<decimal, DateTime>> Left = new List<KeyValuePair<decimal, DateTime>>();
 
-        /// <summary>True when the employee has or had any CTO, or filed some.</summary>
+        /// <summary>This is true when the employee has or had any CTO, or filed some.</summary>
         public bool HasAny;
     }
 
     /// <summary>
-    /// Works out CTO. CTO is given in days (at most LeaveKinds.CtoMaxDays at a time) and can be used
+    /// This is where CTO is worked out. CTO is given in days (at most LeaveKinds.CtoMaxDays at a time) and can be used
     /// until its expiry date. Using CTO takes it from what was given, the one that expires first first.
-    /// CTO not used by its expiry date is lost.
+    /// CTO not used by its expiry date is lost: it is taken off the balance by itself, in the month it expires.
+    /// Solo Parent Leave is worked out the same way, with its own days given.
     /// </summary>
     public static class CtoCalculator
     {
@@ -358,7 +375,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Plays all CTO given and used up to the end of that date. Returns the lots with what is
+        /// This is where all CTO given and used up to the end of that date is played. Returns the lots with what is
         /// left in each, and how much of the CTO used could not be covered.
         /// </summary>
         private static List<Lot> PlayUntil(List<CtoGrant> grants, List<KeyValuePair<DateTime, LeaveEntry>> uses,
@@ -387,7 +404,7 @@ namespace Dat2DTR
             return lots;
         }
 
-        /// <summary>CTO the employee can still use on that day (after the CTO used up to that day).</summary>
+        /// <summary>This is the CTO the employee can still use on that day (after the CTO used up to that day).</summary>
         public static decimal BalanceOn(List<CtoGrant> grants, List<KeyValuePair<DateTime, LeaveEntry>> uses, DateTime day)
         {
             decimal used, notCovered;
@@ -402,7 +419,7 @@ namespace Dat2DTR
             DateTime last = first.AddMonths(1).AddDays(-1);
             decimal ignore1, ignore2;
 
-            // what could be used at the start of the month
+            // This is what could be used at the start of the month
             List<Lot> before = PlayUntil(grants, uses, first.AddDays(-1), first, out ignore1, out ignore2);
             result.Start = before.Where(l => l.Given < first && l.Expires >= first).Sum(l => l.Left);
 
@@ -416,7 +433,7 @@ namespace Dat2DTR
             List<Lot> stillGood = after.Where(l => l.Given <= last && l.Expires > last && l.Left > 0).OrderBy(l => l.Expires).ToList();
             result.End = stillGood.Sum(l => l.Left);
             result.Expired = result.Start + result.Given - result.Used - result.End;
-            if (result.Expired < 0) result.Expired = 0;   // cannot happen, but never show a negative number
+            if (result.Expired < 0) result.Expired = 0;   // This is something that cannot happen, but never show a negative number
 
             foreach (Lot lot in stillGood)
                 result.Left.Add(new KeyValuePair<decimal, DateTime>(lot.Left, lot.Expires));
@@ -427,7 +444,7 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// Computes the leave card.
+    /// This is where the leave card is computed.
     ///
     /// HOW ONE MONTH IS COMPUTED
     ///   1. Every month the employee EARNS 1.25 Vacation Leave and 1.25 Sick Leave credits.
@@ -440,7 +457,8 @@ namespace Dat2DTR
     ///      (see LeaveRules.MinutesToDays) and deducted from the Vacation Leave credits.
     ///   5. If the Vacation Leave credits are not enough, the rest is WITHOUT PAY (LWOP).
     ///   6. Special Privilege Leave (3 days a year) and Wellness Leave (5 days a year) are not deducted,
-    ///      only counted. CTO is taken from the CTO the employee was given (see CtoCalculator).
+    ///      only counted. CTO and Solo Parent Leave are taken from the days the employee was given
+    ///      (see CtoCalculator); days not used by their expiry date are taken off the balance.
     ///   7. Balance at the end (Net) = balance brought forward + earned - enjoyed.
     ///      The balance is carried to the next month automatically.
     ///   8. An employee with days without pay earns less than 1.25 that month, by the CSC table
@@ -448,14 +466,14 @@ namespace Dat2DTR
     /// </summary>
     public static class LeaveCalculator
     {
-        /// <summary>The balance is never followed back further than this (50 years).</summary>
+        /// <summary>This is how far back the balance is followed, at most (600 months = 50 years).</summary>
         private const int MostMonthsBack = 600;
 
-        /// <param name="sheet">The finished DTR of the open month (gives the late and undertime totals).</param>
-        /// <param name="schedule">The work schedule of the employee.</param>
-        /// <param name="dataFrom">The date of the first scan in the opened .dat file.</param>
-        /// <param name="dataThrough">The date of the last scan in the opened .dat file.</param>
-        /// <param name="cto">The CTO given to the employees.</param>
+        /// <param name="sheet">This is the finished DTR of the open month (gives the late and undertime totals).</param>
+        /// <param name="schedule">This is the work schedule of the employee.</param>
+        /// <param name="dataFrom">This is the date of the first scan in the opened .dat file.</param>
+        /// <param name="dataThrough">This is the date of the last scan in the opened .dat file.</param>
+        /// <param name="cto">This is the CTO (and Solo Parent Leave) given to the employees.</param>
         public static LeaveCard Build(DtrSheet sheet, WorkSchedule schedule, LeaveStore leaves, LeaveLedger ledger,
                                       CtoStore cto, DateTime dataFrom, DateTime dataThrough)
         {
@@ -469,7 +487,7 @@ namespace Dat2DTR
             DateTime monthEnd = target.AddMonths(1).AddDays(-1);
             string id = sheet.EmployeeId;
 
-            // Find the month to start from. The balance is followed back through the unbroken row
+            // This is where the month to start from is found. The balance is followed back through the unbroken row
             // of remembered months, as far as it goes. It is not followed across a month the program
             // has never seen, and not further than a month in an earlier year where both balances
             // were typed. (The months of the open year are always gone through, to show them on the card.)
@@ -489,7 +507,7 @@ namespace Dat2DTR
                 first = before;
             }
 
-            // Go through those months one after the other, carrying the balance along.
+            // This is where those months are gone through one after the other, carrying the balance along.
             // A month the program has never seen breaks the chain: the balance is then not known.
             decimal? vl = null, sl = null;
             for (DateTime m = first; m <= target; m = m.AddMonths(1))
@@ -529,7 +547,7 @@ namespace Dat2DTR
                     if (remembered.EarnedVl.HasValue) { month.VlEarned = remembered.EarnedVl.Value; month.VlEarnedTyped = true; }
                     if (remembered.EarnedSl.HasValue) { month.SlEarned = remembered.EarnedSl.Value; month.SlEarnedTyped = true; }
 
-                    // A typed balance always wins over the carried one.
+                    // This is the rule: a typed balance always wins over the carried one.
                     if (remembered.OpeningVl.HasValue) { vl = remembered.OpeningVl; month.VlStartTyped = true; }
                     if (remembered.OpeningSl.HasValue) { sl = remembered.OpeningSl; month.SlStartTyped = true; }
                 }
@@ -545,7 +563,7 @@ namespace Dat2DTR
                     card.Months[m.Month - 1] = month;
             }
 
-            // Days used so far this year (January up to the open month).
+            // This is the days used so far this year (January up to the open month).
             for (int m = 1; m <= target.Month; m++)
             {
                 foreach (var pair in leaves.GetMonth(id, target.Year, m))
@@ -557,11 +575,21 @@ namespace Dat2DTR
                         case LeaveType.Forced: card.ForcedUsed += days; break;
                         case LeaveType.Wellness: card.WellnessUsed += days; break;
                         case LeaveType.Cto: card.CtoUsed += days; break;
+                        case LeaveType.SoloParent: card.SoloUsed += days; break;
                     }
                 }
             }
 
-            card.Cto = CtoCalculator.Compute(cto.Get(id), leaves.GetAllOfKind(id, LeaveType.Cto), target);
+            card.Cto = CtoCalculator.Compute(cto.Get(id, LeaveType.Cto), leaves.GetAllOfKind(id, LeaveType.Cto), target);
+            card.Solo = CtoCalculator.Compute(cto.Get(id, LeaveType.SoloParent), leaves.GetAllOfKind(id, LeaveType.SoloParent), target);
+
+            // This is the History of Availment: every month of the year, January to December, from the leaves filed.
+            for (int m = 1; m <= 12; m++)
+            {
+                var history = new LeaveMonth { Year = target.Year, Month = m, IsCurrent = m == target.Month };
+                CountLeaves(history, leaves.GetMonth(id, target.Year, m));
+                card.History[m - 1] = history;
+            }
 
             WriteBreakdown(card);
             WriteNotes(card, sheet, schedule, ledger, dataFrom);
@@ -569,12 +597,43 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Fills in one month from its leaves, its late / undertime minutes and its starting balance.
+        /// This is where one month is filled in from its leaves, its late / undertime minutes and its starting balance.
         /// (VlStart, SlStart, VlEarned, SlEarned, LateMinutes, UndertimeMinutes and DayCharge must be set.)
         /// </summary>
         public static void ComputeMonth(LeaveMonth month, List<KeyValuePair<DateTime, LeaveEntry>> entries)
         {
-            var dates = new Dictionary<LeaveType, List<KeyValuePair<int, bool>>>();   // day, whole day?
+            CountLeaves(month, entries);
+
+            // This is Rule 2 and 3: what is wanted from each kind of credit.
+            month.VlLeave = Round((month.VacationDays + month.ForcedDays) * month.DayCharge);
+            month.SlLeave = Round(month.SickDays * month.DayCharge);
+
+            // This is Rule 4: late and undertime as a fraction of a day.
+            month.LateDays = LeaveRules.MinutesToDays(month.LateMinutes);
+            month.UndertimeDays = LeaveRules.MinutesToDays(month.UndertimeMinutes);
+
+            // This is Rule 8: an employee with days without pay earns less (CSC table). The days without pay
+            // depend on what was earned, so this is worked out again until it no longer changes.
+            decimal earned = LeaveRules.MonthlyCredit;
+            for (int round = 0; round < 10; round++)
+            {
+                if (!month.VlEarnedTyped) month.VlEarned = earned;
+                if (!month.SlEarnedTyped) month.SlEarned = earned;
+                Settle(month);
+
+                decimal withoutPay = Math.Floor(month.Lwop * 2m) / 2m;
+                decimal next = LeaveRules.EarnedWithoutPay(withoutPay);
+                month.WithoutPayDays = withoutPay;
+                if (next == earned || (month.VlEarnedTyped && month.SlEarnedTyped))
+                    break;
+                earned = next;
+            }
+        }
+
+        /// <summary>This is where the days of each kind of leave in the month are counted and their dates written ("3, 8 (1/2)").</summary>
+        public static void CountLeaves(LeaveMonth month, List<KeyValuePair<DateTime, LeaveEntry>> entries)
+        {
+            var dates = new Dictionary<LeaveType, List<KeyValuePair<int, bool>>>();   // This is day, whole day?
 
             foreach (var pair in entries)
             {
@@ -589,6 +648,7 @@ namespace Dat2DTR
                     case LeaveType.SpecialPrivilege: month.SplDays += days; break;
                     case LeaveType.Wellness: month.WellnessDays += days; break;
                     case LeaveType.Cto: month.CtoDays += days; break;
+                    case LeaveType.SoloParent: month.SoloDays += days; break;
                     default: continue;
                 }
 
@@ -607,59 +667,35 @@ namespace Dat2DTR
             month.SplDates = Join(dates, LeaveType.SpecialPrivilege);
             month.WellnessDates = Join(dates, LeaveType.Wellness);
             month.CtoDates = Join(dates, LeaveType.Cto);
-
-            // Rule 2 and 3: what is wanted from each kind of credit.
-            month.VlLeave = Round((month.VacationDays + month.ForcedDays) * month.DayCharge);
-            month.SlLeave = Round(month.SickDays * month.DayCharge);
-
-            // Rule 4: late and undertime as a fraction of a day.
-            month.LateDays = LeaveRules.MinutesToDays(month.LateMinutes);
-            month.UndertimeDays = LeaveRules.MinutesToDays(month.UndertimeMinutes);
-
-            // Rule 8: an employee with days without pay earns less (CSC table). The days without pay
-            // depend on what was earned, so this is worked out again until it no longer changes.
-            decimal earned = LeaveRules.MonthlyCredit;
-            for (int round = 0; round < 10; round++)
-            {
-                if (!month.VlEarnedTyped) month.VlEarned = earned;
-                if (!month.SlEarnedTyped) month.SlEarned = earned;
-                Settle(month);
-
-                decimal withoutPay = Math.Floor(month.Lwop * 2m) / 2m;
-                decimal next = LeaveRules.EarnedWithoutPay(withoutPay);
-                month.WithoutPayDays = withoutPay;
-                if (next == earned || (month.VlEarnedTyped && month.SlEarnedTyped))
-                    break;
-                earned = next;
-            }
+            month.SoloDates = Join(dates, LeaveType.SoloParent);
         }
 
-        /// <summary>Rules 3 to 5 and 7: what is taken from each kind of credit, and the balances.</summary>
+        /// <summary>This is Rules 3 to 5 and 7: what is taken from each kind of credit, and the balances.</summary>
         private static void Settle(LeaveMonth month)
         {
-            // ---- SICK LEAVE
+            // This is the SICK LEAVE part ----
             if (month.SlStart.HasValue)
             {
                 decimal available = month.SlStart.Value + month.SlEarned;
                 month.SlEnjoyed = Math.Min(month.SlLeave, Math.Max(0m, available));
-                month.SlToVl = month.SlLeave - month.SlEnjoyed;     // rule 3: the rest goes to Vacation Leave
+                month.SlToVl = month.SlLeave - month.SlEnjoyed;     // This is rule 3: the rest goes to Vacation Leave
                 month.SlNet = available - month.SlEnjoyed;
             }
             else
             {
-                // The balance is not known, so we cannot tell whether the credits are enough.
+                // This is when the balance is not known: we cannot tell whether the credits are enough.
                 month.SlEnjoyed = month.SlLeave;
                 month.SlToVl = 0m;
                 month.SlNet = null;
             }
 
-            // ---- VACATION LEAVE
+            // This is the VACATION LEAVE part ----
             decimal wanted = month.VlLeave + month.SlToVl + month.LateDays + month.UndertimeDays;
             if (month.VlStart.HasValue)
             {
                 decimal available = month.VlStart.Value + month.VlEarned;
                 month.VlEnjoyed = Math.Min(wanted, Math.Max(0m, available));
-                month.Lwop = wanted - month.VlEnjoyed;              // rule 5: the rest is without pay
+                month.Lwop = wanted - month.VlEnjoyed;              // This is rule 5: the rest is without pay
                 month.VlNet = available - month.VlEnjoyed;
             }
             else
@@ -671,7 +707,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Writes the days of one kind of leave the short way: "3, 8 (1/2), 21-25".
+        /// This is where the days of one kind of leave are written the short way: "3, 8 (1/2), 21-25".
         /// Three or more whole days in a row are written as a range.
         /// </summary>
         private static string Join(Dictionary<LeaveType, List<KeyValuePair<int, bool>>> dates, LeaveType type)
@@ -691,7 +727,7 @@ namespace Dat2DTR
                     continue;
                 }
 
-                // how far does the row of whole days go?
+                // This is how far the row of whole days goes
                 int last = i;
                 while (last + 1 < list.Count && list[last + 1].Value && list[last + 1].Key == list[last].Key + 1)
                     last++;
@@ -715,7 +751,7 @@ namespace Dat2DTR
             return Math.Round(value, 3, MidpointRounding.AwayFromZero);
         }
 
-        // ---------------------------------------------------------------- the written-out computation
+        // This is the written-out computation ---------------------------------------------------------
 
         private static void WriteBreakdown(LeaveCard card)
         {
@@ -724,7 +760,7 @@ namespace Dat2DTR
             string charge = LeaveRules.FormatShort(m.DayCharge);
             const string notKnown = "not known";
 
-            // ---- Vacation Leave
+            // This is the Vacation Leave part ----
             lines.Add(new LeaveLine(LeaveLineKind.Heading, "VACATION LEAVE", ""));
             lines.Add(new LeaveLine(LeaveLineKind.Item, "Balance brought forward from " + card.PreviousMonthText,
                 m.VlStart.HasValue ? LeaveRules.Format(m.VlStart.Value) : notKnown));
@@ -758,7 +794,7 @@ namespace Dat2DTR
             lines.Add(new LeaveLine(LeaveLineKind.Total, "Balance at the end of " + card.MonthText,
                 m.VlNet.HasValue ? LeaveRules.Format(m.VlNet.Value) : notKnown));
 
-            // ---- Sick Leave
+            // This is the Sick Leave part ----
             lines.Add(new LeaveLine(LeaveLineKind.Heading, "SICK LEAVE", ""));
             lines.Add(new LeaveLine(LeaveLineKind.Item, "Balance brought forward from " + card.PreviousMonthText,
                 m.SlStart.HasValue ? LeaveRules.Format(m.SlStart.Value) : notKnown));
@@ -777,22 +813,32 @@ namespace Dat2DTR
             lines.Add(new LeaveLine(LeaveLineKind.Total, "Balance at the end of " + card.MonthText,
                 m.SlNet.HasValue ? LeaveRules.Format(m.SlNet.Value) : notKnown));
 
-            // ---- Special Privilege Leave and Wellness Leave: so many days a year
+            // This is Special Privilege Leave and Wellness Leave: so many days a year ----
             AddYearlyLeave(lines, card, LeaveType.SpecialPrivilege, "SPECIAL PRIVILEGE LEAVE (SPL)", card.SplUsed, m.SplDays, m.SplDates);
             AddYearlyLeave(lines, card, LeaveType.Wellness, "WELLNESS LEAVE (WL)", card.WellnessUsed, m.WellnessDays, m.WellnessDates);
 
-            // ---- CTO: given, used, expired
-            CtoMonth c = card.Cto;
-            lines.Add(new LeaveLine(LeaveLineKind.Heading,
-                "CTO (COMPENSATORY TIME-OFF, AT MOST " + LeaveRules.FormatShort(LeaveKinds.CtoMaxDays) + " DAYS)", ""));
+            // This is CTO and Solo Parent Leave: given, used, expired ----
+            AddGivenLeave(lines, card, card.Cto, "CTO",
+                "CTO (COMPENSATORY TIME-OFF, AT MOST " + LeaveRules.FormatShort(LeaveKinds.CtoMaxDays) + " DAYS)",
+                m.CtoDays, m.CtoDates);
+            AddGivenLeave(lines, card, card.Solo, "Solo Parent Leave",
+                "SOLO PARENT LEAVE (SOLO, AT MOST " + LeaveRules.FormatShort(LeaveKinds.SoloMaxDays) + " DAYS)",
+                m.SoloDays, m.SoloDates);
+        }
+
+        /// <summary>This is CTO or Solo Parent Leave: the balance, given, used, expired, and what is left.</summary>
+        private static void AddGivenLeave(List<LeaveLine> lines, LeaveCard card, CtoMonth c, string name, string heading,
+                                          decimal usedDays, string usedDates)
+        {
+            lines.Add(new LeaveLine(LeaveLineKind.Heading, heading, ""));
             lines.Add(new LeaveLine(LeaveLineKind.Item, "Balance brought forward from " + card.PreviousMonthText, Days(c.Start)));
             if (c.Given > 0)
-                lines.Add(new LeaveLine(LeaveLineKind.Item, "CTO given this month", "+ " + Days(c.Given)));
-            if (m.CtoDays > 0)
+                lines.Add(new LeaveLine(LeaveLineKind.Item, name + " given this month", "+ " + Days(c.Given)));
+            if (usedDays > 0)
                 lines.Add(new LeaveLine(LeaveLineKind.Item,
-                    "CTO used on " + m.CtoDates + "   (" + LeaveRules.FormatDays(m.CtoDays) + ")", "- " + Days(c.Used)));
+                    name + " used on " + usedDates + "   (" + LeaveRules.FormatDays(usedDays) + ")", "- " + Days(c.Used)));
             if (c.NotCovered > 0)
-                lines.Add(new LeaveLine(LeaveLineKind.Item, "CTO used but there was no CTO left", Days(c.NotCovered)));
+                lines.Add(new LeaveLine(LeaveLineKind.Item, name + " used but there was none left", Days(c.NotCovered)));
             if (c.Expired > 0)
                 lines.Add(new LeaveLine(LeaveLineKind.Item, "Expired, not used in time", "- " + Days(c.Expired)));
             lines.Add(new LeaveLine(LeaveLineKind.Total, "Balance at the end of " + card.MonthText, Days(c.End)));
@@ -802,7 +848,7 @@ namespace Dat2DTR
                     " on " + left.Value.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture), ""));
         }
 
-        /// <summary>"Earned this month", with where the number comes from when it is not the usual 1.25.</summary>
+        /// <summary>This is "Earned this month", with where the number comes from when it is not the usual 1.25.</summary>
         private static string EarnedText(LeaveMonth m, bool typed)
         {
             if (typed) return "Earned this month (typed)";
@@ -811,7 +857,7 @@ namespace Dat2DTR
             return "Earned this month";
         }
 
-        /// <summary>A leave that is allowed so many days a year: used before, used now, and what is left.</summary>
+        /// <summary>This is a leave that is allowed so many days a year: used before, used now, and what is left.</summary>
         private static void AddYearlyLeave(List<LeaveLine> lines, LeaveCard card, LeaveType type, string heading,
                                            decimal usedThisYear, decimal thisMonth, string dates)
         {
@@ -828,13 +874,13 @@ namespace Dat2DTR
                 left >= 0 ? Days(left) : "0  (" + LeaveRules.FormatShort(-left) + " over)"));
         }
 
-        /// <summary>"2", "0.5", "0" - days, written without useless zeros.</summary>
+        /// <summary>This is "2", "0.5", "0" - days, written without useless zeros.</summary>
         private static string Days(decimal days)
         {
             return LeaveRules.FormatShort(days);
         }
 
-        /// <summary>"2 of 5 this year", or "2 this year" when the kind has no yearly limit.</summary>
+        /// <summary>This is "2 of 5 this year", or "2 this year" when the kind has no yearly limit.</summary>
         public static string UsedText(decimal used, LeaveType type)
         {
             int limit = LeaveKinds.Get(type).YearlyLimit;
@@ -848,7 +894,7 @@ namespace Dat2DTR
             List<string> notes = card.Notes;
             string monthName = m.MonthName;
 
-            // ---- the opened file does not hold the whole month
+            // This is when the opened file does not hold the whole month ----
             if (LeaveLedger.StartsLate(m.Year, m.Month, dataFrom))
             {
                 notes.Add("The opened file starts on " + dataFrom.ToString("MMMM d", CultureInfo.InvariantCulture) +
@@ -886,13 +932,20 @@ namespace Dat2DTR
                 notes.Add("CTO was filed for " + LeaveRules.FormatDays(card.Cto.NotCovered) +
                           " but there was no CTO left for it. Check the CTO given (\"CTO given...\" in Edit Leave).");
             if (card.Cto.Expired > 0)
-                notes.Add(LeaveRules.FormatDays(card.Cto.Expired) + " of CTO expired this month without being used.");
+                notes.Add(LeaveRules.FormatDays(card.Cto.Expired) + " of CTO expired this month without being used. " +
+                          "It was taken off the CTO balance.");
+            if (card.Solo.NotCovered > 0)
+                notes.Add("Solo Parent Leave was filed for " + LeaveRules.FormatDays(card.Solo.NotCovered) +
+                          " but there was none left for it. Check the Solo Parent Leave given (\"Solo Parent given...\" in Edit Leave).");
+            if (card.Solo.Expired > 0)
+                notes.Add(LeaveRules.FormatDays(card.Solo.Expired) + " of Solo Parent Leave expired this month without being used. " +
+                          "It was taken off the SOLO balance.");
 
             AddLimitNote(notes, card.ForcedUsed, LeaveType.Forced);
             AddLimitNote(notes, card.SplUsed, LeaveType.SpecialPrivilege);
             AddLimitNote(notes, card.WellnessUsed, LeaveType.Wellness);
 
-            // Absent on a working day with no leave filed: nothing is deducted, a person decides.
+            // This is absent on a working day with no leave filed: nothing is deducted, a person decides.
             List<string> absent = sheet.Days
                 .Where(d => d.IsAbsent && schedule.IsWorkDay(d.Date.DayOfWeek))
                 .Select(d => d.Day.ToString(CultureInfo.InvariantCulture)).ToList();
@@ -901,7 +954,7 @@ namespace Dat2DTR
                           ". Nothing was deducted for " + (absent.Count == 1 ? "this day" : "these days") +
                           ". File a leave on that day if there is one.");
 
-            // A leave that does not match what the DTR shows (times on a day of leave,
+            // This is a leave that does not match what the DTR shows (times on a day of leave,
             // a half-day leave with nothing in the other half...). The DTR warning says what.
             foreach (DtrDay day in sheet.Days)
             {
@@ -909,7 +962,7 @@ namespace Dat2DTR
                     notes.Add("Day " + day.Day + ": " + day.Warning + ". Check the leave and the times of this day.");
             }
 
-            // A leave on a day that is not a working day is still deducted, so it is pointed out.
+            // This is a leave on a day that is not a working day: it is still deducted, so it is pointed out.
             List<string> restDays = sheet.Days
                 .Where(d => d.HasLeave && !LeaveKinds.IsNotCounted(d.Leave) && !schedule.IsWorkDay(d.Date.DayOfWeek))
                 .Select(d => d.Day.ToString(CultureInfo.InvariantCulture)).ToList();
@@ -918,7 +971,7 @@ namespace Dat2DTR
                           ", which is not a working day in this schedule. It is still counted. " +
                           "Remove it with \"Edit Leave...\" if it is a mistake.");
 
-            // Worked from home, but the IDLAR is not ticked yet: the day is not counted as present.
+            // This is worked from home, but the IDLAR is not ticked yet: the day is not counted as present.
             List<string> noIdlar = sheet.Days
                 .Where(d => d.Warning.Contains("IDLAR"))
                 .Select(d => d.Day.ToString(CultureInfo.InvariantCulture)).ToList();
@@ -927,7 +980,7 @@ namespace Dat2DTR
                           string.Join(", ", noIdlar.ToArray()) + ". Tick IDLAR when it is handed in, " +
                           "so the day counts as a day at work.");
 
-            // An earlier month that was computed from a file that stopped before the end of the month.
+            // This is an earlier month that was computed from a file that stopped before the end of the month.
             foreach (LeaveMonth? earlier in card.Months)
             {
                 if (earlier != null && !earlier.IsCurrent && earlier.MayBeIncomplete)

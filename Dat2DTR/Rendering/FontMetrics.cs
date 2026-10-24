@@ -1,7 +1,7 @@
 namespace Dat2DTR
 {
     /// <summary>
-    /// Character widths of the Helvetica font (the same widths as Arial).
+    /// This is the list of character widths of the Helvetica font (the same widths as Arial).
     ///
     /// The DTR page is laid out with these numbers so that the screen preview,
     /// the printout and the PDF all break lines and centre text identically.
@@ -49,7 +49,7 @@ namespace Dat2DTR
             611, 611, 611, 611, 611, 611, 611, 584, 611, 611, 611, 611, 611, 556, 611, 556,
         };
 
-        /// <summary>Width of the text in points when drawn at the given font size.</summary>
+        /// <summary>This is the width of the text in points when drawn at the given font size.</summary>
         public static double TextWidth(string text, double size, bool bold)
         {
             short[] table = bold ? Bold : Regular;
@@ -60,7 +60,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Converts a character to the single-byte code used inside the PDF.
+        /// This is where a character is converted to the single-byte code used inside the PDF.
         /// Plain letters, digits and Western European letters (including the Spanish N with a tilde) are supported;
         /// anything else becomes "?".
         /// </summary>
@@ -71,14 +71,14 @@ namespace Dat2DTR
 
             switch (c)
             {
-                case '\u2013': return 0x96; // en dash
-                case '\u2014': return 0x97; // em dash
-                case '\u2018': return 0x91; // left single quote
-                case '\u2019': return 0x92; // right single quote
-                case '\u201C': return 0x93; // left double quote
-                case '\u201D': return 0x94; // right double quote
-                case '\u2022': return 0x95; // bullet
-                case '\u2026': return 0x85; // ellipsis
+                case '\u2013': return 0x96; // This is an en dash
+                case '\u2014': return 0x97; // This is an em dash
+                case '\u2018': return 0x91; // This is a left single quote
+                case '\u2019': return 0x92; // This is a right single quote
+                case '\u201C': return 0x93; // This is a left double quote
+                case '\u201D': return 0x94; // This is a right double quote
+                case '\u2022': return 0x95; // This is a bullet
+                case '\u2026': return 0x85; // This is an ellipsis
                 default: return (byte)'?';
             }
         }

@@ -1,35 +1,35 @@
 namespace Dat2DTR
 {
-    /// <summary>Paper sizes the DTR can be saved or printed on.</summary>
+    /// <summary>This is the list of paper sizes the DTR can be saved or printed on.</summary>
     public static class PaperInfo
     {
-        /// <summary>Width of the paper in points (1/72 inch).</summary>
+        /// <summary>This is the width of the paper in points (1/72 inch).</summary>
         public static double WidthOf(DtrPaper paper)
         {
-            return paper == DtrPaper.A4 ? 595.28 : 612;       // A4 = 210 mm, the rest = 8.5 in
+            return paper == DtrPaper.A4 ? 595.28 : 612;       // This is A4 = 210 mm, the rest = 8.5 in
         }
 
-        /// <summary>Height of the paper in points (1/72 inch).</summary>
+        /// <summary>This is the height of the paper in points (1/72 inch).</summary>
         public static double HeightOf(DtrPaper paper)
         {
             switch (paper)
             {
-                case DtrPaper.Letter: return 792;   // 11 in
-                case DtrPaper.Long: return 936;     // 13 in
-                case DtrPaper.Legal: return 1008;   // 14 in
-                default: return 841.89;             // A4 = 297 mm
+                case DtrPaper.Letter: return 792;   // This is 11 in
+                case DtrPaper.Long: return 936;     // This is 13 in
+                case DtrPaper.Legal: return 1008;   // This is 14 in
+                default: return 841.89;             // This is A4 = 297 mm
             }
         }
 
-        /// <summary>The number Excel uses for this paper size.</summary>
+        /// <summary>This is the number Excel uses for this paper size.</summary>
         public static int ExcelCodeOf(DtrPaper paper)
         {
             switch (paper)
             {
                 case DtrPaper.Letter: return 1;
-                case DtrPaper.Long: return 14;      // "Folio" 8.5 x 13 in
+                case DtrPaper.Long: return 14;      // This is "Folio" 8.5 x 13 in
                 case DtrPaper.Legal: return 5;
-                default: return 9;                  // A4
+                default: return 9;                  // This is A4
             }
         }
 
@@ -45,14 +45,14 @@ namespace Dat2DTR
         }
     }
 
-    /// <summary>Saves finished DTRs to a file.</summary>
+    /// <summary>This is where finished DTRs are saved to a file.</summary>
     public static class DtrExporter
     {
         /// <summary>
-        /// One PDF file, one page per employee. When leave cards are given (one per DTR, in the
+        /// This is one PDF file, one page per employee. When leave cards are given (one per DTR, in the
         /// same order), each DTR is followed by a "Computation of Leaves" page.
         /// </summary>
-        /// <param name="includeDtr">false = only the Computation of Leaves pages.</param>
+        /// <param name="includeDtr">This is false for only the Computation of Leaves pages.</param>
         public static void SavePdf(string path, IList<DtrSheet> sheets, DtrPaper paper, IList<LeaveCard>? cards = null,
                                    bool includeDtr = true)
         {
@@ -79,10 +79,10 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// One Excel workbook, one worksheet per employee. When leave cards are given (one per DTR,
+        /// This is one Excel workbook, one worksheet per employee. When leave cards are given (one per DTR,
         /// in the same order), each DTR worksheet is followed by a leave card worksheet.
         /// </summary>
-        /// <param name="includeDtr">false = only the leave card worksheets.</param>
+        /// <param name="includeDtr">This is false for only the leave card worksheets.</param>
         public static void SaveExcel(string path, IList<DtrSheet> sheets, DtrPaper paper, IList<LeaveCard>? cards = null,
                                      bool includeDtr = true)
         {

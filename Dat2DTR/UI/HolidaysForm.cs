@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Dat2DTR
 {
     /// <summary>
-    /// The "Holidays" window: the holiday calendar, typed once a year and used for every employee.
+    /// This is the "Holidays" window: the holiday calendar, typed once a year and used for every employee.
     /// On a holiday the DTR says HOLIDAY instead of ABSENT and nothing is deducted.
     /// Two tables: Regular Holidays and Special (Non-Working) Days.
     /// "Add the holidays of ..." fills in the Philippine holidays whose dates are fixed by law
@@ -15,19 +15,19 @@ namespace Dat2DTR
 
         private readonly DataGridView _regular = new DataGridView();
         private readonly DataGridView _special = new DataGridView();
-        private DataGridView _lastUsed;                 // the table "Remove this line" works on
+        private DataGridView _lastUsed;                 // This is the table "Remove this line" works on
         private readonly ComboBox _year = new ComboBox();
         private readonly Label _message = new Label();
         private HolidayCalendar _result;
 
-        /// <param name="calendar">The saved calendar. It is only changed when the user clicks Save.</param>
-        /// <param name="year">The year to offer first (the year of the month on screen).</param>
+        /// <param name="calendar">This is the saved calendar. It is only changed when the user clicks Save.</param>
+        /// <param name="year">This is the year to offer first (the year of the month on screen).</param>
         public HolidaysForm(HolidayCalendar calendar, int year)
         {
             _result = calendar.Clone();
             _lastUsed = _regular;
 
-            // Same order as a designer-made form, so it scales correctly on 125% / 150% screens.
+            // This is the same order as a designer-made form, so it scales correctly on 125% / 150% screens.
             SuspendLayout();
             Text = "Holidays";
             Icon = Theme.GetAppIcon();
@@ -65,7 +65,7 @@ namespace Dat2DTR
             top.Controls.Add(how);
             GridFit.GrowWithText(this, how, top);
 
-            // ---- the two tables, one under the other, each with its heading
+            // This is the two tables, one under the other, each with its heading ----
             SetUpGrid(_regular);
             SetUpGrid(_special);
 
@@ -85,10 +85,10 @@ namespace Dat2DTR
             tables.Controls.Add(_special, 0, 3);
 
             ShowAll();
-            _regular.AllowUserToAddRows = true;     // the empty line at the bottom adds a new one
+            _regular.AllowUserToAddRows = true;     // This is the empty line at the bottom: typing in it adds a new one
             _special.AllowUserToAddRows = true;
 
-            // ---- bottom
+            // This is the bottom ----
             var yearLabel = new Label();
             yearLabel.Text = "Add the holidays of";
             yearLabel.TextAlign = ContentAlignment.MiddleLeft;
@@ -151,13 +151,13 @@ namespace Dat2DTR
                 : CountText(_result) + " Type a date like  Jun 12, 2026  or  6/12/2026.", false);
         }
 
-        /// <summary>The holidays after the user clicked Save.</summary>
+        /// <summary>This is the holidays after the user clicked Save.</summary>
         public HolidayCalendar GetCalendar()
         {
             return _result;
         }
 
-        /// <summary>For the self test: clicks "Add" for a year.</summary>
+        /// <summary>This is for the self test: it clicks "Add" for a year.</summary>
         internal void AddYear(int year)
         {
             _year.SelectedItem = year.ToString(CultureInfo.InvariantCulture);
@@ -165,7 +165,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Removes the line with the cursor. The line being typed at the bottom is first committed (or
+        /// This is where the line with the cursor is removed. The line being typed at the bottom is first committed (or
         /// dropped) - Windows does not allow removing a new line that is still being added.
         /// </summary>
         internal static void RemoveCurrentLine(DataGridView grid)
@@ -240,7 +240,7 @@ namespace Dat2DTR
             return date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture);
         }
 
-        /// <summary>Fills both tables from _result, in date order.</summary>
+        /// <summary>This is where both tables are filled from _result, in date order.</summary>
         private void ShowAll()
         {
             Fill(_regular, HolidayKind.Regular);
@@ -273,7 +273,7 @@ namespace Dat2DTR
             _message.ForeColor = problem ? Theme.Red : Theme.TextMuted;
         }
 
-        /// <summary>Reads both tables into a calendar. Returns false (and says why) when a line is wrong.</summary>
+        /// <summary>This is where both tables are read into a calendar. Returns false (and says why) when a line is wrong.</summary>
         private bool ReadTables(out HolidayCalendar calendar)
         {
             calendar = new HolidayCalendar();
@@ -284,7 +284,7 @@ namespace Dat2DTR
         private bool ReadTable(DataGridView grid, HolidayKind kind, string tableName, HolidayCalendar calendar)
         {
             grid.EndEdit();
-            grid.CurrentCell = null;   // commits the line being typed at the bottom
+            grid.CurrentCell = null;   // This is what commits the line being typed at the bottom
             foreach (DataGridViewRow row in grid.Rows)
             {
                 if (row.IsNewRow) continue;
@@ -321,7 +321,7 @@ namespace Dat2DTR
             int added = 0;
             foreach (Holiday h in HolidayCalendar.PhilippineHolidays(year))
             {
-                if (now.GetName(h.Date) != null) continue;   // keep what is already there
+                if (now.GetName(h.Date) != null) continue;   // This is to keep what is already there
                 now.Set(h.Date, h.Name, h.Kind);
                 added++;
             }

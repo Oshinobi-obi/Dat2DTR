@@ -3,14 +3,14 @@ using System.Text;
 
 namespace Dat2DTR
 {
-    /// <summary>Regular holiday, or special (non-working) day.</summary>
+    /// <summary>This is the kind of holiday: regular holiday, or special (non-working) day.</summary>
     public enum HolidayKind
     {
         Regular = 0,
-        Special = 1     // special (non-working) day
+        Special = 1     // This is a special (non-working) day
     }
 
-    /// <summary>One holiday: the date, its name (for example "Independence Day") and its kind.</summary>
+    /// <summary>This is one holiday: the date, its name (for example "Independence Day") and its kind.</summary>
     public sealed class Holiday
     {
         public DateTime Date;
@@ -19,7 +19,7 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// The holidays of the year, typed once in "Holidays..." and used for EVERY employee:
+    /// This is the list of holidays of the year, typed once in "Holidays..." and used for EVERY employee:
     /// on a holiday the DTR says HOLIDAY instead of ABSENT and nothing is deducted.
     /// A leave filed in Edit Leave on the same day comes first.
     /// Kept in a small file (holidays.csv) next to the other saved files.
@@ -33,35 +33,35 @@ namespace Dat2DTR
             get { return Path.Combine(DtrSettings.DataFolder, "holidays.csv"); }
         }
 
-        /// <summary>The name of the holiday on that date, or null when it is not a holiday.</summary>
+        /// <summary>This is the name of the holiday on that date, or null when it is not a holiday.</summary>
         public string? GetName(DateTime date)
         {
             Holiday? holiday;
             return _days.TryGetValue(date.Date, out holiday) ? holiday.Name : null;
         }
 
-        /// <summary>Regular holiday or special (non-working) day; null when the date is not a holiday.</summary>
+        /// <summary>This is the kind of the holiday on that date (regular or special non-working day); null when it is not a holiday.</summary>
         public HolidayKind? GetKind(DateTime date)
         {
             Holiday? holiday;
             return _days.TryGetValue(date.Date, out holiday) ? holiday.Kind : (HolidayKind?)null;
         }
 
-        /// <summary>Adds or changes a holiday. An empty name is saved as "Holiday".</summary>
+        /// <summary>This is where a holiday is added or changed. An empty name is saved as "Holiday".</summary>
         public void Set(DateTime date, string name, HolidayKind kind)
         {
             name = (name ?? "").Trim();
             _days[date.Date] = new Holiday { Date = date.Date, Name = name.Length == 0 ? "Holiday" : name, Kind = kind };
         }
 
-        /// <summary>Adds or changes a holiday; the kind is guessed from the name (see GuessKind).</summary>
+        /// <summary>This is where a holiday is added or changed; the kind is guessed from the name (see GuessKind).</summary>
         public void Set(DateTime date, string name)
         {
             Set(date, name, GuessKind(name));
         }
 
         /// <summary>
-        /// The kind of a holiday from its name: the special (non-working) days the Proclamations
+        /// This is the kind of a holiday guessed from its name: the special (non-working) days the Proclamations
         /// usually declare. Everything else is taken as a regular holiday.
         /// </summary>
         public static HolidayKind GuessKind(string name)
@@ -84,7 +84,7 @@ namespace Dat2DTR
             _days.Clear();
         }
 
-        /// <summary>Every holiday, in date order.</summary>
+        /// <summary>This is every holiday, in date order.</summary>
         public List<Holiday> GetAll()
         {
             return _days.OrderBy(p => p.Key).Select(p => new Holiday { Date = p.Key, Name = p.Value.Name, Kind = p.Value.Kind }).ToList();
@@ -95,7 +95,7 @@ namespace Dat2DTR
             get { return _days.Count; }
         }
 
-        /// <summary>True when the saved file exists but could not be read: then nothing may be saved over it.</summary>
+        /// <summary>This is true when the saved file exists but could not be read: then nothing may be saved over it.</summary>
         public bool LoadFailed { get; private set; }
 
         public HolidayCalendar Clone()
@@ -107,10 +107,10 @@ namespace Dat2DTR
             return copy;
         }
 
-        // ---------------------------------------------------------------- the holidays fixed by law
+        // This is the part with the holidays fixed by law ------------------------------------------
 
         /// <summary>
-        /// The Philippine holidays whose dates can be worked out for any year (Republic Act No. 9492
+        /// This is the list of Philippine holidays whose dates can be worked out for any year (Republic Act No. 9492
         /// and the laws after it). Holidays whose date is only announced by Proclamation each year
         /// (Chinese New Year, Eid'l Fitr, Eid'l Adha, extra special days) are NOT in this list:
         /// they are added by hand. The Proclamation of the year should always be checked, because
@@ -125,7 +125,7 @@ namespace Dat2DTR
 
             var list = new List<Holiday>
             {
-                // regular holidays
+                // This is the list of regular holidays
                 new Holiday { Date = new DateTime(year, 1, 1), Name = "New Year's Day" },
                 new Holiday { Date = easter.AddDays(-3), Name = "Maundy Thursday" },
                 new Holiday { Date = easter.AddDays(-2), Name = "Good Friday" },
@@ -136,7 +136,7 @@ namespace Dat2DTR
                 new Holiday { Date = new DateTime(year, 11, 30), Name = "Bonifacio Day" },
                 new Holiday { Date = new DateTime(year, 12, 25), Name = "Christmas Day" },
                 new Holiday { Date = new DateTime(year, 12, 30), Name = "Rizal Day" },
-                // special (non-working) days
+                // This is the list of special (non-working) days
                 new Holiday { Date = easter.AddDays(-1), Name = "Black Saturday", Kind = HolidayKind.Special },
                 new Holiday { Date = new DateTime(year, 8, 21), Name = "Ninoy Aquino Day", Kind = HolidayKind.Special },
                 new Holiday { Date = new DateTime(year, 11, 1), Name = "All Saints' Day", Kind = HolidayKind.Special },
@@ -146,7 +146,7 @@ namespace Dat2DTR
             return list.OrderBy(h => h.Date).ToList();
         }
 
-        /// <summary>Easter Sunday (Gregorian calendar), for Holy Week.</summary>
+        /// <summary>This is Easter Sunday (Gregorian calendar), for Holy Week.</summary>
         public static DateTime EasterSunday(int year)
         {
             int a = year % 19, b = year / 100, c = year % 100, d = b / 4, e = b % 4;
@@ -157,9 +157,9 @@ namespace Dat2DTR
             return new DateTime(year, month, day);
         }
 
-        // ---------------------------------------------------------------- files
-        // One line per holiday:   date,name,kind       e.g. 2026-06-12,"Independence Day",Regular
-        //                                                2026-08-21,"Ninoy Aquino Day",Special
+        // This is the part that reads and saves the file -------------------------------------------
+        // This is the file: one line per holiday:   date,name,kind       e.g. 2026-06-12,"Independence Day",Regular
+        //                                                                  2026-08-21,"Ninoy Aquino Day",Special
         // (A file without the kind, from before, still reads: the kind is guessed from the name.)
 
         public static HolidayCalendar LoadDefault()
@@ -187,7 +187,7 @@ namespace Dat2DTR
                 string[] cells = line.Split(new[] { ',' }, 2);
                 DateTime date;
                 if (cells.Length < 1 || !LeaveFileText.TryReadDate(cells[0], out date))
-                    continue; // the heading line, or a damaged line
+                    continue; // This is the heading line, or a damaged line
                 string rest = cells.Length > 1 ? cells[1] : "";
                 HolidayKind? kind = null;
                 int lastComma = rest.LastIndexOf(',');

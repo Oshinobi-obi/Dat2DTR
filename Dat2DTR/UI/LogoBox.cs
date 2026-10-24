@@ -3,7 +3,7 @@ using System.Drawing.Drawing2D;
 namespace Dat2DTR
 {
     /// <summary>
-    /// Shows a logo, shrunk smoothly to fit the box without stretching it.
+    /// This is a box that shows a logo, shrunk smoothly to fit the box without stretching it.
     /// (A normal PictureBox shrinks large pictures roughly, which makes small logos look jagged.)
     /// </summary>
     public class LogoBox : Control
@@ -18,7 +18,7 @@ namespace Dat2DTR
             TabStop = false;
         }
 
-        /// <summary>Sets the picture to show (null shows nothing).</summary>
+        /// <summary>This is where the picture to show is set (null shows nothing).</summary>
         public void SetImage(Image? image)
         {
             _image = image;
@@ -31,7 +31,7 @@ namespace Dat2DTR
                 DrawSmooth(e.Graphics, _image, FitInside(_image.Size, ClientRectangle));
         }
 
-        /// <summary>The biggest rectangle with the picture's shape that fits in the area, centred.</summary>
+        /// <summary>This is the biggest rectangle with the picture's shape that fits in the area, centred.</summary>
         public static RectangleF FitInside(Size picture, RectangleF area)
         {
             float scale = Math.Min(area.Width / picture.Width, area.Height / picture.Height);
@@ -40,7 +40,7 @@ namespace Dat2DTR
             return new RectangleF(area.X + (area.Width - width) / 2, area.Y + (area.Height - height) / 2, width, height);
         }
 
-        /// <summary>Draws a picture into a rectangle with the smoothest scaling Windows offers.</summary>
+        /// <summary>This is where a picture is drawn into a rectangle with the smoothest scaling Windows offers.</summary>
         public static void DrawSmooth(Graphics g, Image image, RectangleF target)
         {
             GraphicsState saved = g.Save();

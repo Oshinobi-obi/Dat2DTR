@@ -9,21 +9,21 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// The small window that asks "Whose DTR do you want to print?" (or save, or change)
+    /// This is the small window that asks "Whose DTR do you want to print?" (or save, or change)
     /// with one big button per answer.
     /// </summary>
     internal sealed class ChoiceDialog : Form
     {
         private DtrChoice _choice = DtrChoice.Cancel;
 
-        /// <param name="questionText">The question at the top, e.g. "Whose DTR do you want to print?"</param>
-        /// <param name="currentName">Name of the employee whose DTR is on screen.</param>
-        /// <param name="tickedCount">How many employees are ticked in the list.</param>
-        /// <param name="allCount">How many employees are in the list for this month.</param>
-        /// <param name="offerAll">false = no "Everyone" button (Edit Leave only offers this one or the ticked ones).</param>
+        /// <param name="questionText">This is the question at the top, e.g. "Whose DTR do you want to print?"</param>
+        /// <param name="currentName">This is the name of the employee whose DTR is on screen.</param>
+        /// <param name="tickedCount">This is how many employees are ticked in the list.</param>
+        /// <param name="allCount">This is how many employees are in the list for this month.</param>
+        /// <param name="offerAll">This is false for no "Everyone" button (Edit Leave only offers this one or the ticked ones).</param>
         public ChoiceDialog(string questionText, string currentName, int tickedCount, int allCount, bool offerAll = true)
         {
-            // Same order as a designer-made form, so it scales correctly on 125% / 150% screens.
+            // This is the same order as a designer-made form, so it scales correctly on 125% / 150% screens.
             SuspendLayout();
             Text = "Dat2DTR";
             Icon = Theme.GetAppIcon();
@@ -70,7 +70,7 @@ namespace Dat2DTR
             PerformLayout();
         }
 
-        /// <summary>What the user picked. Call after ShowDialog().</summary>
+        /// <summary>This is what the user picked. Call after ShowDialog().</summary>
         public DtrChoice GetChoice()
         {
             return _choice;

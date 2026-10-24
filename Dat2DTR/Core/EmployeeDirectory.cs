@@ -2,23 +2,23 @@ using System.Text;
 
 namespace Dat2DTR
 {
-    /// <summary>One line of the employee list.</summary>
+    /// <summary>This is one line of the employee list.</summary>
     public sealed class EmployeeEntry
     {
-        /// <summary>The biometric ID exactly as it was typed (keeps leading zeros).</summary>
+        /// <summary>This is the biometric ID exactly as it was typed (keeps leading zeros).</summary>
         public string Id = "";
 
         public string Name = "";
 
-        /// <summary>Which work schedule the person follows: 0 = Schedule A, 1 = B, 2 = C, 3 = D.</summary>
+        /// <summary>This is which work schedule the person follows: 0 = Schedule A, 1 = B, 2 = C, 3 = D.</summary>
         public int Schedule;
 
-        /// <summary>True when an imported file said which schedule (so "A" is a real choice, not just a blank).</summary>
+        /// <summary>This is true when an imported file said which schedule (so "A" is a real choice, not just a blank).</summary>
         public bool ScheduleGiven;
     }
 
     /// <summary>
-    /// The list that says which biometric ID belongs to which person, and which
+    /// This is the list that says which biometric ID belongs to which person, and which
     /// work schedule that person follows. The .dat file only contains ID numbers,
     /// so this is kept here.
     ///
@@ -26,7 +26,7 @@ namespace Dat2DTR
     /// </summary>
     public sealed class EmployeeDirectory
     {
-        // normalized ID -> entry
+        // This is normalized ID -> entry
         private readonly Dictionary<string, EmployeeEntry> _entries =
             new Dictionary<string, EmployeeEntry>(StringComparer.OrdinalIgnoreCase);
 
@@ -36,7 +36,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// "070126010" and "70126010" are treated as the same ID, because Excel
+        /// This is why "070126010" and "70126010" are treated as the same ID: Excel
         /// removes leading zeros when someone edits the list there.
         /// </summary>
         public static string NormalizeId(string id)
@@ -45,20 +45,20 @@ namespace Dat2DTR
             return trimmed.Length == 0 ? "0" : trimmed;
         }
 
-        /// <summary>True when two IDs mean the same person (leading zeros are ignored).</summary>
+        /// <summary>This is true when two IDs mean the same person (leading zeros are ignored).</summary>
         public static bool SameId(string a, string b)
         {
             return string.Equals(NormalizeId(a), NormalizeId(b), StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <summary>The name for an ID, or "" when no name has been typed in yet.</summary>
+        /// <summary>This is the name for an ID, or "" when no name has been typed in yet.</summary>
         public string GetName(string id)
         {
             EmployeeEntry? entry;
             return _entries.TryGetValue(NormalizeId(id), out entry) ? entry.Name : "";
         }
 
-        /// <summary>The work schedule for an ID: 0 = Schedule A (also when nothing was chosen), 1 = B, 2 = C, 3 = D.</summary>
+        /// <summary>This is the work schedule for an ID: 0 = Schedule A (also when nothing was chosen), 1 = B, 2 = C, 3 = D.</summary>
         public int GetSchedule(string id)
         {
             EmployeeEntry? entry;
@@ -98,7 +98,7 @@ namespace Dat2DTR
             return entry;
         }
 
-        /// <summary>An entry with no name and the default schedule says nothing, so it is not kept.</summary>
+        /// <summary>This is where an entry with no name and the default schedule is dropped: it says nothing, so it is not kept.</summary>
         private void RemoveIfEmpty(string id)
         {
             string key = NormalizeId(id);
@@ -112,7 +112,7 @@ namespace Dat2DTR
             _entries.Clear();
         }
 
-        /// <summary>Every entry, sorted by ID.</summary>
+        /// <summary>This is every entry, sorted by ID.</summary>
         public List<EmployeeEntry> GetAll()
         {
             List<EmployeeEntry> list = _entries.Values.ToList();
@@ -120,7 +120,7 @@ namespace Dat2DTR
             return list;
         }
 
-        // ---------------------------------------------------------------- files
+        // This is the part that reads and saves the files -------------------------------------------
 
         public static EmployeeDirectory LoadDefault()
         {
@@ -141,7 +141,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Adds the employees found in a file to this list. Returns how many were read.
+        /// This is where the employees found in a file are added to this list. Returns how many were read.
         /// The file has the ID, then the name, then (optional) the schedule letter (A, B, C or D).
         /// </summary>
         public int Import(string path)
@@ -160,9 +160,9 @@ namespace Dat2DTR
 
                 string id = cells[0].Trim();
                 string name = cells[1].Trim();
-                int schedule = cells.Count > 2 ? ParseSchedule(cells[2]) : -1; // -1 = the file does not say
+                int schedule = cells.Count > 2 ? ParseSchedule(cells[2]) : -1; // This is -1 when the file does not say
 
-                // Skip a heading row such as "ID,Name,Schedule".
+                // This is where a heading row such as "ID,Name,Schedule" is skipped.
                 if (first)
                 {
                     first = false;
@@ -195,14 +195,14 @@ namespace Dat2DTR
             foreach (EmployeeEntry entry in GetAll())
                 sb.AppendLine(Quote(entry.Id) + "," + Quote(entry.Name) + "," + WorkSchedule.Letters[entry.Schedule].ToString());
 
-            // UTF-8 with a "BOM" so Excel shows accented letters (like the Spanish N in "PENA") correctly.
+            // This is UTF-8 with a "BOM", so Excel shows accented letters (like the Spanish N in "PENA") correctly.
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));
         }
 
-        /// <summary>"A" to "D" or "1" to "4" (any letter case). Returns 0 to 3, or -1 when it is something else.</summary>
+        /// <summary>This is "A" to "D" or "1" to "4" (any letter case) turned into 0 to 3, or -1 when it is something else.</summary>
         private static int ParseSchedule(string text)
         {
-            // "A" to "D", "1" to "4", or "Schedule C".
+            // This is "A" to "D", "1" to "4", or "Schedule C".
             string value = text.Trim().ToUpperInvariant();
             if (value.StartsWith("SCHEDULE ", StringComparison.Ordinal)) value = value.Substring(9).Trim();
             if (value.Length != 1) return -1;
@@ -220,7 +220,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Splits one line into cells. Works with commas, semicolons or tabs, and
+        /// This is where one line is split into cells. Works with commas, semicolons or tabs, and
         /// understands "quoted, names" that contain a comma.
         /// </summary>
         internal static List<string> SplitLine(string line)
@@ -260,12 +260,12 @@ namespace Dat2DTR
             }
             cells.Add(current.ToString());
 
-            // "135,DELA CRUZ, JUAN M" typed without quotes: glue the name back together.
+            // This is "135,DELA CRUZ, JUAN M" typed without quotes: glue the name back together.
             // If the last cell is a schedule ("135,DELA CRUZ, JUAN M,B") it stays separate.
             if (separator == ',' && cells.Count > 2 && !nameWasQuoted)
             {
                 string last = cells[cells.Count - 1].Trim().ToUpperInvariant();
-                bool endsWithSchedule = ParseSchedule(last) >= 0;   // "B", "4", "Schedule C"...
+                bool endsWithSchedule = ParseSchedule(last) >= 0;   // This is "B", "4", "Schedule C"...
 
                 int nameCells = cells.Count - 1 - (endsWithSchedule ? 1 : 0);
                 string name = string.Join(",", cells.Skip(1).Take(nameCells).ToArray());

@@ -3,40 +3,41 @@ using System.Text;
 
 namespace Dat2DTR
 {
-    /// <summary>The kinds of leave that can be filed with "Edit Leave".</summary>
+    /// <summary>This is the list of kinds of leave that can be filed with "Edit Leave".</summary>
     public enum LeaveType
     {
         None = 0,
         Vacation = 1,
         Sick = 2,
-        Forced = 3,            // Mandatory / Forced Leave
+        Forced = 3,            // This is Mandatory / Forced Leave
         SpecialPrivilege = 4,
         Wellness = 5,
-        Cto = 6,               // Compensatory Time-Off
-        Holiday = 7,           // a holiday: not a leave, nothing is deducted
-        Suspended = 8,         // work was suspended (typhoon, flood...): nothing is deducted
-        WorkFromHome = 9,      // worked from home on an ordinary working day (the "WFH" box with no leave)
-        OfficialBusiness = 10  // out of the office for work, e.g. visiting / inspecting schools: counted as present
+        Cto = 6,               // This is Compensatory Time-Off
+        Holiday = 7,           // This is a holiday: not a leave, nothing is deducted
+        Suspended = 8,         // This is when work was suspended (typhoon, flood...): nothing is deducted
+        WorkFromHome = 9,      // This is worked from home on an ordinary working day (the "WFH" box with no leave)
+        OfficialBusiness = 10, // This is out of the office for work, e.g. visiting / inspecting schools: counted as present
+        SoloParent = 11        // This is Solo Parent Leave: taken from the days given (like CTO), each with an expiry date
     }
 
-    /// <summary>How much of the day the leave covers.</summary>
+    /// <summary>This is how much of the day the leave covers.</summary>
     public enum LeavePart
     {
         WholeDay = 0,
-        Morning = 1,           // half day, the morning
-        Afternoon = 2          // half day, the afternoon
+        Morning = 1,           // This is half day, the morning
+        Afternoon = 2          // This is half day, the afternoon
     }
 
-    /// <summary>Which leave credits a kind of leave is taken from.</summary>
+    /// <summary>This is which leave credits a kind of leave is taken from.</summary>
     public enum LeaveCharge
     {
-        NotCharged,            // only counted (Special Privilege, Wellness, CTO), or not a leave at all (Holiday...)
+        NotCharged,            // This is only counted (Special Privilege, Wellness, CTO, Solo Parent), or not a leave at all (Holiday...)
         Vacation,
         Sick
     }
 
     /// <summary>
-    /// What the program knows about one kind of leave.
+    /// This is what the program knows about one kind of leave.
     ///
     /// THE LEAVE RULES (from the Civil Service Commission rules on leave):
     ///   Vacation Leave            - deducted from the Vacation Leave credits
@@ -46,6 +47,9 @@ namespace Dat2DTR
     ///   Wellness Leave            - NOT deducted, only counted, 5 days a year
     ///   CTO                       - taken from the CTO the employee was given (see CtoStore),
     ///                               at most LeaveKinds.CtoMaxDays at a time; unused CTO expires
+    ///   Solo Parent Leave         - the same way as CTO: taken from the Solo Parent Leave days given
+    ///                               (typed by hand, "Solo Parent given..."), at most LeaveKinds.SoloMaxDays
+    ///                               at a time; days not used by their expiry date are lost
     /// Not leaves, but chosen in the same list (nothing is deducted, nothing is counted):
     ///   Holiday                   - the office is closed
     ///   Suspended                 - work was suspended; "Is it WFH?" + IDLAR = worked from home
@@ -68,28 +72,53 @@ namespace Dat2DTR
 
         public LeaveType Type { get; private set; }
 
-        /// <summary>e.g. "Vacation Leave" - shown in the lists on screen.</summary>
+        /// <summary>This is the name, e.g. "Vacation Leave" - shown in the lists on screen.</summary>
         public string Name { get; private set; }
 
-        /// <summary>e.g. "VL" - the short form used in notes and in the saved file.</summary>
+        /// <summary>This is the short form, e.g. "VL" - used in notes and in the saved file.</summary>
         public string Code { get; private set; }
 
-        /// <summary>e.g. "VACATION LEAVE" - printed on the DTR in place of the times.</summary>
+        /// <summary>This is the label, e.g. "VACATION LEAVE" - printed on the DTR in place of the times.</summary>
         public string Label { get; private set; }
 
         public LeaveCharge Charge { get; private set; }
 
-        /// <summary>How many days a year are allowed (0 = no limit).</summary>
+        /// <summary>This is how many days a year are allowed (0 = no limit).</summary>
         public int YearlyLimit { get; private set; }
     }
 
     public static class LeaveKinds
     {
-        /// <summary>The most CTO days an employee can have at one time.</summary>
+        /// <summary>This is the most CTO days an employee can have at one time.</summary>
         public const decimal CtoMaxDays = 6m;
 
-        /// <summary>How long given CTO stays usable when nothing else is typed (one year).</summary>
+        /// <summary>This is how long given CTO stays usable when nothing else is typed (one year).</summary>
         public const int CtoValidMonths = 12;
+
+        /// <summary>This is the most Solo Parent Leave days an employee can have at one time (7 working days a year).</summary>
+        public const decimal SoloMaxDays = 7m;
+
+        /// <summary>This is how long given Solo Parent Leave stays usable when nothing else is typed (one year).</summary>
+        public const int SoloValidMonths = 12;
+
+        /// <summary>This is true for the leaves taken from days that were given by hand: CTO and Solo Parent Leave.</summary>
+        public static bool IsGiven(LeaveType type)
+        {
+            return type == LeaveType.Cto || type == LeaveType.SoloParent;
+        }
+
+        /// <summary>This is the most days of CTO / Solo Parent Leave an employee can have at one time.</summary>
+        public static decimal MaxGiven(LeaveType type)
+        {
+            return type == LeaveType.SoloParent ? SoloMaxDays : CtoMaxDays;
+        }
+
+        /// <summary>This is the expiry date when only the date given is typed: one year (Sep 15, 2026 -> Sep 14, 2027).</summary>
+        public static DateTime DefaultExpiry(LeaveType type, DateTime given)
+        {
+            int months = type == LeaveType.SoloParent ? SoloValidMonths : CtoValidMonths;
+            return given.Date.AddMonths(months).AddDays(-1);
+        }
 
         public static readonly LeaveKind[] All =
         {
@@ -99,6 +128,7 @@ namespace Dat2DTR
             new LeaveKind(LeaveType.SpecialPrivilege, "Special Privilege Leave", "SPL", "SPECIAL PRIVILEGE LEAVE", LeaveCharge.NotCharged, 3),
             new LeaveKind(LeaveType.Wellness, "Wellness Leave", "WL", "WELLNESS LEAVE", LeaveCharge.NotCharged, 5),
             new LeaveKind(LeaveType.Cto, "CTO (Compensatory Time-Off)", "CTO", "CTO", LeaveCharge.NotCharged, 0),
+            new LeaveKind(LeaveType.SoloParent, "Solo Parent Leave", "SOLO", "SOLO PARENT LEAVE", LeaveCharge.NotCharged, 0),
             new LeaveKind(LeaveType.Holiday, "Holiday", "HOL", "HOLIDAY", LeaveCharge.NotCharged, 0),
             new LeaveKind(LeaveType.Suspended, "Suspended (work suspension)", "SUS", "WORK SUSPENDED", LeaveCharge.NotCharged, 0),
             new LeaveKind(LeaveType.OfficialBusiness, "Official Business (school visit)", "OB", "OFFICIAL BUSINESS", LeaveCharge.NotCharged, 0),
@@ -106,7 +136,7 @@ namespace Dat2DTR
         };
 
         /// <summary>
-        /// True for Holiday, Suspended and Work from home: days that are not a leave at all.
+        /// This is true for Holiday, Suspended and Work from home: days that are not a leave at all.
         /// Nothing is deducted or counted for them, and they may have the WFH and IDLAR boxes ticked.
         /// </summary>
         public static bool IsNotALeave(LeaveType type)
@@ -115,7 +145,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// True for the days that are not deducted AND not counted against a yearly limit:
+        /// This is true for the days that are not deducted AND not counted against a yearly limit:
         /// Holiday, Suspended, Work from home and Official Business.
         /// </summary>
         public static bool IsNotCounted(LeaveType type)
@@ -130,7 +160,7 @@ namespace Dat2DTR
             return All[0];
         }
 
-        /// <summary>Finds a kind of leave by its short form ("VL", "SL", ...), or null.</summary>
+        /// <summary>This is where a kind of leave is found by its short form ("VL", "SL", ...), or null.</summary>
         public static LeaveKind? FromCode(string code)
         {
             code = code.Trim();
@@ -141,7 +171,7 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// One filed leave: the kind, and whether it is a whole day or half a day.
+    /// This is one filed leave: the kind, and whether it is a whole day or half a day.
     /// For Holiday, Suspended and Work from home also: was the day worked from home (WFH),
     /// and was the IDLAR (Individual Daily Log and Accomplishment Report) handed in.
     /// With the IDLAR the day counts as a day at work.
@@ -151,23 +181,23 @@ namespace Dat2DTR
         public LeaveType Type = LeaveType.Vacation;
         public LeavePart Part = LeavePart.WholeDay;
 
-        /// <summary>Worked from home (only for Holiday, Suspended and Work from home).</summary>
+        /// <summary>This is true when the day was worked from home (only for Holiday, Suspended and Work from home).</summary>
         public bool Wfh;
 
-        /// <summary>The IDLAR was handed in (only when Wfh): the day counts as present.</summary>
+        /// <summary>This is true when the IDLAR was handed in (only when Wfh): the day counts as present.</summary>
         public bool Idlar;
 
         /// <summary>
-        /// Suspended only: work was suspended FROM this time (for example 3:00 PM). The day is an
+        /// This is for Suspended only: work was suspended FROM this time (for example 3:00 PM). The day is an
         /// ordinary working day until then; no late or undertime is counted after it. null = the
         /// whole day (or the half day in Part) was suspended.
         /// </summary>
         public TimeSpan? From;
 
-        /// <summary>True for a holiday that comes from the holiday calendar (not filed, not saved).</summary>
+        /// <summary>This is true for a holiday that comes from the holiday calendar (not filed, not saved).</summary>
         public bool FromCalendar;
 
-        /// <summary>The name of a holiday from the calendar, e.g. "Independence Day".</summary>
+        /// <summary>This is the name of a holiday from the calendar, e.g. "Independence Day".</summary>
         public string HolidayName = "";
 
         public LeaveEntry()
@@ -184,14 +214,14 @@ namespace Dat2DTR
         {
             Type = type;
             Part = part;
-            // WFH only goes with the days that are not a leave; IDLAR only goes with WFH.
+            // This is the WFH rule: WFH only goes with the days that are not a leave; IDLAR only goes with WFH.
             // (Work from home is always WFH.)
             Wfh = LeaveKinds.IsNotALeave(type) && (wfh || type == LeaveType.WorkFromHome);
             Idlar = Wfh && idlar;
         }
 
         /// <summary>
-        /// False only for work from home without the IDLAR: the day is then not counted as
+        /// This is false only for work from home without the IDLAR: the day is then not counted as
         /// present, and the DTR shows the times (or ABSENT) as if nothing was filed.
         /// </summary>
         public bool Excuses
@@ -199,25 +229,27 @@ namespace Dat2DTR
             get { return Type != LeaveType.WorkFromHome || Idlar; }
         }
 
-        /// <summary>Worked from home, but the IDLAR is not ticked yet.</summary>
+        /// <summary>This is true when the day was worked from home, but the IDLAR is not ticked yet.</summary>
         public bool WaitsForIdlar
         {
             get { return Wfh && !Idlar; }
         }
 
-        /// <summary>What the DTR shows in place of the times, e.g. "VACATION LEAVE" or "HOLIDAY - WFH".</summary>
+        /// <summary>
+        /// This is what the DTR shows in place of the times, e.g. "VACATION LEAVE", "HOLIDAY - WORK FROM HOME",
+        /// or for a work suspension worked from home: "PD - WFH", and "PD - WFH/IDLAR" once the IDLAR is in.
+        /// </summary>
         public string DtrLabel
         {
             get
             {
-                bool workedAtHome = Wfh && Idlar;
-                if (Type == LeaveType.Holiday && workedAtHome) return "HOLIDAY - WORK FROM HOME";
-                if (Type == LeaveType.Suspended && workedAtHome) return "SUSPENDED - WORK FROM HOME";
+                if (Type == LeaveType.Holiday && Wfh && Idlar) return "HOLIDAY - WORK FROM HOME";
+                if (Type == LeaveType.Suspended && Wfh) return Idlar ? "PD - WFH/IDLAR" : "PD - WFH";
                 return Kind.Label;
             }
         }
 
-        /// <summary>1 for a whole day, 0.5 for half a day.</summary>
+        /// <summary>This is 1 for a whole day, 0.5 for half a day.</summary>
         public decimal Days
         {
             get { return Part == LeavePart.WholeDay ? 1m : 0.5m; }
@@ -247,7 +279,7 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// Reads the cells of the two leave files. It also understands the way Excel
+    /// This is the reader of the cells of the two leave files. It also understands the way Excel
     /// re-writes dates when someone opens one of the files in Excel and saves it again.
     /// </summary>
     internal static class LeaveFileText
@@ -258,7 +290,7 @@ namespace Dat2DTR
         private static readonly string[] MonthFormats =
             { "yyyy-MM", "yyyy-M", "MMM-yy", "MMM-yyyy", "yyyy/M", "M/yyyy" };
 
-        /// <summary>The text of a cell without spaces and without "quotes" around it.</summary>
+        /// <summary>This is the text of a cell without spaces and without "quotes" around it.</summary>
         public static string Clean(string cell)
         {
             cell = cell.Trim();
@@ -268,7 +300,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Reads a time of day: "15:00", "9:30", "15:00:00", "3:00 PM", or the fraction of a day
+        /// This is where a time of day is read: "15:00", "9:30", "15:00:00", "3:00 PM", or the fraction of a day
         /// Excel sometimes writes (0.625 = 3:00 PM). "W", "AM", "PM" are not times.
         /// </summary>
         public static bool TryReadTime(string cell, out TimeSpan time)
@@ -301,7 +333,7 @@ namespace Dat2DTR
             return DateTime.TryParseExact(Clean(cell), DateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
         }
 
-        /// <summary>Reads "2026-09" (or Excel's "Sep-26") as the first day of that month.</summary>
+        /// <summary>This is where "2026-09" (or Excel's "Sep-26") is read as the first day of that month.</summary>
         public static bool TryReadMonth(string cell, out DateTime month)
         {
             return DateTime.TryParseExact(Clean(cell), MonthFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out month);
@@ -309,12 +341,12 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// Every leave that was filed with "Edit Leave", kept in a small file
+    /// This is every leave that was filed with "Edit Leave", kept in a small file
     /// (leaves.csv) so it is still there the next time the month is opened.
     /// </summary>
     public sealed class LeaveStore
     {
-        // "normalized ID|yyyy-MM-dd" -> leave
+        // This is "normalized ID|yyyy-MM-dd" -> leave
         private readonly Dictionary<string, LeaveEntry> _items =
             new Dictionary<string, LeaveEntry>(StringComparer.OrdinalIgnoreCase);
 
@@ -328,24 +360,24 @@ namespace Dat2DTR
             return EmployeeDirectory.NormalizeId(employeeId) + "|" + date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         }
 
-        /// <summary>The leave filed for that day, or null.</summary>
+        /// <summary>This is the leave filed for that day, or null.</summary>
         public LeaveEntry? Get(string employeeId, DateTime date)
         {
             LeaveEntry? entry;
             return _items.TryGetValue(Key(employeeId, date), out entry) ? entry : null;
         }
 
-        /// <summary>The holidays that apply to everyone (see HolidayCalendar), or null. Not saved in leaves.csv.</summary>
+        /// <summary>This is the holidays that apply to everyone (see HolidayCalendar), or null. Not saved in leaves.csv.</summary>
         public HolidayCalendar? Holidays;
 
         /// <summary>
-        /// What the DTR uses for that day: the leave filed for the employee, or else the holiday
+        /// This is what the DTR uses for that day: the leave filed for the employee, or else the holiday
         /// from the holiday calendar (only on Monday to Friday).
         /// </summary>
         public LeaveEntry? GetForDtr(string employeeId, DateTime date, WorkSchedule schedule)
         {
             LeaveEntry? filed = Get(employeeId, date);
-            // A filed leave comes first - but not work from home still waiting for the IDLAR,
+            // This is the order: a filed leave comes first - but not work from home still waiting for the IDLAR,
             // which does not count yet (the holiday of the calendar is shown then).
             bool weekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
             if ((filed != null && filed.Excuses) || Holidays == null || weekend)
@@ -360,7 +392,7 @@ namespace Dat2DTR
             return holiday;
         }
 
-        /// <summary>Files a leave for that day. Passing null removes it.</summary>
+        /// <summary>This is where a leave is filed for that day. Passing null removes it.</summary>
         public void Set(string employeeId, DateTime date, LeaveEntry? entry)
         {
             string key = Key(employeeId, date);
@@ -368,7 +400,7 @@ namespace Dat2DTR
             else _items[key] = entry.Clone();
         }
 
-        /// <summary>The leaves of one employee in one month, in date order.</summary>
+        /// <summary>This is the leaves of one employee in one month, in date order.</summary>
         public List<KeyValuePair<DateTime, LeaveEntry>> GetMonth(string employeeId, int year, int month)
         {
             var result = new List<KeyValuePair<DateTime, LeaveEntry>>();
@@ -383,7 +415,7 @@ namespace Dat2DTR
             return result;
         }
 
-        /// <summary>Every leave of one kind filed for one employee, in date order (any month, any year).</summary>
+        /// <summary>This is every leave of one kind filed for one employee, in date order (any month, any year).</summary>
         public List<KeyValuePair<DateTime, LeaveEntry>> GetAllOfKind(string employeeId, LeaveType type)
         {
             string prefix = EmployeeDirectory.NormalizeId(employeeId) + "|";
@@ -402,7 +434,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// The employees (IDs without leading zeros) who have a leave filed in that month.
+        /// This is the list of employees (IDs without leading zeros) who have a leave filed in that month.
         /// </summary>
         public List<string> GetIdsWithLeave(int year, int month)
         {
@@ -427,7 +459,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// True when the saved file exists but could not be read (for example because it is open
+        /// This is true when the saved file exists but could not be read (for example because it is open
         /// in Excel). The program then must not save, or it would wipe out what is in the file.
         /// </summary>
         public bool LoadFailed { get; private set; }
@@ -442,11 +474,11 @@ namespace Dat2DTR
             return copy;
         }
 
-        // ---------------------------------------------------------------- files
-        // One line per day of leave:   ID,date,kind,part,WFH,IDLAR
-        //                         e.g. 070126010,2026-09-21,VL,W,,      (W = whole day, AM / PM = half day)
-        //                              070126010,2026-09-24,SUS,W,Y,Y   (Y = the box is ticked)
-        //                              070126010,2026-09-25,SUS,15:00,,  (work suspended from 3:00 PM)
+        // This is the part that reads and saves the files -------------------------------------------
+        // This is the file: one line per day of leave:   ID,date,kind,part,WFH,IDLAR
+        //                                           e.g. 070126010,2026-09-21,VL,W,,      (W = whole day, AM / PM = half day)
+        //                                                070126010,2026-09-24,SUS,W,Y,Y   (Y = the box is ticked)
+        //                                                070126010,2026-09-25,SUS,15:00,,  (work suspended from 3:00 PM)
 
         public static LeaveStore LoadDefault()
         {
@@ -475,7 +507,7 @@ namespace Dat2DTR
 
                 DateTime date;
                 if (!LeaveFileText.TryReadDate(cells[1], out date))
-                    continue; // the heading line, or a damaged line
+                    continue; // This is the heading line, or a damaged line
 
                 string id = LeaveFileText.Clean(cells[0]);
                 LeaveKind? kind = LeaveKinds.FromCode(LeaveFileText.Clean(cells[2]));
@@ -487,7 +519,7 @@ namespace Dat2DTR
                 var entry = new LeaveEntry(kind.Type,
                     part == "AM" ? LeavePart.Morning : part == "PM" ? LeavePart.Afternoon : LeavePart.WholeDay,
                     wfh, idlar);
-                // "15:00" in the Part column = Suspended from 3:00 PM.
+                // This is "15:00" in the Part column = Suspended from 3:00 PM.
                 TimeSpan from;
                 if (kind.Type == LeaveType.Suspended && LeaveFileText.TryReadTime(LeaveFileText.Clean(cells.Length > 3 ? cells[3] : ""), out from))
                     entry.From = from;
@@ -519,7 +551,7 @@ namespace Dat2DTR
         }
     }
 
-    /// <summary>CTO (Compensatory Time-Off) that was given to an employee: how many days, and until when it can be used.</summary>
+    /// <summary>This is CTO (Compensatory Time-Off) that was given to an employee: how many days, and until when it can be used.</summary>
     public sealed class CtoGrant
     {
         public DateTime Given;
@@ -533,13 +565,16 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// The CTO given to each employee, kept in a small file (cto.csv). Using CTO
-    /// (filed in "Edit Leave") takes it from these, the one that expires first first.
+    /// This is the CTO and the Solo Parent Leave given to each employee, kept in two small files
+    /// (cto.csv and solo-parent.csv). Using CTO or Solo Parent Leave (filed in "Edit Leave")
+    /// takes it from these, the one that expires first first.
     /// </summary>
     public sealed class CtoStore
     {
-        // normalized ID -> what was given, in date order
+        // This is normalized ID -> what was given, in date order. One for CTO, one for Solo Parent Leave.
         private readonly Dictionary<string, List<CtoGrant>> _items =
+            new Dictionary<string, List<CtoGrant>>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, List<CtoGrant>> _solo =
             new Dictionary<string, List<CtoGrant>>(StringComparer.OrdinalIgnoreCase);
 
         public static string DefaultPath
@@ -547,31 +582,54 @@ namespace Dat2DTR
             get { return Path.Combine(DtrSettings.DataFolder, "cto.csv"); }
         }
 
-        /// <summary>A copy of the CTO given to that employee, in date order (empty when none).</summary>
+        /// <summary>This is the file of the Solo Parent Leave given.</summary>
+        public static string SoloPath
+        {
+            get { return Path.Combine(DtrSettings.DataFolder, "solo-parent.csv"); }
+        }
+
+        private Dictionary<string, List<CtoGrant>> Of(LeaveType type)
+        {
+            return type == LeaveType.SoloParent ? _solo : _items;
+        }
+
+        /// <summary>This is a copy of the CTO given to that employee, in date order (empty when none).</summary>
         public List<CtoGrant> Get(string employeeId)
         {
+            return Get(employeeId, LeaveType.Cto);
+        }
+
+        /// <summary>This is a copy of the CTO or Solo Parent Leave given to that employee, in date order.</summary>
+        public List<CtoGrant> Get(string employeeId, LeaveType type)
+        {
             List<CtoGrant>? list;
-            if (!_items.TryGetValue(EmployeeDirectory.NormalizeId(employeeId), out list))
+            if (!Of(type).TryGetValue(EmployeeDirectory.NormalizeId(employeeId), out list))
                 return new List<CtoGrant>();
             return list.Select(g => g.Clone()).ToList();
         }
 
-        /// <summary>Replaces the CTO given to that employee.</summary>
+        /// <summary>This is where the CTO given to that employee is replaced.</summary>
         public void Set(string employeeId, IEnumerable<CtoGrant> grants)
+        {
+            Set(employeeId, LeaveType.Cto, grants);
+        }
+
+        /// <summary>This is where the CTO or Solo Parent Leave given to that employee is replaced.</summary>
+        public void Set(string employeeId, LeaveType type, IEnumerable<CtoGrant> grants)
         {
             List<CtoGrant> list = grants.Where(g => g.Days > 0).Select(g => g.Clone())
                                         .OrderBy(g => g.Given).ThenBy(g => g.Expires).ToList();
             string key = EmployeeDirectory.NormalizeId(employeeId);
-            if (list.Count == 0) _items.Remove(key);
-            else _items[key] = list;
+            if (list.Count == 0) Of(type).Remove(key);
+            else Of(type)[key] = list;
         }
 
-        /// <summary>See LeaveStore.LoadFailed.</summary>
+        /// <summary>This is the same as LeaveStore.LoadFailed.</summary>
         public bool LoadFailed { get; private set; }
 
         public int Count
         {
-            get { return _items.Values.Sum(l => l.Count); }
+            get { return _items.Values.Sum(l => l.Count) + _solo.Values.Sum(l => l.Count); }
         }
 
         public CtoStore Clone()
@@ -580,11 +638,13 @@ namespace Dat2DTR
             copy.LoadFailed = LoadFailed;
             foreach (var pair in _items)
                 copy._items[pair.Key] = pair.Value.Select(g => g.Clone()).ToList();
+            foreach (var pair in _solo)
+                copy._solo[pair.Key] = pair.Value.Select(g => g.Clone()).ToList();
             return copy;
         }
 
-        // One line per time CTO was given:   ID,given,days,expires
-        //                               e.g. 070126010,2026-09-15,2,2027-09-14
+        // This is the file: one line per time CTO (or Solo Parent Leave) was given:   ID,given,days,expires
+        //                                                                      e.g. 070126010,2026-09-15,2,2027-09-14
 
         public static CtoStore LoadDefault()
         {
@@ -593,6 +653,8 @@ namespace Dat2DTR
             {
                 if (File.Exists(DefaultPath))
                     store.Load(DefaultPath);
+                if (File.Exists(SoloPath))
+                    store.Load(SoloPath, LeaveType.SoloParent);
             }
             catch (IOException) { store.LoadFailed = true; }
             catch (UnauthorizedAccessException) { store.LoadFailed = true; }
@@ -602,10 +664,21 @@ namespace Dat2DTR
         public void SaveDefault()
         {
             Save(DefaultPath);
+            // This is because the Solo Parent file is only made once someone was given Solo Parent Leave
+            if (_solo.Count > 0 || File.Exists(SoloPath))
+                Save(SoloPath, LeaveType.SoloParent);
         }
 
+        /// <summary>This is where a file of CTO given is read.</summary>
         public void Load(string path)
         {
+            Load(path, LeaveType.Cto);
+        }
+
+        /// <summary>This is where a file of CTO or Solo Parent Leave given is read.</summary>
+        public void Load(string path, LeaveType type)
+        {
+            Dictionary<string, List<CtoGrant>> items = Of(type);
             foreach (string line in File.ReadAllLines(path, Encoding.UTF8))
             {
                 string[] cells = line.Split(',');
@@ -618,26 +691,33 @@ namespace Dat2DTR
                     !LeaveFileText.TryReadDate(cells[3], out expires) ||
                     !decimal.TryParse(LeaveFileText.Clean(cells[2]), NumberStyles.Float, CultureInfo.InvariantCulture, out days) ||
                     days <= 0 || days > 99)
-                    continue; // the heading line, or a damaged line
+                    continue; // This is the heading line, or a damaged line
 
                 string key = EmployeeDirectory.NormalizeId(id);
                 List<CtoGrant>? list;
-                if (!_items.TryGetValue(key, out list))
+                if (!items.TryGetValue(key, out list))
                 {
                     list = new List<CtoGrant>();
-                    _items[key] = list;
+                    items[key] = list;
                 }
                 list.Add(new CtoGrant { Given = given, Days = Math.Round(days, 3), Expires = expires });
             }
-            foreach (List<CtoGrant> list in _items.Values)
+            foreach (List<CtoGrant> list in items.Values)
                 list.Sort((a, b) => a.Given.CompareTo(b.Given));
         }
 
+        /// <summary>This is where the file of CTO given is written.</summary>
         public void Save(string path)
+        {
+            Save(path, LeaveType.Cto);
+        }
+
+        /// <summary>This is where the file of CTO or Solo Parent Leave given is written.</summary>
+        public void Save(string path, LeaveType type)
         {
             var sb = new StringBuilder();
             sb.AppendLine("ID,Given,Days,Expires");
-            foreach (var pair in _items.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase))
+            foreach (var pair in Of(type).OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase))
                 foreach (CtoGrant g in pair.Value)
                     sb.AppendLine(pair.Key + "," + g.Given.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "," +
                                   g.Days.ToString("0.###", CultureInfo.InvariantCulture) + "," +
@@ -647,26 +727,26 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// What the program remembers about one month of one employee, so the leave
+    /// This is what the program remembers about one month of one employee, so the leave
     /// balance can be carried from month to month.
     /// </summary>
     public sealed class LedgerMonth
     {
-        /// <summary>Balance at the START of the month, typed by a person (null = not typed).</summary>
+        /// <summary>This is the balance at the START of the month, typed by a person (null = not typed).</summary>
         public decimal? OpeningVl, OpeningSl;
 
-        /// <summary>Credits earned in the month, typed by a person (null = the usual 1.25).</summary>
+        /// <summary>This is the credits earned in the month, typed by a person (null = the usual 1.25).</summary>
         public decimal? EarnedVl, EarnedSl;
 
         /// <summary>
-        /// Remembered from the last time the month was open: total late and undertime (minutes),
+        /// This is what is remembered from the last time the month was open: total late and undertime (minutes),
         /// how many leave credits one day of leave costs, and the last date the .dat file covered.
         /// </summary>
         public int? LateMinutes, UndertimeMinutes;
         public decimal? DayCharge;
         public DateTime? DataThrough;
 
-        /// <summary>True when the month was opened in the program at least once.</summary>
+        /// <summary>This is true when the month was opened in the program at least once.</summary>
         public bool IsRemembered
         {
             get { return LateMinutes.HasValue && UndertimeMinutes.HasValue && DayCharge.HasValue; }
@@ -688,11 +768,11 @@ namespace Dat2DTR
     }
 
     /// <summary>
-    /// The remembered months of every employee, kept in a small file (leave-ledger.csv).
+    /// This is the remembered months of every employee, kept in a small file (leave-ledger.csv).
     /// </summary>
     public sealed class LeaveLedger
     {
-        // "normalized ID|yyyy-MM" -> month
+        // This is "normalized ID|yyyy-MM" -> month
         private readonly Dictionary<string, LedgerMonth> _items =
             new Dictionary<string, LedgerMonth>(StringComparer.OrdinalIgnoreCase);
 
@@ -707,14 +787,14 @@ namespace Dat2DTR
                    year.ToString("0000", CultureInfo.InvariantCulture) + "-" + month.ToString("00", CultureInfo.InvariantCulture);
         }
 
-        /// <summary>What is remembered about that month, or null.</summary>
+        /// <summary>This is what is remembered about that month, or null.</summary>
         public LedgerMonth? Get(string employeeId, int year, int month)
         {
             LedgerMonth? item;
             return _items.TryGetValue(Key(employeeId, year, month), out item) ? item : null;
         }
 
-        /// <summary>The month's entry, made new when there is none yet.</summary>
+        /// <summary>This is the month's entry, made new when there is none yet.</summary>
         public LedgerMonth GetOrAdd(string employeeId, int year, int month)
         {
             string key = Key(employeeId, year, month);
@@ -728,7 +808,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// True when the opened file starts too late to hold the whole month: its first scan
+        /// This is true when the opened file starts too late to hold the whole month: its first scan
         /// is after the first week. (A few days are allowed for weekends and holidays.)
         /// </summary>
         public static bool StartsLate(int year, int month, DateTime dataFrom)
@@ -737,7 +817,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// True when that month was already remembered from a file that went further into the
+        /// This is true when that month was already remembered from a file that went further into the
         /// month than this one. The earlier, more complete result is then kept.
         /// </summary>
         public bool HasMoreComplete(string employeeId, int year, int month, DateTime dataThrough)
@@ -748,7 +828,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// Remembers the late and undertime totals of a month, so the balance can be carried over
+        /// This is where the late and undertime totals of a month are remembered, so the balance can be carried over
         /// next month. Returns true when something changed (the file is only written when needed).
         ///
         /// Nothing is remembered when the opened file holds only a part of the month:
@@ -756,8 +836,8 @@ namespace Dat2DTR
         /// a file that went further (HasMoreComplete). Looking at a month through the wrong
         /// file must never replace a good result with half a month.
         /// </summary>
-        /// <param name="dataFrom">Date of the first scan in the opened file.</param>
-        /// <param name="dataThrough">The last day of this month that the opened file covers.</param>
+        /// <param name="dataFrom">This is the date of the first scan in the opened file.</param>
+        /// <param name="dataThrough">This is the last day of this month that the opened file covers.</param>
         public bool Remember(string employeeId, int year, int month, int lateMinutes, int undertimeMinutes,
                              decimal dayCharge, DateTime dataFrom, DateTime dataThrough)
         {
@@ -777,7 +857,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// The employees (IDs without leading zeros) whose month is remembered.
+        /// This is the list of employees (IDs without leading zeros) whose month is remembered.
         /// </summary>
         public List<string> GetRememberedIds(int year, int month)
         {
@@ -798,7 +878,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// True when the saved file exists but could not be read (for example because it is open
+        /// This is true when the saved file exists but could not be read (for example because it is open
         /// in Excel). The program then must not save, or it would wipe out what is in the file.
         /// </summary>
         public bool LoadFailed { get; private set; }
@@ -812,8 +892,8 @@ namespace Dat2DTR
             return copy;
         }
 
-        // ---------------------------------------------------------------- files
-        // One line per employee and month:
+        // This is the part that reads and saves the files -------------------------------------------
+        // This is the file: one line per employee and month:
         //   ID,Month,Opening VL,Opening SL,Earned VL,Earned SL,Late minutes,Undertime minutes,Day charge,Data through
         //   070126010,2026-09,20.027,9.75,,,195,300,1.25,2026-09-30
 
@@ -845,7 +925,7 @@ namespace Dat2DTR
 
                 DateTime month;
                 if (!LeaveFileText.TryReadMonth(cells[1], out month))
-                    continue; // the heading line, or a damaged line
+                    continue; // This is the heading line, or a damaged line
 
                 var item = new LedgerMonth();
                 item.OpeningVl = ReadDecimal(cells[2]);
@@ -888,7 +968,7 @@ namespace Dat2DTR
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));
         }
 
-        /// <summary>Leave credits are kept with three decimals, so anything finer is rounded away.</summary>
+        /// <summary>This is how leave credits are kept: with three decimals, so anything finer is rounded away.</summary>
         private static decimal? ReadDecimal(string text)
         {
             decimal value;

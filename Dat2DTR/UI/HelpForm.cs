@@ -1,7 +1,7 @@
 namespace Dat2DTR
 {
     /// <summary>
-    /// The "How it works" window: what is new in this DTR, a step-by-step guide,
+    /// This is the "How it works" window: what is new in this DTR, a step-by-step guide,
     /// how to edit times by hand, and the rules used for Late and Undertime.
     ///
     /// The text is built from the current settings, so it always explains the
@@ -23,13 +23,13 @@ namespace Dat2DTR
         private readonly Font _noteFont = new Font("Segoe UI", 9.75f, FontStyle.Italic);
         private readonly Font _gapFont = new Font("Segoe UI", 5f);
 
-        private readonly int _stepIndent;    // how far the text under a numbered step is pushed in
-        private readonly int _bulletIndent;  // how far a bullet is pushed in
-        private readonly int _bulletWidth;   // width of the bullet mark, so wrapped lines line up
+        private readonly int _stepIndent;    // This is how far the text under a numbered step is pushed in
+        private readonly int _bulletIndent;  // This is how far a bullet is pushed in
+        private readonly int _bulletWidth;   // This is the width of the bullet mark, so wrapped lines line up
 
         public HelpForm(DtrSettings settings)
         {
-            // Same order as a designer-made form, so it scales correctly on 125% / 150% screens.
+            // This is the same order as a designer-made form, so it scales correctly on 125% / 150% screens.
             SuspendLayout();
             Text = "How Dat2DTR works";
             Icon = Theme.GetAppIcon();
@@ -42,7 +42,7 @@ namespace Dat2DTR
             ClientSize = new Size(760, 660);
             MinimumSize = new Size(520, 380);
 
-            // Measured from the font, so the spacing stays right on any screen scaling.
+            // This is measured from the font, so the spacing stays right on any screen scaling.
             _stepIndent = TextRenderer.MeasureText("10.  ", _boldFont, Size.Empty, TextFormatFlags.NoPadding).Width;
             _bulletWidth = TextRenderer.MeasureText("\u2022   ", _textFont, Size.Empty, TextFormatFlags.NoPadding).Width;
             _bulletIndent = _bulletWidth / 2;
@@ -80,7 +80,7 @@ namespace Dat2DTR
             ResumeLayout(false);
             PerformLayout();
 
-            // The text is written when the window opens (see OnLoad), because the
+            // This is why the text is written when the window opens (see OnLoad): the
             // text box can only be formatted once it really exists on screen.
             _settings = settings;
             _closeButton = close;
@@ -92,7 +92,7 @@ namespace Dat2DTR
 
             BuildGuide(_settings);
 
-            // Start at the top of the text.
+            // This is where the text starts: at the top.
             _box.Select(0, 0);
             _box.ScrollToCaret();
             _closeButton.Select();
@@ -112,7 +112,7 @@ namespace Dat2DTR
             base.Dispose(disposing);
         }
 
-        // ================================================================ the words
+        // This is the words ================================================================
 
         private void BuildGuide(DtrSettings s)
         {
@@ -121,7 +121,7 @@ namespace Dat2DTR
                       "(Civil Service Form No. 48). It computes Late and Undertime for you, and it deducts " +
                       "filed leaves, Late and Undertime from the leave credits (the Computation of Leaves).");
 
-            // ------------------------------------------------------------
+            // This is the "What is new" section ------------------------------------------------------------
             Heading("What is new in this DTR");
             Bullet("A new  L A T E  column (Hours and Minutes) was added after the P.M. column.");
             Bullet("Late and Undertime are computed automatically for every day and added up in the TOTAL row.");
@@ -129,11 +129,14 @@ namespace Dat2DTR
             foreach (WorkSchedule schedule in s.Schedules)
                 SubBullet(schedule.Description);
             Bullet("\"Edit DTR\" lets you type in a missing time, correct a wrong one, or mark a day as HOLIDAY.");
-            Bullet("\"Edit Leave\" lets you file a leave (Vacation, Sick, Mandatory / Forced, Special Privilege, Wellness, CTO). " +
+            Bullet("\"Edit Leave\" lets you file a leave (Vacation, Sick, Mandatory / Forced, Special Privilege, Wellness, CTO, Solo Parent). " +
                    "The leave is written on the DTR and deducted from the leave credits automatically.");
             Bullet("A new page, the Computation of Leaves, shows the leave card of the employee and how the month was computed. " +
                    "When you print or save, you choose: the DTR only, the Computation of Leaves only, or both.");
             Bullet("CTO is kept as a balance: the CTO given (at most 6 days at a time, each with its own expiry date) minus the CTO used.");
+            Bullet("Solo Parent Leave is kept the same way: the days given (at most 7 at a time, each with its own expiry date) minus the days used. " +
+                   "What is not used by its expiry date is taken off the balance by itself.");
+            Bullet("Below the computation, the History of Availment of Leave shows every leave used from January to December.");
             Bullet("The DTR has two signature lines: \"Signature over Printed Name\" at the bottom right, " +
                    "and another one in the middle below it.");
             Bullet("The official hours of the employee's schedule are printed beside \"Regular days\".");
@@ -143,7 +146,7 @@ namespace Dat2DTR
             Bullet("Days with a missing or an extra scan are pointed out, so someone can check them.");
             Bullet("The names are kept in the program. You type them once, not every month.");
 
-            // ------------------------------------------------------------
+            // This is the "Do this once" section ------------------------------------------------------------
             Heading("Do this once: type the names and choose the schedules");
             Paragraph("The .dat file only contains ID numbers. The program has to be told which name belongs to which ID, " +
                       "and which work schedule each person follows.");
@@ -158,7 +161,7 @@ namespace Dat2DTR
                  "then use \"Import list...\". Use \"Export list...\" to copy the list to another computer.");
             Note("A new employee shows as \"(no name yet)\" in the list. Add the name the same way.");
 
-            // ------------------------------------------------------------
+            // This is the "Once a year: the holidays" section ------------------------------------------------------------
             Heading("Once a year: the holidays");
             Paragraph("Holidays are typed once and used for every employee: on a holiday the DTR says HOLIDAY instead of ABSENT, " +
                       "and nothing is deducted. Nobody has to file them in Edit Leave.");
@@ -176,7 +179,7 @@ namespace Dat2DTR
             Note("A leave filed in Edit Leave on the same day comes first. Someone who scanned on a holiday keeps the times, " +
                  "and no late or undertime is counted. Holidays on a Saturday or Sunday are not shown on the DTR.");
 
-            // ------------------------------------------------------------
+            // This is the "Every month" section ------------------------------------------------------------
             Heading("Every month: make the DTRs, step by step");
             Step(1, "Get the file from the biometrics device.",
                  "Export the attendance from the device to a USB flash drive. The file name ends in .dat. Plug the USB into this computer.");
@@ -207,7 +210,7 @@ namespace Dat2DTR
                  "PDF document (best for printing later or sending) or Excel workbook. Click Save.");
             Step(11, "Sign and stamp the printed DTR as usual.", "");
 
-            // ------------------------------------------------------------
+            // This is the "Edit DTR" section ------------------------------------------------------------
             Heading("Edit DTR: typing in a missing or wrong time");
             Paragraph("Use this when someone forgot to scan (for example at lunch), when a scan is wrong, " +
                       "or when a day should say HOLIDAY instead of ABSENT. (For a leave, use \"Edit Leave...\" instead, so that it is deducted.)");
@@ -244,11 +247,11 @@ namespace Dat2DTR
                  "(for example  Day 8 - undertime 13m -> none (Work suspended at 3:00 PM)),  so anyone can see what was changed and why.");
             Note("To go back to the computed value, empty both boxes (Hours and Minutes), or click \"Undo this day\".");
 
-            // ------------------------------------------------------------
+            // This is the "Edit Leave" section ------------------------------------------------------------
             Heading("Edit Leave: filing a leave and computing the leave credits");
             Paragraph("Use this when an employee filed a leave. The program writes the leave on the DTR, deducts it from the " +
                       "leave credits and works out the new balance. The kinds of leave are: Vacation Leave, Sick Leave, " +
-                      "Mandatory / Forced Leave, Special Privilege Leave, Wellness Leave and CTO. " +
+                      "Mandatory / Forced Leave, Special Privilege Leave, Wellness Leave, CTO and Solo Parent Leave. " +
                       "Holiday, Suspended and Official Business (for example a school visit) are in the same list, but nothing is deducted for them.");
             Step(1, "Click the employee, then click \"Edit Leave...\" above the DTR.",
                  "A table opens with one row for each day of the month. The column \"On the DTR\" shows what the person scanned that day.");
@@ -278,7 +281,8 @@ namespace Dat2DTR
             Bullet("WFH = work from home. Tick it on a day with no leave, a Holiday or a Suspended day. " +
                    "On a Suspended day the heading of that column reads \"Is it WFH?\".");
             Bullet("IDLAR can be ticked only after WFH. Tick it when the IDLAR (the daily accomplishment report) is handed in: " +
-                   "the day then counts as a day at work. The DTR shows WORK FROM HOME (or SUSPENDED - WORK FROM HOME).");
+                   "the day then counts as a day at work. The DTR shows WORK FROM HOME. On a Suspended day with WFH the DTR shows PD - WFH, " +
+                   "and PD - WFH/IDLAR once IDLAR is ticked.");
             Bullet("WFH without IDLAR: on an ordinary day the DTR still shows ABSENT, and the day is listed to check. " +
                    "When you click Save, the program asks once whether to save it like that. " +
                    "A Holiday is saved without asking: it needs neither WFH nor IDLAR.");
@@ -305,13 +309,16 @@ namespace Dat2DTR
             Bullet("Above the DTR there are two buttons:  DTR  and  Computation of Leaves.  " +
                    "Click \"Computation of Leaves\" to see the leave page of the employee. Click \"DTR\" to go back.");
             Bullet("The top of the page is the leave card of the year, one row for each month. The VACATION part has: " +
-                   "Earned, Enjoyed, Net, Leave Date/s, SPL, WL (Wellness Leave), CTO, Late and Undertime. " +
+                   "Earned, Enjoyed, Net, Leave Date/s, SPL, WL (Wellness Leave), CTO, SOLO (Solo Parent Leave), Late and Undertime. " +
                    "The SICK part has: Earned, Enjoyed, Net and Leave Date/s. The month you are working on is yellow.");
             Bullet("Below it, the computation of the month is written out line by line: Vacation Leave and Sick Leave on the left; " +
-                   "Special Privilege Leave, Wellness Leave and CTO on the right.");
+                   "Special Privilege Leave, Wellness Leave and CTO on the right. Solo Parent Leave is in the column that is shorter.");
             Bullet("At the top right, under \"For the month of\", the page shows the Vacation Leave (VL) and Sick Leave (SL) " +
                    "the employee has left at the end of the month. They stay empty until the balance is known.");
-            Bullet("Under the table, \"Used this year\" shows the Special Privilege, Forced and Wellness Leave and the CTO used since January.");
+            Bullet("Under the table, \"Used this year\" shows the Special Privilege, Forced and Wellness Leave, the CTO and the SOLO used since January. " +
+                   "Beside CTO and SOLO is the balance left at the end of the month.");
+            Bullet("At the bottom, below a line across the page, the History of Availment of Leave lists the leaves used in each month " +
+                   "of the year, January to December, with the days they were used (for example  3, 8 (1/2)), and the total days.");
             Bullet("Things you should check are shown in the Edit Leave window (bottom right). They are not printed.");
 
             SubHeading("Printing or saving the Computation of Leaves");
@@ -325,17 +332,29 @@ namespace Dat2DTR
             SubHeading("CTO: giving and using");
             Step(1, "In Edit Leave, click \"CTO given...\".",
                  "A table opens with every time CTO was given to this employee.");
-            Step(2, "Type the date it was given, how many days, and the date it expires.",
-                 "Example:  Sep 15, 2026   2   Sep 14, 2027.  Leave \"Expires on\" empty to make it one year. " +
+            Step(2, "Type the date it was given and how many days.",
+                 "Example:  Sep 15, 2026   2.  \"Expires on\" is filled in by itself: one year (Sep 14, 2027). Type over it if it is different. " +
                  "An employee can have at most " + LeaveRules.FormatShort(LeaveKinds.CtoMaxDays) + " days of CTO at one time; " +
                  "the program does not let you give more.");
             Step(3, "Click \"Save\".", "");
             Step(4, "When the employee uses CTO, file it like a leave:",
                  "pick \"CTO\" under Leave on that day (whole day or half a day).");
-            Note("CTO used is taken from the CTO that expires first. CTO not used by its expiry date is lost; " +
-                 "the computation shows how much expired and when the rest expires.");
+            Note("CTO used is taken from the CTO that expires first. CTO not used by its expiry date is lost: it is taken off " +
+                 "the balance by itself, and the computation shows how much expired and when the rest expires.");
 
-            // ------------------------------------------------------------
+            SubHeading("Solo Parent Leave: giving and using");
+            Step(1, "In Edit Leave, click \"Solo Parent given...\".",
+                 "A table opens with every time Solo Parent Leave was given to this employee.");
+            Step(2, "Type the date it was given and how many days.",
+                 "\"Expires on\" is filled in by itself: one year from the date given. Type over it if it is different. " +
+                 "An employee can have at most " + LeaveRules.FormatShort(LeaveKinds.SoloMaxDays) + " days of Solo Parent Leave at one time.");
+            Step(3, "Click \"Save\".", "");
+            Step(4, "When the employee uses it, file it like a leave:",
+                 "pick \"Solo Parent Leave\" under Leave on that day (whole day or half a day). The DTR shows SOLO PARENT LEAVE.");
+            Note("It works the same way as CTO: it is not deducted from the leave credits, the days that expire first are used first, " +
+                 "and days not used by their expiry date are taken off the SOLO balance by themselves.");
+
+            // This is the "How leave is computed" section ------------------------------------------------------------
             Heading("How leave is computed");
             Paragraph("The rules follow the leave rules of the Civil Service Commission (Omnibus Rules on Leave).");
             Bullet("Every month the employee earns " + LeaveRules.FormatShort(LeaveRules.MonthlyCredit) + " days of Vacation Leave and " +
@@ -358,7 +377,8 @@ namespace Dat2DTR
             Bullet("Special Privilege Leave (3 days a year) and Wellness Leave (5 days a year) are NOT deducted from the leave credits. " +
                    "They are counted, and the computation shows how many days are left for the year. " +
                    "Forced Leave is counted too (5 days a year).");
-            Bullet("CTO is taken from the CTO given to the employee (see \"CTO: giving and using\").");
+            Bullet("CTO is taken from the CTO given to the employee (see \"CTO: giving and using\"). " +
+                   "Solo Parent Leave is taken from the Solo Parent Leave given (see \"Solo Parent Leave: giving and using\").");
             Bullet("Balance at the end of the month (Net)  =  balance brought forward + earned - enjoyed.  " +
                    "It becomes the balance brought forward of the next month.");
 
@@ -384,10 +404,10 @@ namespace Dat2DTR
             Note("A month is only remembered from a file that holds the whole month. If you look at a month through a file " +
                  "that starts in the middle of it, or that ends earlier than a file you opened before, the page says so and " +
                  "the earlier result is kept.");
-            Note("The leaves and balances are kept in small files on this computer (leaves.csv, leave-ledger.csv and cto.csv). " +
+            Note("The leaves and balances are kept in small files on this computer (leaves.csv, leave-ledger.csv, cto.csv and solo-parent.csv). " +
                  "Do not leave them open in Excel while you use Dat2DTR: the program then cannot read them and will not save.");
 
-            // ------------------------------------------------------------
+            // This is the "Printing or saving several employees" section ------------------------------------------------------------
             Heading("Printing or saving several employees at once");
             Step(1, "Tick the box beside each name you want.", "\"Tick all\" ticks everyone in the list. \"Untick all\" clears the ticks.");
             Step(2, "Click \"Print...\" or \"Save To...\".", "");
@@ -401,7 +421,7 @@ namespace Dat2DTR
             Note("The same works for the work schedule: tick several people, then pick the schedule above the DTR, " +
                  "and you are asked whether to change only this person, the ticked ones, or everyone.");
 
-            // ------------------------------------------------------------
+            // This is the "How Late and Undertime are computed" section ------------------------------------------------------------
             Heading("How Late and Undertime are computed");
             Paragraph("The rules are the same for every schedule. Only the times and the working days are different. " +
                       "These are the rules being used right now:");
@@ -415,7 +435,7 @@ namespace Dat2DTR
             Bullet("Days before the first scan or after the last scan in the file are left blank, because the file does not cover them.");
             Bullet("Saturdays and Sundays are only labelled Sat and Sun. No late or undertime is computed for them.");
 
-            // ------------------------------------------------------------
+            // This is the "Which scan goes in which column" section ------------------------------------------------------------
             Heading("Which scan goes in which column");
             Bullet("First scan of the day  =  A.M. Arrival");
             Bullet("Last scan of the day  =  P.M. Departure");
@@ -425,7 +445,7 @@ namespace Dat2DTR
             Note("If a day has only one scan, or one lunch scan is missing, the program shows what it has and asks you to check that day. " +
                  "It does not guess the missing time. Use \"Edit DTR...\" to type it in.");
 
-            // ------------------------------------------------------------
+            // This is the "Changing the office hours" section ------------------------------------------------------------
             Heading("Changing the office hours, grace period or working days");
             Step(1, "Click \"Office Hours...\" at the top right.", "");
             Step(2, "Choose the schedule to change (A, B, C or D) in the list at the top.", "");
@@ -434,7 +454,7 @@ namespace Dat2DTR
                  "How Late is counted and the paper size are the same for every schedule.");
             Step(4, "Click \"Save\".", "Every DTR is computed again right away with the new rules. The program remembers them.");
 
-            // ------------------------------------------------------------
+            // This is the "Common questions" section ------------------------------------------------------------
             Heading("Common questions");
             Question("The name shows \"(no name yet)\".",
                      "That ID has no name typed in. Click \"Employee Names...\" and type it.");
@@ -460,7 +480,8 @@ namespace Dat2DTR
                      "When you click \"Print...\" or \"Save To...\", choose \"Computation of Leaves only\" or \"Both\".");
             Question("It will not let me give more CTO.",
                      "An employee can have at most " + LeaveRules.FormatShort(LeaveKinds.CtoMaxDays) + " days of CTO at one time. " +
-                     "Give more only after some of it was used or has expired.");
+                     "Give more only after some of it was used or has expired. (Solo Parent Leave: at most " +
+                     LeaveRules.FormatShort(LeaveKinds.SoloMaxDays) + " days at one time.)");
             Question("Someone forgot to scan at lunch.",
                      "Click \"Edit DTR...\" and type the missing times. The yellow message for that day goes away.");
             Question("An employee is missing from the list.",
@@ -485,7 +506,7 @@ namespace Dat2DTR
                      "Yes.  Ctrl+O = open a file.   Ctrl+P = print.   Ctrl+S = save.");
         }
 
-        /// <summary>Writes the Late and Undertime rules of one schedule, with its own times in the examples.</summary>
+        /// <summary>This is where the Late and Undertime rules of one schedule are written, with its own times in the examples.</summary>
         private void DescribeRules(WorkSchedule w, DtrSettings s)
         {
             string timeIn = DtrSettings.FormatTime(w.TimeIn);
@@ -494,7 +515,7 @@ namespace Dat2DTR
             string lunchEnd = DtrSettings.FormatTime(w.LunchEnd);
             string graceEnd = DtrSettings.FormatTime(w.TimeIn + TimeSpan.FromMinutes(w.GraceMinutes));
 
-            int afterGrace = 11; // the example arrives 11 minutes after the grace period ends
+            int afterGrace = 11; // This is because the example arrives 11 minutes after the grace period ends
             string lateTime = DtrSettings.FormatTime(w.TimeIn + TimeSpan.FromMinutes(w.GraceMinutes + afterGrace));
             int lateMinutes = s.CountLateFromOfficialTime ? w.GraceMinutes + afterGrace : afterGrace;
 
@@ -510,6 +531,12 @@ namespace Dat2DTR
                        ? ", and the minutes are counted from " + timeIn + "."
                        : ", and only the minutes after " + graceEnd + " are counted.") +
                    "  Example: arriving at " + lateTime + " = " + lateMinutes + " minutes late.");
+            if (w.GraceMinutes > 0)
+                Bullet("Grace period:  the minutes must be made up at the end of the day.  Example: arriving at " +
+                       DtrSettings.FormatTime(w.TimeIn + TimeSpan.FromMinutes(Math.Min(14, w.GraceMinutes))) +
+                       " means leaving at " + DtrSettings.FormatTime(w.TimeOut + TimeSpan.FromMinutes(Math.Min(14, w.GraceMinutes))) +
+                       " or later. Leaving earlier = " + Math.Min(14, w.GraceMinutes) + " minutes late. " +
+                       "(Not when the afternoon is on leave or suspended.)");
             Bullet("Late:  coming back from lunch after " + lunchEnd + ", counted from " + lunchEnd + ".  " +
                    "Example: back at " + lunchLateTime + " = 10 minutes late.");
             Bullet("Undertime:  leaving before " + lunchStart + " in the morning, or before " + timeOut + " in the afternoon.  " +
@@ -519,7 +546,7 @@ namespace Dat2DTR
             Gap();
         }
 
-        // ================================================================ building blocks
+        // This is the building blocks ================================================================
 
         private void Title(string text)
         {
@@ -547,7 +574,7 @@ namespace Dat2DTR
             Gap();
         }
 
-        /// <summary>A numbered step: a bold line saying what to do, and a line underneath with details.</summary>
+        /// <summary>This is a numbered step: a bold line saying what to do, and a line underneath with details.</summary>
         private void Step(int number, string whatToDo, string details)
         {
             Write(number + ".  ", _boldFont, Theme.Warm, 0, _stepIndent);
@@ -562,13 +589,13 @@ namespace Dat2DTR
             Write("\u2022   " + text + "\n", _textFont, Theme.TextStrong, _bulletIndent, _bulletWidth);
         }
 
-        /// <summary>A second-level bullet, pushed in further.</summary>
+        /// <summary>This is a second-level bullet, pushed in further.</summary>
         private void SubBullet(string text)
         {
             Write("-   " + text + "\n", _textFont, Theme.TextStrong, _bulletIndent + _bulletWidth, _bulletWidth);
         }
 
-        /// <summary>A tip in smaller, slanted, grey letters.</summary>
+        /// <summary>This is a tip in smaller, slanted, grey letters.</summary>
         private void Note(string text)
         {
             Write(text + "\n", _noteFont, Theme.TextMuted, _stepIndent, 0);
@@ -582,28 +609,28 @@ namespace Dat2DTR
             Gap();
         }
 
-        /// <summary>A little empty space between two blocks.</summary>
+        /// <summary>This is a little empty space between two blocks.</summary>
         private void Gap()
         {
             Write("\n", _gapFont, Theme.TextStrong, 0, 0);
         }
 
-        /// <summary>Adds text at the end of the box, then gives that new text its look.</summary>
-        /// <param name="indent">How far the paragraph is pushed in from the left.</param>
-        /// <param name="hangingIndent">Extra push for the 2nd line onwards (lines up wrapped text).</param>
+        /// <summary>This is where text is added at the end of the box, and that new text is given its look.</summary>
+        /// <param name="indent">This is how far the paragraph is pushed in from the left.</param>
+        /// <param name="hangingIndent">This is the extra push for the 2nd line onwards (lines up wrapped text).</param>
         private void Write(string text, Font font, Color color, int indent, int hangingIndent)
         {
             int start = _box.TextLength;
             _box.AppendText(text);
 
-            // Select what was just added and format it.
+            // This is where what was just added is selected and formatted.
             _box.Select(start, _box.TextLength - start);
             _box.SelectionFont = font;
             _box.SelectionColor = color;
             _box.SelectionIndent = indent;
             _box.SelectionHangingIndent = hangingIndent;
 
-            // Put the cursor back at the end, ready for the next piece of text.
+            // This is where the cursor is put back at the end, ready for the next piece of text.
             _box.Select(_box.TextLength, 0);
         }
     }

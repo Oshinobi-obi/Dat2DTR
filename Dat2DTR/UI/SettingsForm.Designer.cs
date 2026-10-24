@@ -3,14 +3,14 @@ namespace Dat2DTR
     partial class SettingsForm
     {
         /// <summary>
-        /// Required designer variable.
+        /// This is the required designer variable.
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
         /// <summary>
-        /// Clean up any resources being used.
+        /// This is where any resources being used are cleaned up.
         /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        /// <param name="disposing">This is true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -23,7 +23,7 @@ namespace Dat2DTR
         #region Windows Form Designer generated code
 
         /// <summary>
-        /// Required method for Designer support - do not modify
+        /// This is the required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
@@ -64,7 +64,7 @@ namespace Dat2DTR
             grpDays.SuspendLayout();
             SuspendLayout();
             //
-            // lblWhich
+            // This is lblWhich
             //
             lblWhich.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblWhich.Location = new Point(14, 14);
@@ -74,7 +74,7 @@ namespace Dat2DTR
             lblWhich.Text = "Schedule to change:";
             lblWhich.TextAlign = ContentAlignment.MiddleLeft;
             //
-            // cboWhich
+            // This is cboWhich
             //
             cboWhich.DropDownStyle = ComboBoxStyle.DropDownList;
             cboWhich.FormattingEnabled = true;
@@ -84,7 +84,7 @@ namespace Dat2DTR
             cboWhich.TabIndex = 9;
             cboWhich.SelectedIndexChanged += cboWhich_SelectedIndexChanged;
             //
-            // grpHours
+            // This is grpHours
             //
             grpHours.Controls.Add(lblTimeIn);
             grpHours.Controls.Add(dtpTimeIn);
@@ -101,7 +101,7 @@ namespace Dat2DTR
             grpHours.TabStop = false;
             grpHours.Text = "Office hours";
             //
-            // lblTimeIn
+            // This is lblTimeIn
             //
             lblTimeIn.Location = new Point(16, 28);
             lblTimeIn.Name = "lblTimeIn";
@@ -110,7 +110,7 @@ namespace Dat2DTR
             lblTimeIn.Text = "Time In (start of work)";
             lblTimeIn.TextAlign = ContentAlignment.MiddleLeft;
             //
-            // dtpTimeIn
+            // This is dtpTimeIn
             //
             dtpTimeIn.CustomFormat = "hh:mm tt";
             dtpTimeIn.Format = DateTimePickerFormat.Custom;
@@ -121,7 +121,7 @@ namespace Dat2DTR
             dtpTimeIn.TabIndex = 1;
             dtpTimeIn.ValueChanged += RuleChanged;
             //
-            // lblLunchStart
+            // This is lblLunchStart
             //
             lblLunchStart.Location = new Point(16, 59);
             lblLunchStart.Name = "lblLunchStart";
@@ -130,7 +130,7 @@ namespace Dat2DTR
             lblLunchStart.Text = "Lunch break starts";
             lblLunchStart.TextAlign = ContentAlignment.MiddleLeft;
             //
-            // dtpLunchStart
+            // This is dtpLunchStart
             //
             dtpLunchStart.CustomFormat = "hh:mm tt";
             dtpLunchStart.Format = DateTimePickerFormat.Custom;
@@ -140,7 +140,7 @@ namespace Dat2DTR
             dtpLunchStart.Size = new Size(120, 23);
             dtpLunchStart.TabIndex = 3;
             //
-            // lblLunchEnd
+            // This is lblLunchEnd
             //
             lblLunchEnd.Location = new Point(16, 90);
             lblLunchEnd.Name = "lblLunchEnd";
@@ -149,7 +149,7 @@ namespace Dat2DTR
             lblLunchEnd.Text = "Lunch break ends";
             lblLunchEnd.TextAlign = ContentAlignment.MiddleLeft;
             //
-            // dtpLunchEnd
+            // This is dtpLunchEnd
             //
             dtpLunchEnd.CustomFormat = "hh:mm tt";
             dtpLunchEnd.Format = DateTimePickerFormat.Custom;
@@ -159,7 +159,7 @@ namespace Dat2DTR
             dtpLunchEnd.Size = new Size(120, 23);
             dtpLunchEnd.TabIndex = 5;
             //
-            // lblTimeOut
+            // This is lblTimeOut
             //
             lblTimeOut.Location = new Point(16, 121);
             lblTimeOut.Name = "lblTimeOut";
@@ -168,7 +168,7 @@ namespace Dat2DTR
             lblTimeOut.Text = "Time Out (end of work)";
             lblTimeOut.TextAlign = ContentAlignment.MiddleLeft;
             //
-            // dtpTimeOut
+            // This is dtpTimeOut
             //
             dtpTimeOut.CustomFormat = "hh:mm tt";
             dtpTimeOut.Format = DateTimePickerFormat.Custom;
@@ -178,7 +178,7 @@ namespace Dat2DTR
             dtpTimeOut.Size = new Size(120, 23);
             dtpTimeOut.TabIndex = 7;
             //
-            // grpLate
+            // This is grpLate
             //
             grpLate.Controls.Add(lblGrace);
             grpLate.Controls.Add(nudGrace);
@@ -192,7 +192,7 @@ namespace Dat2DTR
             grpLate.TabStop = false;
             grpLate.Text = "Late";
             //
-            // lblGrace
+            // This is lblGrace
             //
             lblGrace.Location = new Point(16, 28);
             lblGrace.Name = "lblGrace";
@@ -201,7 +201,7 @@ namespace Dat2DTR
             lblGrace.Text = "Grace period (minutes)";
             lblGrace.TextAlign = ContentAlignment.MiddleLeft;
             //
-            // nudGrace
+            // This is nudGrace
             //
             nudGrace.Location = new Point(236, 28);
             nudGrace.Maximum = new decimal(new int[] { 120, 0, 0, 0 });
@@ -210,7 +210,7 @@ namespace Dat2DTR
             nudGrace.TabIndex = 1;
             nudGrace.ValueChanged += RuleChanged;
             //
-            // lblGraceHint
+            // This is lblGraceHint
             //
             lblGraceHint.ForeColor = Color.FromArgb(96, 100, 124);
             lblGraceHint.Location = new Point(16, 58);
@@ -220,7 +220,7 @@ namespace Dat2DTR
             lblGraceHint.Text = "After the grace period, how is Late counted? (the same for every schedule)";
             lblGraceHint.TextAlign = ContentAlignment.MiddleLeft;
             //
-            // rdoFromOfficial
+            // This is rdoFromOfficial
             //
             rdoFromOfficial.Location = new Point(18, 82);
             rdoFromOfficial.Name = "rdoFromOfficial";
@@ -230,7 +230,7 @@ namespace Dat2DTR
             rdoFromOfficial.Text = "Count from Time In";
             rdoFromOfficial.UseVisualStyleBackColor = true;
             //
-            // rdoAfterGrace
+            // This is rdoAfterGrace
             //
             rdoAfterGrace.Location = new Point(18, 108);
             rdoAfterGrace.Name = "rdoAfterGrace";
@@ -240,7 +240,7 @@ namespace Dat2DTR
             rdoAfterGrace.Text = "Count only the minutes after the grace period";
             rdoAfterGrace.UseVisualStyleBackColor = true;
             //
-            // grpDays
+            // This is grpDays
             //
             grpDays.Controls.Add(chkMon);
             grpDays.Controls.Add(chkTue);
@@ -256,7 +256,7 @@ namespace Dat2DTR
             grpDays.TabStop = false;
             grpDays.Text = "Working days (a working day with no scans is marked ABSENT)";
             //
-            // chkMon
+            // This is chkMon
             //
             chkMon.Location = new Point(18, 26);
             chkMon.Name = "chkMon";
@@ -265,7 +265,7 @@ namespace Dat2DTR
             chkMon.Text = "Mon";
             chkMon.UseVisualStyleBackColor = true;
             //
-            // chkTue
+            // This is chkTue
             //
             chkTue.Location = new Point(84, 26);
             chkTue.Name = "chkTue";
@@ -274,7 +274,7 @@ namespace Dat2DTR
             chkTue.Text = "Tue";
             chkTue.UseVisualStyleBackColor = true;
             //
-            // chkWed
+            // This is chkWed
             //
             chkWed.Location = new Point(150, 26);
             chkWed.Name = "chkWed";
@@ -283,7 +283,7 @@ namespace Dat2DTR
             chkWed.Text = "Wed";
             chkWed.UseVisualStyleBackColor = true;
             //
-            // chkThu
+            // This is chkThu
             //
             chkThu.Location = new Point(216, 26);
             chkThu.Name = "chkThu";
@@ -292,7 +292,7 @@ namespace Dat2DTR
             chkThu.Text = "Thu";
             chkThu.UseVisualStyleBackColor = true;
             //
-            // chkFri
+            // This is chkFri
             //
             chkFri.Location = new Point(282, 26);
             chkFri.Name = "chkFri";
@@ -301,7 +301,7 @@ namespace Dat2DTR
             chkFri.Text = "Fri";
             chkFri.UseVisualStyleBackColor = true;
             //
-            // chkSat
+            // This is chkSat
             //
             chkSat.Location = new Point(348, 26);
             chkSat.Name = "chkSat";
@@ -310,7 +310,7 @@ namespace Dat2DTR
             chkSat.Text = "Sat";
             chkSat.UseVisualStyleBackColor = true;
             //
-            // chkSun
+            // This is chkSun
             //
             chkSun.Location = new Point(414, 26);
             chkSun.Name = "chkSun";
@@ -319,7 +319,7 @@ namespace Dat2DTR
             chkSun.Text = "Sun";
             chkSun.UseVisualStyleBackColor = true;
             //
-            // lblPaper
+            // This is lblPaper
             //
             lblPaper.Location = new Point(30, 444);
             lblPaper.Name = "lblPaper";
@@ -328,7 +328,7 @@ namespace Dat2DTR
             lblPaper.Text = "Paper size";
             lblPaper.TextAlign = ContentAlignment.MiddleLeft;
             //
-            // cboPaper
+            // This is cboPaper
             //
             cboPaper.DropDownStyle = ComboBoxStyle.DropDownList;
             cboPaper.FormattingEnabled = true;
@@ -337,7 +337,7 @@ namespace Dat2DTR
             cboPaper.Size = new Size(240, 23);
             cboPaper.TabIndex = 4;
             //
-            // btnDefaults
+            // This is btnDefaults
             //
             btnDefaults.Location = new Point(14, 488);
             btnDefaults.Name = "btnDefaults";
@@ -347,7 +347,7 @@ namespace Dat2DTR
             btnDefaults.UseVisualStyleBackColor = true;
             btnDefaults.Click += btnDefaults_Click;
             //
-            // btnOk
+            // This is btnOk
             //
             btnOk.Location = new Point(310, 488);
             btnOk.Name = "btnOk";
@@ -357,7 +357,7 @@ namespace Dat2DTR
             btnOk.UseVisualStyleBackColor = true;
             btnOk.Click += btnOk_Click;
             //
-            // btnCancel
+            // This is btnCancel
             //
             btnCancel.DialogResult = DialogResult.Cancel;
             btnCancel.Location = new Point(412, 488);
@@ -367,7 +367,7 @@ namespace Dat2DTR
             btnCancel.Text = "Cancel";
             btnCancel.UseVisualStyleBackColor = true;
             //
-            // SettingsForm
+            // This is SettingsForm (the window itself)
             //
             AcceptButton = btnOk;
             AutoScaleDimensions = new SizeF(7F, 15F);

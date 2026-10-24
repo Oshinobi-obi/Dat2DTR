@@ -2,7 +2,7 @@ using System.Drawing.Drawing2D;
 
 namespace Dat2DTR
 {
-    /// <summary>The round navy "1", "2", "3" markers beside each step.</summary>
+    /// <summary>This is the round navy "1", "2", "3" markers beside each step.</summary>
     public class StepBadge : Control
     {
         public StepBadge()

@@ -1,36 +1,36 @@
 namespace Dat2DTR
 {
     /// <summary>
-    /// The "Employee Names" window: a simple table where the user types the name
+    /// This is the "Employee Names" window: a simple table where the user types the name
     /// that belongs to each biometric ID and chooses the work schedule (A, B, C or D).
     /// </summary>
     public partial class EmployeeNamesForm : Form
     {
-        // Column numbers of the table.
+        // This is the column numbers of the table.
         private const int ColId = 0, ColName = 1, ColSchedule = 2;
 
         private readonly EmployeeDirectory _names;
-        private readonly string[] _scheduleTexts; // what the Schedule boxes show: [0] = Schedule A ... [3] = Schedule D
+        private readonly string[] _scheduleTexts; // This is what the Schedule boxes show: [0] = Schedule A ... [3] = Schedule D
 
-        /// <param name="names">The saved list. It is only changed when the user clicks Save.</param>
-        /// <param name="idsInFile">IDs found in the opened .dat file, so they can be listed automatically.</param>
-        /// <param name="settings">Used to show what each schedule (A to D) is.</param>
+        /// <param name="names">This is the saved list. It is only changed when the user clicks Save.</param>
+        /// <param name="idsInFile">This is the IDs found in the opened .dat file, so they can be listed automatically.</param>
+        /// <param name="settings">This is used to show what each schedule (A to D) is.</param>
         public EmployeeNamesForm(EmployeeDirectory names, IList<string> idsInFile, DtrSettings settings)
         {
             InitializeComponent();
             Icon = Theme.GetAppIcon();
-            GridFit.Attach(this, dgvNames);    // headings and columns fit the screen it is shown on (125%, 150%...)
+            GridFit.Attach(this, dgvNames);    // This is so the headings and columns fit the screen it is shown on (125%, 150%...)
             Theme.StylePrimary(btnOk);
             _names = names;
 
-            // The empty "add a new row" line at the bottom is switched off while the table is filled.
+            // This is the empty "add a new row" line at the bottom: it is switched off while the table is filled.
             dgvNames.AllowUserToAddRows = false;
 
             _scheduleTexts = settings.Schedules.Select(s => s.Description).ToArray();
             foreach (string text in _scheduleTexts)
                 colSchedule.Items.Add(text);
 
-            // IDs that still need a name come first, so they are easy to find.
+            // This is the IDs that still need a name: they come first, so they are easy to find.
             var listed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (string id in idsInFile)
             {
@@ -38,7 +38,7 @@ namespace Dat2DTR
                     dgvNames.Rows.Add(id, "", _scheduleTexts[names.GetSchedule(id)]);
             }
 
-            // Then everyone who is already in the saved list.
+            // This is everyone who is already in the saved list, after them.
             foreach (EmployeeEntry entry in names.GetAll())
             {
                 if (listed.Add(EmployeeDirectory.NormalizeId(entry.Id)))
@@ -54,14 +54,14 @@ namespace Dat2DTR
             return (Convert.ToString(cell.Value) ?? "").Trim();
         }
 
-        /// <summary>Which schedule a row shows: 0 = A (also when the box is still empty) ... 3 = D.</summary>
+        /// <summary>This is which schedule a row shows: 0 = A (also when the box is still empty) ... 3 = D.</summary>
         private int ScheduleOf(DataGridViewRow row)
         {
             int index = Array.IndexOf(_scheduleTexts, TextOf(row.Cells[ColSchedule]));
             return index >= 0 ? index : 0;
         }
 
-        /// <summary>Reads the table into a fresh list (rows without an ID are skipped).</summary>
+        /// <summary>This is where the table is read into a fresh list (rows without an ID are skipped).</summary>
         private EmployeeDirectory ReadTable()
         {
             dgvNames.EndEdit();
@@ -96,7 +96,7 @@ namespace Dat2DTR
             UpdateCount();
         }
 
-        /// <summary>If a box ever holds something the table cannot show, ignore it instead of showing an error window.</summary>
+        /// <summary>This is for a box that ever holds something the table cannot show: ignore it instead of showing an error window.</summary>
         private void dgvNames_DataError(object? sender, DataGridViewDataErrorEventArgs e)
         {
             e.ThrowException = false;
@@ -134,7 +134,7 @@ namespace Dat2DTR
                     return;
                 }
 
-                // Put the imported employees into the table: fill in rows that exist, add the rest.
+                // This is where the imported employees are put into the table: fill in rows that exist, add the rest.
                 dgvNames.EndEdit();
                 foreach (EmployeeEntry entry in imported.GetAll())
                 {
@@ -156,7 +156,7 @@ namespace Dat2DTR
                     {
                         if (entry.Name.Length > 0)
                             match.Cells[ColName].Value = entry.Name;
-                        if (entry.ScheduleGiven)   // a file without a schedule column leaves the schedule alone
+                        if (entry.ScheduleGiven)   // This is because a file without a schedule column leaves the schedule alone
                             match.Cells[ColSchedule].Value = _scheduleTexts[entry.Schedule];
                     }
                 }
