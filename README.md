@@ -90,7 +90,7 @@ carried over from month to month automatically.
 | Sick Leave | Deducted from the Sick Leave credits; if not enough, the rest comes from Vacation Leave |
 | Special Privilege Leave | Not deducted; counted (3 days a year) |
 | Wellness Leave | Not deducted; counted (5 days a year) |
-| CTO | Taken from the CTO given (at most 6 days at a time, each with its own expiry date; unused CTO expires) |
+| CTO | Taken from the CTO given (at most 15 days at a time, each with its own expiry date; unused CTO expires). Can only be filed when there is enough CTO on that day |
 | Solo Parent Leave | Taken from the Solo Parent Leave given, the same way as CTO (at most 7 days at a time, each with its own expiry date; unused days expire and are taken off the balance) |
 | Holiday | Not a leave: not deducted, not counted; the DTR shows `HOLIDAY` |
 | Suspended (work suspension) | Not a leave: not deducted, not counted; the DTR shows `WORK SUSPENDED` |
@@ -134,7 +134,10 @@ with the days they were used and the total days.
 
 **CTO given...** in Edit Leave keeps the CTO given to the employee: date, days and expiry date.
 **Solo Parent given...** does the same for Solo Parent Leave. In both, typing the date given fills in the
-expiry date by itself: one year (Sep 15, 2026 -> Sep 14, 2027); it can be typed over.
+expiry date by itself: one year (Sep 15, 2026 -> Sep 14, 2027); it can be typed over. Each line shows
+what is **Left** and its **Status** (Active, Used up, Expired); used-up and expired lines are grey and locked,
+kept as a record. CTO and Solo Parent Leave cannot be filed in Edit Leave without enough balance on that day
+(for ticked employees, those without enough are skipped and listed).
 
 **Print...** and **Save To...** first ask what you want: *DTR only*, *Computation of Leaves only*, or *Both*.
 **Save To...** can also save the scans of the chosen employees and month as a new **.dat file**, line for line

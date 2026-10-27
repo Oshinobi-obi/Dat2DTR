@@ -600,6 +600,18 @@ namespace Dat2DTR
                 entry.Idlar = false;
             }
 
+            // This is the balance check: CTO and Solo Parent Leave can only be filed when enough was given.
+            // Otherwise the choice is refused and the row goes back to what it was.
+            if (entry != null && !CtoCalculator.CanFile(_cto, _leaves, _attendance.EmployeeId, _attendance.Days[i].Date, entry))
+            {
+                Say(NotEnoughText(i, entry), true);
+                if (IsHandleCreated)
+                    BeginInvoke(new Action(() => PutRowBack(i)));
+                else
+                    PutRowBack(i);
+                return;
+            }
+
             _leaves.Set(_attendance.EmployeeId, _attendance.Days[i].Date, entry);
             _changed = true;
 
@@ -609,6 +621,34 @@ namespace Dat2DTR
                 Say("", false);
             ShowRow(i);
             Recompute();
+        }
+
+        /// <summary>This is the row shown again from what is filed (after a choice was refused).</summary>
+        private void PutRowBack(int i)
+        {
+            ShowRow(i);
+            if (_grid.IsCurrentCellInEditMode && _grid.CurrentCell != null && _grid.CurrentCell.RowIndex == i)
+                _grid.RefreshEdit();
+        }
+
+        /// <summary>This is the message when there is not enough CTO / Solo Parent Leave for the day picked.</summary>
+        private string NotEnoughText(int i, LeaveEntry entry)
+        {
+            DateTime date = _attendance.Days[i].Date;
+            bool solo = entry.Type == LeaveType.SoloParent;
+            string name = solo ? "Solo Parent Leave" : "CTO";
+            string button = solo ? "\"Solo Parent given...\"" : "\"CTO given...\"";
+            decimal left = CtoCalculator.LeftOn(_cto, _leaves, _attendance.EmployeeId, date, entry.Type);
+            string day = "Day " + date.Day + ": ";
+
+            if (left <= 0m)
+                return day + "there is no " + name + " left on " + date.ToString("MMM d", CultureInfo.InvariantCulture) +
+                       ", so it cannot be filed. Add the " + name + " given first with " + button + ".";
+            if (left < entry.Days)
+                return day + "only " + LeaveRules.FormatDays(left) + " of " + name + " is left on " +
+                       date.ToString("MMM d", CultureInfo.InvariantCulture) + ", so a whole day cannot be filed. Choose half a day.";
+            return day + name + " here would take what a later day already filed needs, so it cannot be filed. " +
+                   "Add more with " + button + ", or remove the later day first.";
         }
 
         private static bool IsTicked(object? value)

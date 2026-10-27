@@ -89,8 +89,8 @@ namespace Dat2DTR
 
     public static class LeaveKinds
     {
-        /// <summary>This is the most CTO days an employee can have at one time.</summary>
-        public const decimal CtoMaxDays = 6m;
+        /// <summary>This is the most CTO days an employee can have at one time (15 days).</summary>
+        public const decimal CtoMaxDays = 15m;
 
         /// <summary>This is how long given CTO stays usable when nothing else is typed (one year).</summary>
         public const int CtoValidMonths = 12;

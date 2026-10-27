@@ -404,6 +404,52 @@ namespace Dat2DTR
             return lots;
         }
 
+        /// <summary>
+        /// This is what is left of each time it was given (same order as grants), after every day filed so far -
+        /// in any month. 0 = used up. Shown in the "CTO given" / "Solo Parent given" window.
+        /// </summary>
+        public static decimal[] LeftOfEach(List<CtoGrant> grants, List<KeyValuePair<DateTime, LeaveEntry>> uses)
+        {
+            decimal used, notCovered;
+            return PlayUntil(grants, uses, DateTime.MaxValue, DateTime.MinValue, out used, out notCovered)
+                .Select(l => l.Left).ToArray();
+        }
+
+        /// <summary>This is how much of the days filed could not be taken from what was given (all months).</summary>
+        public static decimal NotCoveredAtAll(List<CtoGrant> grants, List<KeyValuePair<DateTime, LeaveEntry>> uses)
+        {
+            decimal used, notCovered;
+            PlayUntil(grants, uses, DateTime.MaxValue, DateTime.MinValue, out used, out notCovered);
+            return notCovered;
+        }
+
+        /// <summary>
+        /// This is the check made before CTO or Solo Parent Leave is filed on a day: true when there is enough
+        /// given for it, without leaving another day that is already filed uncovered. Other kinds of leave are
+        /// always fine.
+        /// </summary>
+        public static bool CanFile(CtoStore given, LeaveStore leaves, string employeeId, DateTime date, LeaveEntry entry)
+        {
+            if (!LeaveKinds.IsGiven(entry.Type))
+                return true;
+            List<CtoGrant> grants = given.Get(employeeId, entry.Type);
+            List<KeyValuePair<DateTime, LeaveEntry>> uses = leaves.GetAllOfKind(employeeId, entry.Type);
+            decimal before = NotCoveredAtAll(grants, uses);
+
+            uses = uses.Where(u => u.Key.Date != date.Date).ToList();
+            uses.Add(new KeyValuePair<DateTime, LeaveEntry>(date.Date, entry));
+            uses.Sort((a, b) => a.Key.CompareTo(b.Key));
+            return NotCoveredAtAll(grants, uses) <= before;
+        }
+
+        /// <summary>This is the CTO (or Solo Parent Leave) left on that day, not counting what is filed on the day itself.</summary>
+        public static decimal LeftOn(CtoStore given, LeaveStore leaves, string employeeId, DateTime date, LeaveType type)
+        {
+            List<KeyValuePair<DateTime, LeaveEntry>> uses = leaves.GetAllOfKind(employeeId, type)
+                .Where(u => u.Key.Date != date.Date).ToList();
+            return BalanceOn(given.Get(employeeId, type), uses, date);
+        }
+
         /// <summary>This is the CTO the employee can still use on that day (after the CTO used up to that day).</summary>
         public static decimal BalanceOn(List<CtoGrant> grants, List<KeyValuePair<DateTime, LeaveEntry>> uses, DateTime day)
         {

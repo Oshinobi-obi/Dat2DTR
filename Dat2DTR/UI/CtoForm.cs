@@ -12,7 +12,10 @@ namespace Dat2DTR
     internal sealed class CtoForm : Form
     {
         // This is the column numbers of the table.
-        private const int ColGiven = 0, ColDays = 1, ColExpires = 2;
+        private const int ColGiven = 0, ColDays = 1, ColExpires = 2, ColLeft = 3, ColStatus = 4;
+
+        /// <summary>This is the Tag of the Status cell of a line that is used up or expired: grey and locked.</summary>
+        private const string Locked = "locked";
 
         private static readonly string[] DateFormats =
         {
@@ -54,8 +57,8 @@ namespace Dat2DTR
             MinimizeBox = false;
             MaximizeBox = false;
             ShowInTaskbar = false;
-            ClientSize = new Size(620, 470);
-            MinimumSize = new Size(560, 380);
+            ClientSize = new Size(780, 470);
+            MinimumSize = new Size(700, 380);
 
             var title = new Label();
             title.Text = _name + " given to " + who;
@@ -69,7 +72,8 @@ namespace Dat2DTR
             how.Text = "One line for each time " + _name + " was given: the date, how many days (for example 1 or 0.5), and the date it expires. " +
                        "\"Expires on\" is filled in by itself when you type the date given: one year. Type over it if it is different.\r\n" +
                        "An employee can have at most " + LeaveRules.FormatShort(_maxDays) + " days of " + _name + " at one time. " +
-                       _name + " not used by its expiry date is lost (taken off the balance by itself). Using it is filed in Edit Leave.";
+                       _name + " not used by its expiry date is lost (taken off the balance by itself). Using it is filed in Edit Leave. " +
+                       "Lines that are used up or expired are grey: they are kept as a record and cannot be changed.";
             how.ForeColor = Theme.TextMuted;
             how.SetBounds(16, 40, 588, 62);
             how.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -94,17 +98,26 @@ namespace Dat2DTR
             _grid.EditMode = DataGridViewEditMode.EditOnEnter;
             _grid.RowTemplate.Height = 25;
 
-            AddColumn("Given on", 170);
-            AddColumn("Days", 80).DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-            DataGridViewColumn expires = AddColumn("Expires on", 170);
-            expires.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            AddColumn("Given on", 150);
+            AddColumn("Days", 70).DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            AddColumn("Expires on", 150);
+            DataGridViewColumn leftColumn = AddColumn("Left", 70);
+            leftColumn.ReadOnly = true;
+            leftColumn.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            DataGridViewColumn status = AddColumn("Status", 220);
+            status.ReadOnly = true;
+            status.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            status.Tag = GridFit.FreeText;
             GridFit.Attach(this, _grid);    // This is so it fits the screen it is shown on (125%, 150%...)
 
-            foreach (CtoGrant g in grants)
+            decimal[] left = CtoCalculator.LeftOfEach(grants, _uses);
+            for (int k = 0; k < grants.Count; k++)
             {
+                CtoGrant g = grants[k];
                 int index = _grid.Rows.Add(ShowDate(g.Given), LeaveRules.FormatShort(g.Days), ShowDate(g.Expires));
                 if (g.Expires.Date != LeaveKinds.DefaultExpiry(_type, g.Given))
                     _grid.Rows[index].Tag = TypedExpiry;    // This is when a different expiry was typed: keep it
+                ShowStatus(_grid.Rows[index], g.Expires, left[k], true);
             }
             _grid.AllowUserToAddRows = true;     // This is the empty line at the bottom: typing in it adds a new one
             _grid.CellValueChanged += Grid_CellValueChanged;
@@ -112,7 +125,7 @@ namespace Dat2DTR
             var remove = new Button();
             remove.Text = "Remove this line";
             remove.SetBounds(16, 34, 130, 32);
-            remove.Click += (sender, e) => HolidaysForm.RemoveCurrentLine(_grid);
+            remove.Click += RemoveLine_Click;
 
             _message.AutoEllipsis = true;
             _message.SetBounds(16, 6, 588, 22);
@@ -161,8 +174,10 @@ namespace Dat2DTR
             DataGridViewRow row = _grid.Rows[e.RowIndex];
 
             if (e.ColumnIndex == ColExpires)
-            {
                 row.Tag = TypedExpiry;       // This is typed by hand: keep it
+            if (e.ColumnIndex == ColDays || e.ColumnIndex == ColExpires)
+            {
+                RefreshLeft();
                 return;
             }
             if (e.ColumnIndex != ColGiven)
@@ -204,6 +219,109 @@ namespace Dat2DTR
             if (!keepTyped)
                 Say("Expires on " + ShowDate(LeaveKinds.DefaultExpiry(_type, given)) + ": one year from the date given. " +
                     "Type over it if it is different.", false);
+            RefreshLeft();
+        }
+
+        /// <summary>
+        /// This is where the Left and Status of a line are written: "Active", "Used up", or "Expired ... (N not used)".
+        /// A line that is used up or expired when the window opens is made grey and locked (lock = true).
+        /// </summary>
+        private void ShowStatus(DataGridViewRow row, DateTime expires, decimal left, bool lockIt)
+        {
+            bool usedUp = left <= 0m;
+            bool expired = !usedUp && expires.Date < DateTime.Today;
+            string text = usedUp ? "Used up" :
+                          expired ? "Expired " + ShowDate(expires) + " (" + LeaveRules.FormatShort(left) + " not used)" :
+                          "Active";
+
+            _filling = true;
+            try
+            {
+                row.Cells[ColLeft].Value = LeaveRules.FormatShort(expired ? 0m : left);
+                row.Cells[ColStatus].Value = text;
+            }
+            finally
+            {
+                _filling = false;
+            }
+
+            if (lockIt && (usedUp || expired))
+            {
+                row.ReadOnly = true;
+                row.Cells[ColStatus].Tag = Locked;
+                row.DefaultCellStyle.BackColor = Theme.Panel;
+                row.DefaultCellStyle.ForeColor = Theme.TextMuted;
+                row.DefaultCellStyle.SelectionBackColor = Theme.Line;
+                row.DefaultCellStyle.SelectionForeColor = Theme.TextMuted;
+            }
+            else if (row.Cells[ColStatus].Tag as string != Locked)
+            {
+                row.Cells[ColStatus].Style.ForeColor = expired ? Theme.Red : Color.Empty;
+            }
+        }
+
+        /// <summary>This is where Left and Status are worked out again after a line was typed or changed.</summary>
+        private void RefreshLeft()
+        {
+            var rows = new List<DataGridViewRow>();
+            var grants = new List<CtoGrant>();
+            foreach (DataGridViewRow row in _grid.Rows)
+            {
+                if (row.IsNewRow) continue;
+                DateTime given, expires;
+                decimal? days;
+                if (!TryReadDate(Convert.ToString(row.Cells[ColGiven].Value), out given) ||
+                    !LeaveRules.TryParseCredits(Convert.ToString(row.Cells[ColDays].Value), out days) || !days.HasValue || days.Value <= 0)
+                {
+                    if (row.Cells[ColStatus].Tag as string != Locked) ClearStatus(row);
+                    continue;
+                }
+                string expiresText = (Convert.ToString(row.Cells[ColExpires].Value) ?? "").Trim();
+                if (expiresText.Length == 0) expires = LeaveKinds.DefaultExpiry(_type, given);
+                else if (!TryReadDate(expiresText, out expires))
+                {
+                    if (row.Cells[ColStatus].Tag as string != Locked) ClearStatus(row);
+                    continue;
+                }
+                rows.Add(row);
+                grants.Add(new CtoGrant { Given = given.Date, Days = days.Value, Expires = expires.Date });
+            }
+
+            decimal[] left = CtoCalculator.LeftOfEach(grants, _uses);
+            for (int k = 0; k < rows.Count; k++)
+                ShowStatus(rows[k], grants[k].Expires, left[k], false);
+        }
+
+        /// <summary>This is an empty Left and Status, for a line that is not finished yet.</summary>
+        private void ClearStatus(DataGridViewRow row)
+        {
+            _filling = true;
+            try
+            {
+                row.Cells[ColLeft].Value = "";
+                row.Cells[ColStatus].Value = "";
+            }
+            finally
+            {
+                _filling = false;
+            }
+        }
+
+        /// <summary>This is "Remove this line": a grey (used up or expired) line is only removed after asking.</summary>
+        private void RemoveLine_Click(object? sender, EventArgs e)
+        {
+            DataGridViewRow? row = _grid.CurrentRow;
+            if (row != null && !row.IsNewRow && row.Cells[ColStatus].Tag as string == Locked)
+            {
+                DialogResult answer = MessageBox.Show(this,
+                    "This line is " + Convert.ToString(row.Cells[ColStatus].Value) + ". It is kept as a record of the " + _name +
+                    " that was given and used.\n\nRemove it anyway? (Only if it was typed by mistake.)",
+                    Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
+                if (answer != DialogResult.Yes)
+                    return;
+            }
+            HolidaysForm.RemoveCurrentLine(_grid);
+            RefreshLeft();
         }
 
         /// <summary>This is what was given, after the user clicked Save.</summary>

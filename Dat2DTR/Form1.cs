@@ -864,8 +864,24 @@ namespace Dat2DTR
                 replace = answer == DialogResult.Yes;
             }
 
+            var skipped = new List<KeyValuePair<int, DateTime>>();
             int changed = ApplyLeaveToMany(_leaves, ticked.Select(s => s.EmployeeId).ToList(),
-                ticked.Select(s => _settings.GetSchedule(s.ScheduleIndex)).ToList(), from, to, entry, replace);
+                ticked.Select(s => _settings.GetSchedule(s.ScheduleIndex)).ToList(), from, to, entry, replace, _cto, skipped);
+
+            // This is the list of employees who did not have enough CTO / Solo Parent Leave: those days were not filed.
+            if (skipped.Count > 0 && entry != null)
+            {
+                string name = entry.Type == LeaveType.SoloParent ? "Solo Parent Leave" : "CTO";
+                var lines = skipped.GroupBy(k => k.Key).Select(g =>
+                    "- " + names[g.Key] + ":  day" + (g.Count() == 1 ? " " : "s ") +
+                    string.Join(", ", g.Select(k => k.Value.Day.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToArray())).ToList();
+                MessageBox.Show(this,
+                    "Not filed - there was not enough " + name + " given for:\n\n" + string.Join("\n", lines.Take(15).ToArray()) +
+                    (lines.Count > 15 ? "\n... and " + (lines.Count - 15) + " more" : "") +
+                    "\n\nAdd the " + name + " given in Edit Leave (\"" + (entry.Type == LeaveType.SoloParent ? "Solo Parent given..." : "CTO given...") +
+                    "\") first, then file it again.",
+                    "Edit Leave", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
 
             SaveLeaveFiles(true);
             _showLeave = false;     // This is so a holiday or a suspension is seen on the DTR
@@ -881,8 +897,11 @@ namespace Dat2DTR
         /// from..to for each of the employees. Returns how many days were changed.
         /// </summary>
         /// <param name="replace">This is false to keep a different leave that is already filed on a day.</param>
+        /// <param name="given">This is the CTO / Solo Parent Leave given, to check the balance before filing it (null = no check).</param>
+        /// <param name="skipped">This is where the days not filed for lack of balance are listed (employee number, date), or null.</param>
         internal static int ApplyLeaveToMany(LeaveStore leaves, List<string> ids, List<WorkSchedule> schedules,
-                                             DateTime from, DateTime to, LeaveEntry? entry, bool replace)
+                                             DateTime from, DateTime to, LeaveEntry? entry, bool replace,
+                                             CtoStore? given, List<KeyValuePair<int, DateTime>>? skipped)
         {
             int changed = 0;
             for (int n = 0; n < ids.Count; n++)
@@ -896,6 +915,11 @@ namespace Dat2DTR
                         continue;
                     if (entry != null && existing != null && !replace)
                         continue;
+                    if (entry != null && given != null && !CtoCalculator.CanFile(given, leaves, ids[n], date, entry))
+                    {
+                        if (skipped != null) skipped.Add(new KeyValuePair<int, DateTime>(n, date));
+                        continue;
+                    }
                     leaves.Set(ids[n], date, entry);
                     changed++;
                 }

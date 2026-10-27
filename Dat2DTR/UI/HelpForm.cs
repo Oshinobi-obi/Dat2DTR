@@ -133,7 +133,8 @@ namespace Dat2DTR
                    "The leave is written on the DTR and deducted from the leave credits automatically.");
             Bullet("A new page, the Computation of Leaves, shows the leave card of the employee and how the month was computed. " +
                    "When you print or save, you choose: the DTR only, the Computation of Leaves only, or both.");
-            Bullet("CTO is kept as a balance: the CTO given (at most 6 days at a time, each with its own expiry date) minus the CTO used.");
+            Bullet("CTO is kept as a balance: the CTO given (at most " + LeaveRules.FormatShort(LeaveKinds.CtoMaxDays) +
+                   " days at a time, each with its own expiry date) minus the CTO used.");
             Bullet("Solo Parent Leave is kept the same way: the days given (at most 7 at a time, each with its own expiry date) minus the days used. " +
                    "What is not used by its expiry date is taken off the balance by itself.");
             Bullet("Below the computation, the History of Availment of Leave shows every leave used from January to December.");
@@ -341,6 +342,11 @@ namespace Dat2DTR
                  "pick \"CTO\" under Leave on that day (whole day or half a day).");
             Note("CTO used is taken from the CTO that expires first. CTO not used by its expiry date is lost: it is taken off " +
                  "the balance by itself, and the computation shows how much expired and when the rest expires.");
+            Note("In the \"CTO given\" window, \"Left\" shows what is left of each line and \"Status\" says Active, Used up or Expired. " +
+                 "Lines that are used up or expired are grey and cannot be changed: they stay as a record.");
+            Note("CTO can only be filed when there is enough of it on that day. Without it, Edit Leave does not take the choice " +
+                 "and says how much is left (for example: only 1/2 day left - choose half a day). " +
+                 "For ticked employees, the ones without enough CTO are skipped and listed.");
 
             SubHeading("Solo Parent Leave: giving and using");
             Step(1, "In Edit Leave, click \"Solo Parent given...\".",
@@ -352,7 +358,8 @@ namespace Dat2DTR
             Step(4, "When the employee uses it, file it like a leave:",
                  "pick \"Solo Parent Leave\" under Leave on that day (whole day or half a day). The DTR shows SOLO PARENT LEAVE.");
             Note("It works the same way as CTO: it is not deducted from the leave credits, the days that expire first are used first, " +
-                 "and days not used by their expiry date are taken off the SOLO balance by themselves.");
+                 "days not used by their expiry date are taken off the SOLO balance by themselves, used-up and expired lines are grey, " +
+                 "and it can only be filed when there is enough of it on that day.");
 
             // This is the "How leave is computed" section ------------------------------------------------------------
             Heading("How leave is computed");
