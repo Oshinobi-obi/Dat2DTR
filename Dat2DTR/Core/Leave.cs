@@ -765,6 +765,13 @@ namespace Dat2DTR
         /// </summary>
         public decimal? OpeningFl;
 
+        /// <summary>
+        /// This is the "Balance below zero: make it 0" tick of the month in Edit Leave. Not ticked (the usual case): when the
+        /// deductions are more than the Vacation Leave credits, the balance goes below zero and is carried to the next month.
+        /// Ticked: the balance stops at 0 and what the credits do not cover is without pay.
+        /// </summary>
+        public bool ZeroBalance;
+
         /// <summary>This is the credits earned in the month, typed by a person (null = the usual 1.25).</summary>
         public decimal? EarnedVl, EarnedSl;
 
@@ -786,7 +793,7 @@ namespace Dat2DTR
         {
             get
             {
-                return !OpeningVl.HasValue && !OpeningSl.HasValue && !OpeningSpl.HasValue && !OpeningWl.HasValue && !OpeningFl.HasValue &&
+                return !OpeningVl.HasValue && !OpeningSl.HasValue && !OpeningSpl.HasValue && !OpeningWl.HasValue && !OpeningFl.HasValue && !ZeroBalance &&
                        !EarnedVl.HasValue && !EarnedSl.HasValue &&
                        !LateMinutes.HasValue && !UndertimeMinutes.HasValue && !DayCharge.HasValue;
             }
@@ -992,15 +999,22 @@ namespace Dat2DTR
                 if (cells.Length > 12)
                     item.OpeningFl = ReadDecimal(cells[12]);
 
+                // This is the "make it 0" tick (added after the Forced Leave left).
+                if (cells.Length > 13)
+                    item.ZeroBalance = cells[13].Trim().Equals(ZeroMark, StringComparison.OrdinalIgnoreCase);
+
                 if (!item.IsEmpty)
                     _items[Key(id, month.Year, month.Month)] = item;
             }
         }
 
+        /// <summary>This is what is written in the file for a month ticked "Balance below zero: make it 0".</summary>
+        private const string ZeroMark = "MAKE 0";
+
         public void Save(string path)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("ID,Month,Opening VL,Opening SL,Earned VL,Earned SL,Late minutes,Undertime minutes,Day charge,Data through,Opening SPL,Opening WL,Opening FL");
+            sb.AppendLine("ID,Month,Opening VL,Opening SL,Earned VL,Earned SL,Late minutes,Undertime minutes,Day charge,Data through,Opening SPL,Opening WL,Opening FL,Below zero");
             foreach (var pair in _items.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase))
             {
                 LedgerMonth m = pair.Value;
@@ -1015,7 +1029,8 @@ namespace Dat2DTR
                     m.UndertimeMinutes.HasValue ? m.UndertimeMinutes.Value.ToString(CultureInfo.InvariantCulture) : "",
                     Write(m.DayCharge),
                     m.DataThrough.HasValue ? m.DataThrough.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "",
-                    Write(m.OpeningSpl), Write(m.OpeningWl), Write(m.OpeningFl)
+                    Write(m.OpeningSpl), Write(m.OpeningWl), Write(m.OpeningFl),
+                    m.ZeroBalance ? ZeroMark : ""
                 }));
             }
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));

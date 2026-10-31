@@ -420,9 +420,11 @@ namespace Dat2DTR
                 SubBullet("Schedule " + schedule.Letter + " (" + schedule.OfficialHoursText + "):  a whole day of leave = " +
                           LeaveRules.FormatShort(charge) + ",  half a day = " + LeaveRules.FormatShort(charge / 2));
             }
-            Bullet("If the Vacation Leave credits are not enough, the rest is without pay. The credits never go below zero. The computation " +
-                   "first shows, with a minus sign, what the balance would have come to (for example  Not enough credits: the balance would be  -1.812), " +
-                   "then the days without pay that make up for it (1.812), so the balance at the end is 0.000.");
+            Bullet("If the Vacation Leave credits are not enough, the balance goes below zero, with its minus sign (for example -1.750), " +
+                   "in the table, the computation and the VL at the top right. It is carried to next month, where the credits earned bring it back up.");
+            Bullet("To make it 0 instead, tick \"Balance below zero: make it 0 (the rest is without pay)\" in Edit Leave, below the credits earned. " +
+                   "The balance then stops at 0.000 and the rest is without pay (also a balance below zero brought forward). The computation shows " +
+                   "what the balance would have come to (Not enough credits: the balance would be  -1.812), then the days without pay.");
             Bullet("An employee with days without pay earns less that month. The CSC table of computation for leave without pay is used " +
                    "(for example 1 day without pay = 1.208 earned, 6 days = 1.000, 30 days = 0).");
             Bullet("Special Privilege Leave (3 days a year) and Wellness Leave (5 days a year) are NOT deducted from the leave credits. " +

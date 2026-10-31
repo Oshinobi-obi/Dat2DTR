@@ -31,6 +31,12 @@ namespace Dat2DTR
         /// <summary>This is every version, NEWEST FIRST.</summary>
         public static readonly VersionEntry[] History =
         {
+            new VersionEntry("1.8.0", "October 31, 2026",
+                "Vacation Leave below zero: when the deductions are more than the credits, the balance goes below zero with its minus " +
+                "sign (e.g. -1.750) in the leave card table, the VL at the top right, the computation and the certificate, and is " +
+                "carried to next month (the credits earned bring it back up).",
+                "Edit Leave: \"Balance below zero: make it 0 (the rest is without pay)\", a tick box for the month. Ticked, the balance " +
+                "stops at 0 and the rest is without pay, as before."),
             new VersionEntry("1.7.0", "October 31, 2026",
                 "Edit DTR: a No Late / Undertime box beside Flexi-Time. A ticked day keeps its times, but no Late or Undertime " +
                 "is counted, totalled, deducted or reported (for example a Friday when everyone went back to 7-4 or 8-5).",

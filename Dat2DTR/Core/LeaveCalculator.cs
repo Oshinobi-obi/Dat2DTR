@@ -182,6 +182,9 @@ namespace Dat2DTR
         /// <summary>This is true when a person typed the starting balance (instead of it being carried over).</summary>
         public bool VlStartTyped, SlStartTyped;
 
+        /// <summary>This is "Balance below zero: make it 0" (ticked in Edit Leave): the balance stops at 0, the rest is without pay.</summary>
+        public bool ZeroBalance;
+
         /// <summary>This is the last date the .dat file covered when this month was computed.</summary>
         public DateTime? DataThrough;
 
@@ -504,9 +507,11 @@ namespace Dat2DTR
     ///      the rest is deducted from the Vacation Leave credits.
     ///   4. LATE and UNDERTIME of the month are converted to a fraction of a day
     ///      (see LeaveRules.MinutesToDays) and deducted from the Vacation Leave credits.
-    ///   5. If the Vacation Leave credits are not enough, the rest is WITHOUT PAY (LWOP). The credits never go below
-    ///      zero; the computation shows, with a minus sign, the balance the deductions would have come to
-    ///      ("Not enough credits: the balance would be -1.812"), then the days without pay that make up for it.
+    ///   5. If the Vacation Leave credits are not enough, the balance goes BELOW ZERO (with its minus sign, e.g. -1.750)
+    ///      and is carried to the next month, where the credits earned bring it back up.
+    ///      When "Balance below zero: make it 0" is ticked for the month in Edit Leave, the balance stops at 0 instead and
+    ///      the rest is WITHOUT PAY (LWOP) - a balance below zero brought forward too. The computation then shows the
+    ///      balance it would have come to ("Not enough credits: the balance would be -1.812") and the days without pay.
     ///   6. Special Privilege Leave (3 days a year) and Wellness Leave (5 days a year) are not deducted,
     ///      only counted. CTO and Solo Parent Leave are taken from the days the employee was given
     ///      (see CtoCalculator); days not used by their expiry date are taken off the balance.
@@ -601,6 +606,7 @@ namespace Dat2DTR
                     // This is the rule: a typed balance always wins over the carried one.
                     if (remembered.OpeningVl.HasValue) { vl = remembered.OpeningVl; month.VlStartTyped = true; }
                     if (remembered.OpeningSl.HasValue) { sl = remembered.OpeningSl; month.SlStartTyped = true; }
+                    month.ZeroBalance = remembered.ZeroBalance;
                 }
 
                 month.VlStart = vl;
@@ -794,9 +800,21 @@ namespace Dat2DTR
             if (month.VlStart.HasValue)
             {
                 decimal available = month.VlStart.Value + month.VlEarned;
-                month.VlEnjoyed = Math.Min(wanted, Math.Max(0m, available));
-                month.Lwop = wanted - month.VlEnjoyed;              // This is rule 5: the rest is without pay
-                month.VlNet = available - month.VlEnjoyed;
+                if (month.ZeroBalance)
+                {
+                    // This is rule 5 with "make it 0": the credits stop at 0; what they do not cover is without pay,
+                    // and so is a balance below zero brought forward from the month before.
+                    month.VlEnjoyed = Math.Min(wanted, Math.Max(0m, available));
+                    month.Lwop = wanted - month.VlEnjoyed + Math.Max(0m, -available);
+                    month.VlNet = Math.Max(0m, available - month.VlEnjoyed);
+                }
+                else
+                {
+                    // This is rule 5, the usual case: everything is taken from the credits, even below zero.
+                    month.VlEnjoyed = wanted;
+                    month.Lwop = 0m;
+                    month.VlNet = available - wanted;
+                }
             }
             else
             {
@@ -1036,8 +1054,11 @@ namespace Dat2DTR
 
             if (m.Lwop > 0)
                 notes.Add("The Vacation Leave credits were not enough. " + LeaveRules.Format(m.Lwop) +
-                          " day(s) are WITHOUT PAY (LWOP). Check the credits earned this month: " +
-                          "an employee with days without pay earns less than 1.25.");
+                          " day(s) are WITHOUT PAY (LWOP), because \"Balance below zero: make it 0\" is ticked. Check the credits " +
+                          "earned this month: an employee with days without pay earns less than 1.25.");
+            else if (m.VlNet.HasValue && m.VlNet.Value < 0)
+                notes.Add("The Vacation Leave balance is below zero: " + LeaveRules.Format(m.VlNet.Value) + ". It is carried to next month. " +
+                          "To make it 0 instead (the rest without pay), tick \"Balance below zero: make it 0\".");
 
             if (m.SlToVl > 0)
                 notes.Add("The Sick Leave credits were not enough. " + LeaveRules.Format(m.SlToVl) +

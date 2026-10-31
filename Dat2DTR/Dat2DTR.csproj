@@ -9,7 +9,7 @@
     <Product>Dat2DTR</Product>
     <AssemblyTitle>Dat2DTR - Daily Time Record Maker</AssemblyTitle>
     <!-- This is the version shown on Dat2DTR.exe in Windows. Keep it the same as the newest entry of the version history in Core\AppInfo.cs -->
-    <Version>1.7.0</Version>
+    <Version>1.8.0</Version>
     <!-- This is the logo shown on Dat2DTR.exe in Windows Explorer and on the taskbar -->
     <ApplicationIcon>Assets\Dat2DTR.ico</ApplicationIcon>
   </PropertyGroup>

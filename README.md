@@ -168,10 +168,12 @@ How the month is computed (Civil Service Commission rules on leave):
   Half a day costs half of that.
 - The month's **Late** and **Undertime** are converted to a fraction of a day with the CSC table
   (8 hours = 1 day, 1 hour = .125, 1 minute = .002) and deducted from Vacation Leave.
-- What the Vacation Leave credits cannot cover is **without pay**, and with days without pay less than 1.25 is
-  earned that month (CSC table of computation for leave without pay). The credits never go below zero: the
-  computation shows, with a minus sign, what the balance would have come to (`Not enough credits: the balance
-  would be -1.812`), then the days without pay that make up for it, so the lines add up to the balance of 0.000.
+- When the deductions are more than the Vacation Leave credits, the balance goes **below zero** with its minus sign
+  (e.g. `-1.750`) in the table, the computation and the VL at the top right, and is carried to next month.
+  **Balance below zero: make it 0** (a tick box in Edit Leave, kept in `leave-ledger.csv`) stops it at 0 instead:
+  the rest is **without pay**, and with days without pay less than 1.25 is earned that month (CSC table of
+  computation for leave without pay). The computation then shows what the balance would have come to
+  (`Not enough credits: the balance would be -1.812`), then the days without pay.
 - **Net** = balance brought forward + earned - enjoyed.
 
 On the DTR, a whole day of leave is printed in place of ABSENT (for example `VACATION LEAVE`). With a

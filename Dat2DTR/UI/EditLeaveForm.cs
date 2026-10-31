@@ -43,6 +43,9 @@ namespace Dat2DTR
         private readonly TextBox _openingVl = new TextBox(), _openingSl = new TextBox();
         private readonly TextBox _openingSpl = new TextBox(), _openingWl = new TextBox();   // This is the SPL and WL left, typed by hand
         private readonly TextBox _openingFl = new TextBox();   // This is the Mandatory / Forced Leave left, typed by hand
+
+        /// <summary>This is "Balance below zero: make it 0": the Vacation Leave balance stops at 0 and the rest is without pay.</summary>
+        private readonly CheckBox _zeroBalance = new CheckBox();
         private readonly TextBox _earnedVl = new TextBox(), _earnedSl = new TextBox();
         private readonly Label _carried = new Label();
         private readonly TextBox _notes = new TextBox();
@@ -85,8 +88,8 @@ namespace Dat2DTR
             StartPosition = FormStartPosition.CenterParent;
             MinimizeBox = false;
             ShowInTaskbar = false;
-            ClientSize = new Size(1200, 712);
-            MinimumSize = new Size(1100, 602);
+            ClientSize = new Size(1200, 736);
+            MinimumSize = new Size(1100, 626);
 
             // This is the top: who and how ----
             var title = new Label();
@@ -191,9 +194,16 @@ namespace Dat2DTR
             side.Controls.Add(SideHeading("Credits earned this month", 200));
             AddBoxRow(side, 226, _earnedVl, _earnedSl);
 
-            side.Controls.Add(SideHeading("Computation of " + attendance.MonthText, 260));
+            // This is the choice for a Vacation Leave balance that goes below zero: keep it (carried over) or make it 0.
+            _zeroBalance.Text = "Balance below zero: make it 0 (the rest is without pay)";
+            _zeroBalance.SetBounds(12, 254, 396, 22);
+            tip.SetToolTip(_zeroBalance, "Not ticked: when the deductions are more than the Vacation Leave credits, the balance goes below zero " +
+                                         "(for example -1.750) and is carried to next month. Ticked: the balance stops at 0 and the rest is without pay.");
+            side.Controls.Add(_zeroBalance);
 
-            _summary.SetBounds(12, 284, 396, 150);
+            side.Controls.Add(SideHeading("Computation of " + attendance.MonthText, 284));
+
+            _summary.SetBounds(12, 308, 396, 126);
             _summary.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             _summary.BackgroundColor = Color.White;
             _summary.BorderStyle = BorderStyle.FixedSingle;
@@ -309,12 +319,14 @@ namespace Dat2DTR
             _openingSpl.Text = month != null && month.OpeningSpl.HasValue ? LeaveRules.FormatShort(month.OpeningSpl.Value) : "";
             _openingWl.Text = month != null && month.OpeningWl.HasValue ? LeaveRules.FormatShort(month.OpeningWl.Value) : "";
             _openingFl.Text = month != null && month.OpeningFl.HasValue ? LeaveRules.FormatShort(month.OpeningFl.Value) : "";
+            _zeroBalance.Checked = month != null && month.ZeroBalance;
             _earnedVl.Text = LeaveRules.FormatShort(month != null && month.EarnedVl.HasValue ? month.EarnedVl.Value : LeaveRules.MonthlyCredit);
             _earnedSl.Text = LeaveRules.FormatShort(month != null && month.EarnedSl.HasValue ? month.EarnedSl.Value : LeaveRules.MonthlyCredit);
             _filling = false;
 
             foreach (TextBox box in new[] { _openingVl, _openingSl, _openingSpl, _openingWl, _openingFl, _earnedVl, _earnedSl })
                 box.TextChanged += Box_TextChanged;
+            _zeroBalance.CheckedChanged += Box_TextChanged;
 
             for (int i = 0; i < attendance.Days.Count; i++)
                 ShowRow(i);
@@ -748,6 +760,8 @@ namespace Dat2DTR
             // This is the Mandatory / Forced Leave left: a number from 0 up to 5, or empty.
             if (CheckYearly(_openingFl, LeaveType.Forced, out value)) month.OpeningFl = value;
             else if (problem.Length == 0) problem = "the Forced Leave left";
+
+            month.ZeroBalance = _zeroBalance.Checked;
 
             // This is the rule: an empty box, or the usual 1.25, means "nothing special typed".
             if (Check(_earnedVl, out value)) month.EarnedVl = value == LeaveRules.MonthlyCredit ? null : value;

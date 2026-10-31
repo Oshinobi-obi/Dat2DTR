@@ -607,7 +607,12 @@ namespace Dat2DTR
                 else
                     cells.Add(Formula("D" + r, string.Join("+", enjoyedParts.ToArray()), m.VlEnjoyed, numberStyle));
 
-                NetCell(cells, 'E', 'C', 'D', r, i, previousRowIsMonth, m.VlStartTyped, m.VlStart, m.VlNet, numberStyle);
+                // This is a balance below zero made 0 (Edit Leave): the Net is then not "start + earned - enjoyed", so it is a plain number.
+                bool netAddsUp = !m.VlStart.HasValue || !m.VlNet.HasValue || m.VlStart.Value + m.VlEarned - m.VlEnjoyed == m.VlNet.Value;
+                if (netAddsUp)
+                    NetCell(cells, 'E', 'C', 'D', r, i, previousRowIsMonth, m.VlStartTyped, m.VlStart, m.VlNet, numberStyle);
+                else
+                    cells.Add(Amount("E" + r, m.VlNet!.Value, numberStyle));
 
                 cells.Add(Text("F" + r, m.VlDatesText, datesStyle));
                 cells.Add(m.SplDays > 0m ? Amount("G" + r, m.SplDays, cellStyle) : Blank("G" + r, cellStyle));
