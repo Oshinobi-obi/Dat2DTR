@@ -43,6 +43,9 @@ namespace Dat2DTR
         /// <summary>This is why Late / Undertime was typed in by hand.</summary>
         public string AdjustReason = "";
 
+        /// <summary>This is true for a day ticked No Late / Undertime in Edit DTR: its times stay, no Late or Undertime is counted.</summary>
+        public bool NoLateUndertime;
+
         /// <summary>This is a hand-typed remark such as HOLIDAY. Printed when the day has no times.</summary>
         public string Note = "";
 

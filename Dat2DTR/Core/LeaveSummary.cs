@@ -79,9 +79,11 @@ namespace Dat2DTR
         {
             var result = new List<string>();
 
-            // This is Forced Leave: counted over the whole year (a day already filed for December counts too).
+            // This is Forced Leave: counted over the whole year (a day already filed for December counts too). The days used up to
+            // this month are the leave card's (with a Forced Leave balance typed in Edit Leave), plus those filed for later months.
             int limit = LeaveKinds.Get(LeaveType.Forced).YearlyLimit;
-            decimal forced = card.History.Where(h => h != null).Sum(h => h.ForcedDays);
+            decimal forced = card.ForcedUsed +
+                             card.History.Where(h => h != null && h.Month > card.MonthStart.Month).Sum(h => h.ForcedDays);
             decimal? vl = card.Current.VlNet;
             if (card.MonthStart.Month >= 11 && forced < limit && (!vl.HasValue || vl.Value >= ForcedLeaveFrom))
                 result.Add("Forced Leave: " + LeaveRules.FormatShort(limit - forced) + " of " + limit +

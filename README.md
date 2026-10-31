@@ -65,7 +65,7 @@ The kept scans are in the backup too. The `.dat` files themselves are never chan
 The **clock** at the bottom right of the main window shows the date and time in the Philippines (UTC+8), from the
 computer's clock (so it is right even when Windows is set to another time zone). It is only shown on screen.
 
-**About** (top right) shows the version (also in the title bar, e.g. `Dat2DTR 1.6.0`), the developer and how to
+**About** (top right) shows the version (also in the title bar, e.g. `Dat2DTR 1.7.0`), the developer and how to
 contact them, and the version history. The version is always the newest entry of the history in `Core/AppInfo.cs`;
 for a new version add an entry at the top there and put the same number in `Dat2DTR.csproj` (`Version`).
 
@@ -109,11 +109,16 @@ undertime (a tie keeps the person's own schedule), and writes it in the Remark c
 7:00 - 4:00 on Schedule B -> Schedule C, not late, no undertime. 7:30 - 4:30 -> stays on B (30 minutes undertime either way).
 Schedule A (10 hours) has no other schedule of the same length. A day that is not ticked follows the person's own schedule.
 
+**No Late / Undertime** (a tick box per day, beside Flexi-Time): no Late and no Undertime are counted on that day,
+for example a Friday when everyone went back to 7-4 or 8-5. The times stay on the DTR; the Late / Undertime boxes are left
+empty, not totalled, not deducted and not in the Reports, and the Result column shows what would have been counted.
+It does not change ABSENT (a working day with no scans).
+
 **Forgotten lunch scans** are fine: a day with only the arrival and the departure (or one lunch scan) is judged on the
 arrival and the departure, with no warning.
 
 The `.dat` file is never changed. Typed values are kept in `%AppData%\Dat2DTR\corrections.csv`
-(times) and `adjustments.csv` (Late / Undertime and Flexi-Time), and days typed in by hand are listed on screen
+(times) and `adjustments.csv` (Late / Undertime, Flexi-Time and No Late / Undertime), and days typed in by hand are listed on screen
 (the employee gets a `*` in the list).
 
 ## Edit Leave and the Computation of Leaves
@@ -123,8 +128,9 @@ kind of leave and whether it was a whole day or half a day. The first time, also
 **balance brought forward** (Vacation and Sick Leave, from the leave card). After that the balance is
 carried over from month to month automatically. Below them, **Special** and **Wellness** take the Special Privilege Leave and
 Wellness Leave *left* at the start of the month (for days used before the program was used; e.g. 2 SPL used = type 1).
-Empty = counted from the SPL and WL filed this year. The typed numbers are kept in `leave-ledger.csv` and count for
-the rest of that year (both start again every January 1).
+Empty = counted from the SPL and WL filed this year. Centred below them, **Force/Mandatory** takes the Mandatory / Forced
+Leave left in the same way (5 days a year; e.g. 2 days taken = type 3). The typed numbers are kept in `leave-ledger.csv`
+and count for the rest of that year (all three start again every January 1).
 
 | Kind of leave | What happens |
 |---|---|
@@ -163,7 +169,9 @@ How the month is computed (Civil Service Commission rules on leave):
 - The month's **Late** and **Undertime** are converted to a fraction of a day with the CSC table
   (8 hours = 1 day, 1 hour = .125, 1 minute = .002) and deducted from Vacation Leave.
 - What the Vacation Leave credits cannot cover is **without pay**, and with days without pay less than 1.25 is
-  earned that month (CSC table of computation for leave without pay).
+  earned that month (CSC table of computation for leave without pay). The credits never go below zero: the
+  computation shows, with a minus sign, what the balance would have come to (`Not enough credits: the balance
+  would be -1.812`), then the days without pay that make up for it, so the lines add up to the balance of 0.000.
 - **Net** = balance brought forward + earned - enjoyed.
 
 On the DTR, a whole day of leave is printed in place of ABSENT (for example `VACATION LEAVE`). With a
@@ -210,11 +218,12 @@ the CTO given in `cto.csv`, the Solo Parent Leave given in `solo-parent.csv`.
   (e.g. `Sep 21 - In 7:11, Out 6:05 PM (11m)`). A Monday on leave or a holiday is not
   counted. **Save to Excel...** saves all five, one worksheet each; **Save as PDF...** and **Print...** give the report on
   screen or all five, on sideways (landscape) pages with the headings repeated on every page.
-- **Certificate of Leave Credits** (a choice in Print / Save To): one page per employee with a table of every
+- **Certificate of Leave Credits** (a tab above the DTR, beside Computation of Leaves, to see it as it will be printed
+  today; and a choice in Print / Save To): one page per employee with a table of every
   leave - Vacation Leave, Sick Leave and their total, Mandatory / Forced Leave, Special Privilege Leave and Wellness
   Leave left for the year, CTO and Solo Parent Leave - ready to sign, saved as PDF. The paragraphs are justified.
   The names and positions of "Prepared by" and "Certified correct" are changed with **Edit Certificate Details...**
-  (bottom of the Print / Save To choice window) and kept in `settings.ini`; an empty one is blank on the certificate.
+  (beside the Certificate tab, or at the bottom of the Print / Save To choice window) and kept in `settings.ini`; an empty one is blank on the certificate.
   At first Prepared by is MARY GRACE E. SACRAMENTO, Administrative Officer - IV. The line under each signature says Position. As of the end of the month on screen, or the end of the
   month before when that month is not over yet. An unknown balance is left as an empty box.
   At the top is the DepEd logo (`Assets\DepEd-Logo.jpg`, built into the program; made from `DepEd-Logo.webp`, which
@@ -241,6 +250,7 @@ The grace period can be changed per schedule in **Office Hours...**; "how Late i
 | Grace period | Arriving 7:01 - 7:15 AM is not late only if the minutes are made up: arriving 7:14 AM means leaving at 6:14 PM or later. Leaving at 6:08 PM = 14 minutes late (no undertime). Not applied when the afternoon is on leave or suspended. |
 | Mondays | The grace period never goes past 7:15 AM. A 7:00 AM start keeps it; 8:00 AM (Schedule B) and 9:00 AM (Schedule D) must be met sharp on Mondays (8:01 = 1 minute late). Tuesday to Friday have the full 15 minutes. |
 | Flexi-Time | Only on days ticked in Edit DTR (see above). |
+| No Late / Undertime | A day ticked in Edit DTR: its times stay, nothing is counted (see above). |
 | Late (afternoon) | Coming back from lunch after 1:00 PM, counted from 1:00 PM. |
 | Undertime | Leaving before 12:00 PM in the morning or before 6:00 PM in the afternoon. |
 | Half day | A half day with no scans at all (when the other half has scans) = 5 hours undertime. |

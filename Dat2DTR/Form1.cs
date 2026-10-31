@@ -57,6 +57,16 @@ namespace Dat2DTR
         /// <summary>This is false when the preview shows the DTR, true when it shows the Computation of Leaves.</summary>
         private bool _showLeave;
 
+        /// <summary>This is true when the preview shows the Certificate of Leave Credits (then _showLeave is false).</summary>
+        private bool _showCertificate;
+
+        /// <summary>
+        /// This is the third tab above the preview, "Certificate of Leave Credits", and the "Edit Certificate Details..." button
+        /// shown beside it while the certificate is on screen (see PlaceCertificateTab).
+        /// </summary>
+        private readonly Button btnViewCertificate = new Button();
+        private readonly Button btnCertificateDetails = new Button();
+
         /// <summary>This is the IDs of the employees whose box is ticked.</summary>
         private readonly HashSet<string> _ticked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -171,6 +181,7 @@ namespace Dat2DTR
             PlaceSecondRow();
             PlaceYearBox();
             PlaceAboutButton();
+            PlaceCertificateTab();
             preview.SetPaper(_settings.Paper);
             ShowRules();
             ShowEmployeeList();
@@ -207,6 +218,49 @@ namespace Dat2DTR
             btnAbout.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             picBanner.Left -= width + gap;
             pnlHeader.Controls.Add(btnAbout);
+        }
+
+        /// <summary>
+        /// This is where the "Certificate of Leave Credits" tab is put after the "Computation of Leaves" tab, the same height
+        /// and font, measured after Windows has scaled the window. "Edit Certificate Details..." goes beside it, shown only
+        /// while the certificate is on screen.
+        /// </summary>
+        private void PlaceCertificateTab()
+        {
+            int gap = btnViewLeave.Left - btnViewDtr.Right;
+            int padding = btnViewLeave.Height;   // This is the room around the words, like the other two tabs
+
+            btnViewCertificate.Text = "Certificate of Leave Credits";
+            btnViewCertificate.Font = btnViewLeave.Font;
+            btnViewCertificate.UseVisualStyleBackColor = false;
+            btnViewCertificate.TabIndex = btnViewLeave.TabIndex + 1;
+            int width = Math.Max(btnViewLeave.Width, TextRenderer.MeasureText(btnViewCertificate.Text, btnViewLeave.Font).Width + padding);
+            btnViewCertificate.SetBounds(btnViewLeave.Right + gap, btnViewLeave.Top, width, btnViewLeave.Height);
+            btnViewCertificate.Click += btnViewCertificate_Click;
+            toolTip.SetToolTip(btnViewCertificate, "Show the Certificate of Leave Credits of this employee, as it will be printed");
+            pnlView.Controls.Add(btnViewCertificate);
+
+            // This is an ordinary button (grey, regular letters), so it does not look like a fourth tab.
+            btnCertificateDetails.Text = "Edit Certificate Details...";
+            btnCertificateDetails.Font = new Font(btnViewLeave.Font, FontStyle.Regular);
+            btnCertificateDetails.FlatStyle = FlatStyle.Flat;
+            btnCertificateDetails.FlatAppearance.BorderColor = Theme.Line;
+            btnCertificateDetails.FlatAppearance.MouseOverBackColor = Theme.Highlight;
+            btnCertificateDetails.BackColor = Theme.Panel;
+            btnCertificateDetails.ForeColor = Theme.TextStrong;
+            btnCertificateDetails.Cursor = Cursors.Hand;
+            btnCertificateDetails.TabIndex = btnViewCertificate.TabIndex + 1;
+            int detailsWidth = TextRenderer.MeasureText(btnCertificateDetails.Text, btnCertificateDetails.Font).Width + padding;
+            btnCertificateDetails.SetBounds(btnViewCertificate.Right + gap * 4, btnViewLeave.Top, detailsWidth, btnViewLeave.Height);
+            btnCertificateDetails.Visible = false;
+            btnCertificateDetails.Click += (sender, e) =>
+            {
+                EditCertificateDetails(this);
+                ShowCurrentSheet();   // This is so the new names and positions are seen at once
+            };
+            toolTip.SetToolTip(btnCertificateDetails, "Change the names and positions of \"Prepared by\" and \"Certified correct\" on the certificate");
+            pnlView.Controls.Add(btnCertificateDetails);
+            ShowViewButtons();
         }
 
         /// <summary>
@@ -763,10 +817,18 @@ namespace Dat2DTR
             LeaveCard? card = null;
             if (sheet != null)
                 _cards.TryGetValue(sheet.EmployeeId, out card);
-            preview.ShowPages(sheet, card, _showLeave);
+
+            // This is the certificate of this employee, the same as Print / Save To > Certificate of Leave Credits makes today.
+            LeaveCertificate? certificate = _showCertificate && card != null
+                ? LeaveCertificate.Make(card, DateTime.Today).SignedBy(_settings) : null;
+            preview.ShowPages(sheet, card, certificate,
+                              _showCertificate ? PreviewPage.Certificate : _showLeave ? PreviewPage.Leave : PreviewPage.Dtr);
 
             // This is the yellow bar: days a person should double-check, days typed in by hand, and days on leave.
             var notices = new List<string>();
+            if (certificate != null && !certificate.IsComplete)
+                notices.Add("Certificate: the Vacation / Sick Leave balance is not known yet, so the box is empty to fill in by hand. " +
+                            "Type the balance brought forward once in Edit Leave to have it filled in.");
             if (sheet != null && sheet.DaysToCheck.Count > 0)
                 notices.Add("Please check (use Edit DTR or Edit Leave to fix):   " +
                     string.Join(";   ", sheet.DaysToCheck.Select(d => "Day " + d.Day + " - " + d.Warning).ToArray()));
@@ -894,6 +956,9 @@ namespace Dat2DTR
         /// <summary>This is the text for the yellow notice, e.g. "undertime 1h -> none (Work suspended at 3:00 PM)".</summary>
         private static string AdjustedText(DtrDay day)
         {
+            if (day.NoLateUndertime)
+                return "No Late / Undertime (not counted: late " + DurationOrNone(day.ComputedLateMinutes) + ", undertime " +
+                       DurationOrNone(day.ComputedUndertimeMinutes) + ")" + (day.AdjustReason.Length > 0 ? " (" + day.AdjustReason + ")" : "");
             var parts = new List<string>();
             if (day.LateMinutes != day.ComputedLateMinutes)
                 parts.Add("late " + DurationOrNone(day.ComputedLateMinutes) + " -> " + DurationOrNone(day.LateMinutes));
@@ -1088,6 +1153,7 @@ namespace Dat2DTR
             SaveLeaveFiles(true);
 
             _showLeave = true;      // This is to show the result right away
+            _showCertificate = false;
             ShowViewButtons();
             BuildSheets();
             lblStatus.Text = "Leave updated for " + current.NameLine;
@@ -1159,6 +1225,7 @@ namespace Dat2DTR
 
             SaveLeaveFiles(true);
             _showLeave = false;     // This is so a holiday or a suspension is seen on the DTR
+            _showCertificate = false;
             ShowViewButtons();
             BuildSheets();
             lblStatus.Text = (entry == null ? "Leave removed" : (entry.Type == LeaveType.WorkFromHome ? "Work from home" : entry.Kind.Name) +
@@ -1238,6 +1305,7 @@ namespace Dat2DTR
         private void btnViewDtr_Click(object? sender, EventArgs e)
         {
             _showLeave = false;
+            _showCertificate = false;
             ShowViewButtons();
             ShowCurrentSheet();
         }
@@ -1245,15 +1313,26 @@ namespace Dat2DTR
         private void btnViewLeave_Click(object? sender, EventArgs e)
         {
             _showLeave = true;
+            _showCertificate = false;
             ShowViewButtons();
             ShowCurrentSheet();
         }
 
-        /// <summary>This is where the two buttons above the preview are made to look like tabs: the chosen one is navy.</summary>
+        private void btnViewCertificate_Click(object? sender, EventArgs e)
+        {
+            _showLeave = false;
+            _showCertificate = true;
+            ShowViewButtons();
+            ShowCurrentSheet();
+        }
+
+        /// <summary>This is where the three buttons above the preview are made to look like tabs: the chosen one is navy.</summary>
         private void ShowViewButtons()
         {
-            StyleViewButton(btnViewDtr, !_showLeave);
-            StyleViewButton(btnViewLeave, _showLeave);
+            StyleViewButton(btnViewDtr, !_showLeave && !_showCertificate);
+            StyleViewButton(btnViewLeave, _showLeave && !_showCertificate);
+            StyleViewButton(btnViewCertificate, _showCertificate);
+            btnCertificateDetails.Visible = _showCertificate;
         }
 
         private static void StyleViewButton(Button button, bool chosen)

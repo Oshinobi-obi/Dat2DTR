@@ -182,6 +182,8 @@ namespace Dat2DTR
         /// </summary>
         public static int TimeInLate(DtrDay day)
         {
+            if (day.NoLateUndertime)
+                return 0;   // This is a day ticked No Late / Undertime in Edit DTR
             int late = day.MorningLateMinutes;
             if (day.IsAdjusted)
                 late = Math.Min(late, day.LateMinutes);
@@ -196,8 +198,8 @@ namespace Dat2DTR
         {
             if (day.IsAbsent)
                 return true;
-            if (!day.HasTimes || day.AmArrival.HasValue)
-                return false;
+            if (!day.HasTimes || day.AmArrival.HasValue || day.NoLateUndertime)
+                return false;   // This is also a day ticked No Late / Undertime: coming in late on it is not counted
             bool morningOnLeave = day.HasLeave && (day.LeavePart == LeavePart.WholeDay || day.LeavePart == LeavePart.Morning);
             return !morningOnLeave;
         }

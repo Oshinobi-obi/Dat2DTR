@@ -3,10 +3,18 @@ using System.Drawing.Text;
 
 namespace Dat2DTR
 {
+    /// <summary>This is which page of the employee the preview shows (the tabs above it).</summary>
+    public enum PreviewPage
+    {
+        Dtr,
+        Leave,          // This is the Computation of Leaves
+        Certificate     // This is the Certificate of Leave Credits
+    }
+
     /// <summary>
     /// This is the big area on the right of the main window. It shows the DTR (or the
-    /// Computation of Leaves) exactly as it will be printed, on a white
-    /// "sheet of paper" that can be scrolled.
+    /// Computation of Leaves, or the Certificate of Leave Credits) exactly as it will be printed,
+    /// on a white "sheet of paper" that can be scrolled.
     /// </summary>
     public class DtrPreviewControl : ScrollableControl
     {
@@ -15,7 +23,8 @@ namespace Dat2DTR
 
         private DtrSheet? _sheet;
         private LeaveCard? _card;             // This is the Computation of Leaves of the same employee
-        private bool _showLeave;              // This is true to show the Computation of Leaves instead of the DTR
+        private LeaveCertificate? _certificate;   // This is the Certificate of Leave Credits of the same employee
+        private PreviewPage _page = PreviewPage.Dtr;
         private DtrPaper _paper = DtrPaper.A4;
         private float _zoom = 1f;             // This is pixels per point
         private string _emptyTitle = "No DTR to show yet";
@@ -44,11 +53,21 @@ namespace Dat2DTR
         /// </summary>
         public void ShowPages(DtrSheet? sheet, LeaveCard? card, bool showLeave)
         {
+            ShowPages(sheet, card, null, showLeave ? PreviewPage.Leave : PreviewPage.Dtr);
+        }
+
+        /// <summary>
+        /// This is where one of the three pages of an employee is shown: the DTR, the Computation of Leaves (when there is a
+        /// leave card) or the Certificate of Leave Credits (when there is a certificate). Otherwise the DTR is shown.
+        /// </summary>
+        public void ShowPages(DtrSheet? sheet, LeaveCard? card, LeaveCertificate? certificate, PreviewPage page)
+        {
             bool isNewEmployee = sheet == null || _sheet == null || sheet.EmployeeId != _sheet.EmployeeId;
-            bool isOtherPage = showLeave != _showLeave;
+            bool isOtherPage = page != _page;
             _sheet = sheet;
             _card = card;
-            _showLeave = showLeave;
+            _certificate = certificate;
+            _page = page;
             UpdatePageSize();
             if (isNewEmployee || isOtherPage)
                 AutoScrollPosition = new Point(0, 0);
@@ -143,8 +162,10 @@ namespace Dat2DTR
 
             using (var canvas = new GdiCanvas(g))
             {
-                if (_showLeave && _card != null)
+                if (_page == PreviewPage.Leave && _card != null)
                     LeavePageRenderer.Draw(canvas, _card, PaperInfo.WidthOf(_paper), PaperInfo.HeightOf(_paper));
+                else if (_page == PreviewPage.Certificate && _certificate != null)
+                    CertificateRenderer.Draw(canvas, _certificate, PaperInfo.WidthOf(_paper), PaperInfo.HeightOf(_paper));
                 else
                     DtrPageRenderer.Draw(canvas, _sheet, PaperInfo.WidthOf(_paper), PaperInfo.HeightOf(_paper), true);   // This is with the screen-only colours
             }

@@ -42,6 +42,7 @@ namespace Dat2DTR
         private readonly DataGridView _summary = new DataGridView();
         private readonly TextBox _openingVl = new TextBox(), _openingSl = new TextBox();
         private readonly TextBox _openingSpl = new TextBox(), _openingWl = new TextBox();   // This is the SPL and WL left, typed by hand
+        private readonly TextBox _openingFl = new TextBox();   // This is the Mandatory / Forced Leave left, typed by hand
         private readonly TextBox _earnedVl = new TextBox(), _earnedSl = new TextBox();
         private readonly Label _carried = new Label();
         private readonly TextBox _notes = new TextBox();
@@ -84,8 +85,8 @@ namespace Dat2DTR
             StartPosition = FormStartPosition.CenterParent;
             MinimizeBox = false;
             ShowInTaskbar = false;
-            ClientSize = new Size(1200, 670);
-            MinimumSize = new Size(1100, 560);
+            ClientSize = new Size(1200, 712);
+            MinimumSize = new Size(1100, 602);
 
             // This is the top: who and how ----
             var title = new Label();
@@ -176,20 +177,23 @@ namespace Dat2DTR
             side.Controls.Add(SideHeading("Balance brought forward from " + previousMonth, 10));
             AddBoxRow(side, 36, _openingVl, _openingSl);
             AddBoxRow(side, 64, _openingSpl, _openingWl, "Special", "Wellness");
+            AddCenteredBox(side, 92, _openingFl, "Force/Mandatory");
             var tip = new ToolTip();
             tip.SetToolTip(_openingSpl, "Special Privilege Leave LEFT at the start of the month (3 days a year). Empty = worked out from the leaves filed.");
             tip.SetToolTip(_openingWl, "Wellness Leave LEFT at the start of the month (5 days a year). Empty = worked out from the leaves filed.");
+            tip.SetToolTip(_openingFl, "Mandatory / Forced Leave LEFT at the start of the month: the days still to be taken this year (5 days a year). " +
+                                       "Empty = worked out from the leaves filed.");
 
             _carried.ForeColor = Theme.TextMuted;
-            _carried.SetBounds(12, 92, 396, 62);   // This is room for 4 lines, in case a line wraps on a small screen
+            _carried.SetBounds(12, 120, 396, 76);   // This is room for 5 lines, in case a line wraps on a small screen
             side.Controls.Add(_carried);
 
-            side.Controls.Add(SideHeading("Credits earned this month", 158));
-            AddBoxRow(side, 184, _earnedVl, _earnedSl);
+            side.Controls.Add(SideHeading("Credits earned this month", 200));
+            AddBoxRow(side, 226, _earnedVl, _earnedSl);
 
-            side.Controls.Add(SideHeading("Computation of " + attendance.MonthText, 218));
+            side.Controls.Add(SideHeading("Computation of " + attendance.MonthText, 260));
 
-            _summary.SetBounds(12, 242, 396, 192);
+            _summary.SetBounds(12, 284, 396, 150);
             _summary.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             _summary.BackgroundColor = Color.White;
             _summary.BorderStyle = BorderStyle.FixedSingle;
@@ -304,11 +308,12 @@ namespace Dat2DTR
             _openingSl.Text = month != null && month.OpeningSl.HasValue ? LeaveRules.FormatShort(month.OpeningSl.Value) : "";
             _openingSpl.Text = month != null && month.OpeningSpl.HasValue ? LeaveRules.FormatShort(month.OpeningSpl.Value) : "";
             _openingWl.Text = month != null && month.OpeningWl.HasValue ? LeaveRules.FormatShort(month.OpeningWl.Value) : "";
+            _openingFl.Text = month != null && month.OpeningFl.HasValue ? LeaveRules.FormatShort(month.OpeningFl.Value) : "";
             _earnedVl.Text = LeaveRules.FormatShort(month != null && month.EarnedVl.HasValue ? month.EarnedVl.Value : LeaveRules.MonthlyCredit);
             _earnedSl.Text = LeaveRules.FormatShort(month != null && month.EarnedSl.HasValue ? month.EarnedSl.Value : LeaveRules.MonthlyCredit);
             _filling = false;
 
-            foreach (TextBox box in new[] { _openingVl, _openingSl, _openingSpl, _openingWl, _earnedVl, _earnedSl })
+            foreach (TextBox box in new[] { _openingVl, _openingSl, _openingSpl, _openingWl, _openingFl, _earnedVl, _earnedSl })
                 box.TextChanged += Box_TextChanged;
 
             for (int i = 0; i < attendance.Days.Count; i++)
@@ -458,6 +463,26 @@ namespace Dat2DTR
             side.Controls.Add(vacation);
             side.Controls.Add(sickLabel);
             side.Controls.Add(sick);
+        }
+
+        /// <summary>This is one line with one box, centred below the two boxes of the lines above:   Force/Mandatory [    ]</summary>
+        private static void AddCenteredBox(Panel side, int y, TextBox box, string name)
+        {
+            // This is the middle of the two pairs above (from the first label at 12 to the end of the second box at 362).
+            const int middle = (12 + 362) / 2, labelWidth = 116, gap = 4, boxWidth = 78;
+            int left = middle - (labelWidth + gap + boxWidth) / 2;
+
+            var label = new Label();
+            label.Text = name;
+            label.TextAlign = ContentAlignment.MiddleRight;
+            label.SetBounds(left, y, labelWidth, 23);
+
+            box.SetBounds(left + labelWidth + gap, y, boxWidth, 23);
+            box.TextAlign = HorizontalAlignment.Right;
+            box.MaxLength = 9;
+
+            side.Controls.Add(label);
+            side.Controls.Add(box);
         }
 
         // This is the table of days ================================================================
@@ -700,7 +725,7 @@ namespace Dat2DTR
 
         // This is the balance boxes ================================================================
 
-        /// <summary>This is where the six boxes are read. Returns the name of the first box that is not a number, or "".</summary>
+        /// <summary>This is where the seven boxes are read. Returns the name of the first box that is not a number, or "".</summary>
         private string ReadBoxes()
         {
             string problem = "";
@@ -719,6 +744,10 @@ namespace Dat2DTR
 
             if (CheckYearly(_openingWl, LeaveType.Wellness, out value)) month.OpeningWl = value;
             else if (problem.Length == 0) problem = "the Wellness Leave left";
+
+            // This is the Mandatory / Forced Leave left: a number from 0 up to 5, or empty.
+            if (CheckYearly(_openingFl, LeaveType.Forced, out value)) month.OpeningFl = value;
+            else if (problem.Length == 0) problem = "the Forced Leave left";
 
             // This is the rule: an empty box, or the usual 1.25, means "nothing special typed".
             if (Check(_earnedVl, out value)) month.EarnedVl = value == LeaveRules.MonthlyCredit ? null : value;
@@ -747,10 +776,13 @@ namespace Dat2DTR
             if (problem == "the Wellness Leave left")
                 return "Please type how many days of Wellness Leave are left: a number from 0 to " +
                        LeaveKinds.Get(LeaveType.Wellness).YearlyLimit + ", for example 4 or 2.5";
+            if (problem == "the Forced Leave left")
+                return "Please type how many days of Mandatory / Forced Leave are left: a number from 0 to " +
+                       LeaveKinds.Get(LeaveType.Forced).YearlyLimit + ", for example 3 or 2.5";
             return "Please type a number for " + problem + ", for example 12.5";
         }
 
-        /// <summary>This is one SPL / WL box: empty, or a number from 0 up to the days a year of that leave (pale red otherwise).</summary>
+        /// <summary>This is one SPL / WL / Forced Leave box: empty, or a number from 0 up to the days a year of that leave (pale red otherwise).</summary>
         private static bool CheckYearly(TextBox box, LeaveType type, out decimal? value)
         {
             bool ok = LeaveRules.TryParseCredits(box.Text, out value) &&
@@ -814,6 +846,7 @@ namespace Dat2DTR
                 "Sick Leave: " + StartText(month.SlStart, month.SlStartTyped) + "\r\n" +
                 "Special left: " + YearlyStartText(card.SplUsed - month.SplDays, LeaveType.SpecialPrivilege, card.SplStartTyped) + "    " +
                 "Wellness left: " + YearlyStartText(card.WellnessUsed - month.WellnessDays, LeaveType.Wellness, card.WellnessStartTyped) + "\r\n" +
+                "Force/Mandatory left: " + YearlyStartText(card.ForcedUsed - month.ForcedDays, LeaveType.Forced, card.ForcedStartTyped) + "\r\n" +
                 (month.VlStart.HasValue && month.SlStart.HasValue
                     ? "Type a number above only if the balance has to be corrected."
                     : "Type it once, from the employee's leave card.");

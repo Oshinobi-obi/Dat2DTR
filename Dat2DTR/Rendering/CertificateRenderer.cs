@@ -62,8 +62,8 @@ namespace Dat2DTR
             DtrPageRenderer.DrawCentered(canvas, "CERTIFICATE OF LEAVE CREDITS", left, right, y, 16, true, Black);
 
             // This is the first paragraph: who, and as of which date ------------------------------------------------------------
-            string who = (c.EmployeeName.Length > 0 ? c.EmployeeName : "ID " + c.EmployeeId) +
-                         (c.EmployeeName.Length > 0 ? " (biometric ID " + c.EmployeeId + ")" : "");
+            // This is the name only (no biometric ID). Only someone with no name typed yet is written as "ID 16".
+            string who = c.EmployeeName.Length > 0 ? c.EmployeeName : "ID " + c.EmployeeId;
             y += 44;
             y = Paragraph(canvas, "This is to certify that " + who + " has the following leave credits as of " +
                           KeepTogether(LeaveCertificate.LongDate(c.AsOf)) + ", based on the leave records of this office:", left, width, y);

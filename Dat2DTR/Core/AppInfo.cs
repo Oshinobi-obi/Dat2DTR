@@ -31,6 +31,16 @@ namespace Dat2DTR
         /// <summary>This is every version, NEWEST FIRST.</summary>
         public static readonly VersionEntry[] History =
         {
+            new VersionEntry("1.7.0", "October 31, 2026",
+                "Edit DTR: a No Late / Undertime box beside Flexi-Time. A ticked day keeps its times, but no Late or Undertime " +
+                "is counted, totalled, deducted or reported (for example a Friday when everyone went back to 7-4 or 8-5).",
+                "Edit Leave: a Force/Mandatory box, centred below Special and Wellness, for the Mandatory / Forced Leave left at " +
+                "the start of the month. The computation, Leave Summary, certificate and reminder use it.",
+                "A Certificate of Leave Credits tab beside DTR and Computation of Leaves: the certificate of the employee on screen, " +
+                "as it will be printed, with Edit Certificate Details... beside it.",
+                "Computation of Leaves: when the Vacation Leave credits are not enough, the balance it would have come to is shown with " +
+                "its minus sign (e.g. -1.812) before the days without pay.",
+                "Certificate of Leave Credits: only the name of the employee, without the biometric ID."),
             new VersionEntry("1.6.0", "October 31, 2026",
                 "Edit Leave: Special and Wellness boxes below Vacation Leave and Sick Leave, for the Special Privilege Leave and Wellness Leave " +
                 "left at the start of the month (days used before the program was used). The computation, Leave Summary and " +

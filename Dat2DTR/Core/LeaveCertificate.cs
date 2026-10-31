@@ -101,7 +101,7 @@ namespace Dat2DTR
             // This is the leaves given every year (they start again on January 1): what is left as of that date.
             if (c.AsOf.Year == card.Year)
             {
-                // This is the days used this year as the leave card counts them (with an SPL / WL balance typed in Edit Leave),
+                // This is the days used this year as the leave card counts them (with an SPL / WL / Forced Leave balance typed in Edit Leave),
                 // without the open month when the certificate is as of the end of the month before.
                 bool withOpenMonth = c.AsOf.Month == card.MonthStart.Month;
                 LeaveMonth now = card.Current;

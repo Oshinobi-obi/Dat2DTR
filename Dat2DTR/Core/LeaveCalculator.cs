@@ -274,7 +274,7 @@ namespace Dat2DTR
         public decimal SplUsed, ForcedUsed, WellnessUsed, CtoUsed, SoloUsed;
 
         /// <summary>This is the SPL and Wellness Leave left at the start of the open month when it was typed in Edit Leave (else null).</summary>
-        public decimal? SplStartTyped, WellnessStartTyped;
+        public decimal? SplStartTyped, WellnessStartTyped, ForcedStartTyped;
 
         /// <summary>This is the CTO of the open month: given, used, expired, and what is left.</summary>
         public CtoMonth Cto = new CtoMonth();
@@ -504,7 +504,9 @@ namespace Dat2DTR
     ///      the rest is deducted from the Vacation Leave credits.
     ///   4. LATE and UNDERTIME of the month are converted to a fraction of a day
     ///      (see LeaveRules.MinutesToDays) and deducted from the Vacation Leave credits.
-    ///   5. If the Vacation Leave credits are not enough, the rest is WITHOUT PAY (LWOP).
+    ///   5. If the Vacation Leave credits are not enough, the rest is WITHOUT PAY (LWOP). The credits never go below
+    ///      zero; the computation shows, with a minus sign, the balance the deductions would have come to
+    ///      ("Not enough credits: the balance would be -1.812"), then the days without pay that make up for it.
     ///   6. Special Privilege Leave (3 days a year) and Wellness Leave (5 days a year) are not deducted,
     ///      only counted. CTO and Solo Parent Leave are taken from the days the employee was given
     ///      (see CtoCalculator); days not used by their expiry date are taken off the balance.
@@ -629,9 +631,10 @@ namespace Dat2DTR
                 }
             }
 
-            // This is the SPL and Wellness Leave left that was typed in Edit Leave (see ApplyTypedYearly).
+            // This is the SPL, Wellness and Forced Leave left that was typed in Edit Leave (see ApplyTypedYearly).
             card.SplUsed = ApplyTypedYearly(card, ledger, leaves, id, target, LeaveType.SpecialPrivilege, card.SplUsed);
             card.WellnessUsed = ApplyTypedYearly(card, ledger, leaves, id, target, LeaveType.Wellness, card.WellnessUsed);
+            card.ForcedUsed = ApplyTypedYearly(card, ledger, leaves, id, target, LeaveType.Forced, card.ForcedUsed);
 
             card.Cto = CtoCalculator.Compute(cto.Get(id, LeaveType.Cto), leaves.GetAllOfKind(id, LeaveType.Cto), target);
             card.Solo = CtoCalculator.Compute(cto.Get(id, LeaveType.SoloParent), leaves.GetAllOfKind(id, LeaveType.SoloParent), target);
@@ -650,7 +653,7 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// This is the SPL or Wellness Leave used this year (January up to the open month) when a balance was typed in Edit
+        /// This is the SPL, Wellness or Forced Leave used this year (January up to the open month) when a balance was typed in Edit
         /// Leave: the latest month of the year (up to the open month) with a typed balance wins. The days used before it are
         /// what the typed balance says (3 SPL a year, 1 typed as left = 2 used before), and the leaves filed from that month
         /// on are added. With nothing typed this year, the days filed are used as they are.
@@ -661,7 +664,7 @@ namespace Dat2DTR
             for (int m = target.Month; m >= 1; m--)
             {
                 LedgerMonth? typed = ledger.Get(id, target.Year, m);
-                decimal? left = typed == null ? null : type == LeaveType.SpecialPrivilege ? typed.OpeningSpl : typed.OpeningWl;
+                decimal? left = typed == null ? null : TypedLeft(typed, type);
                 if (!left.HasValue)
                     continue;
 
@@ -673,11 +676,24 @@ namespace Dat2DTR
                 if (m == target.Month)
                 {
                     if (type == LeaveType.SpecialPrivilege) card.SplStartTyped = left;
-                    else card.WellnessStartTyped = left;
+                    else if (type == LeaveType.Wellness) card.WellnessStartTyped = left;
+                    else card.ForcedStartTyped = left;
                 }
                 return used;
             }
             return filedUsed;
+        }
+
+        /// <summary>This is the balance LEFT typed in Edit Leave for a leave that is allowed so many days a year (null = not typed).</summary>
+        private static decimal? TypedLeft(LedgerMonth month, LeaveType type)
+        {
+            switch (type)
+            {
+                case LeaveType.SpecialPrivilege: return month.OpeningSpl;
+                case LeaveType.Wellness: return month.OpeningWl;
+                case LeaveType.Forced: return month.OpeningFl;
+                default: return null;
+            }
         }
 
         /// <summary>
@@ -862,6 +878,10 @@ namespace Dat2DTR
                 lines.Add(new LeaveLine(LeaveLineKind.Item,
                     "   Forced Leave used this year: " + UsedText(card.ForcedUsed, LeaveType.Forced).Replace(" this year", " days"), ""));
             }
+            if (card.ForcedStartTyped.HasValue)
+                lines.Add(new LeaveLine(LeaveLineKind.Item,
+                    "   Forced Leave left on " + card.MonthStart.ToString("MMM d", CultureInfo.InvariantCulture) + " (typed): " +
+                    LeaveRules.FormatDays(card.ForcedStartTyped.Value), ""));
             if (m.SlToVl > 0)
                 lines.Add(new LeaveLine(LeaveLineKind.Item,
                     "Sick Leave charged here, because the Sick Leave credits ran out", "- " + LeaveRules.Format(m.SlToVl)));
@@ -872,8 +892,15 @@ namespace Dat2DTR
                 lines.Add(new LeaveLine(LeaveLineKind.Item,
                     "Undertime, " + LeaveRules.FormatMinutes(m.UndertimeMinutes), "- " + LeaveRules.Format(m.UndertimeDays)));
             if (m.Lwop > 0)
+            {
+                // This is the balance the deductions come to, before the days without pay: below zero, with its minus sign,
+                // so the lines add up. The credits never go below zero (CSC rules): the part not covered is without pay.
+                if (m.VlNet.HasValue)
+                    lines.Add(new LeaveLine(LeaveLineKind.Item,
+                        "Not enough credits: the balance would be", LeaveRules.Format(m.VlNet.Value - m.Lwop)));
                 lines.Add(new LeaveLine(LeaveLineKind.Item,
                     "Not covered by the credits: without pay", LeaveRules.Format(m.Lwop)));
+            }
 
             lines.Add(new LeaveLine(LeaveLineKind.Total, "Balance at the end of " + card.MonthText,
                 m.VlNet.HasValue ? LeaveRules.Format(m.VlNet.Value) : notKnown));

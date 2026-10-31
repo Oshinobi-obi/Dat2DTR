@@ -40,7 +40,7 @@ namespace Dat2DTR
     /// This is the Late and Undertime of one day typed in by hand, in place of what the program computed
     /// (for example when work was suspended at 3:00 PM and everyone went home at 3:00).
     /// null = keep the computed value. The times of the day are not changed.
-    /// It also holds the Flexi-Time box of the day (see DtrBuilder rule 10).
+    /// It also holds the Flexi-Time box of the day (see DtrBuilder rule 10) and the No Late / Undertime box (rule 11).
     /// </summary>
     public sealed class DayAdjustment
     {
@@ -53,6 +53,12 @@ namespace Dat2DTR
         /// <summary>This is the Flexi-Time box: the day starts when the person arrived (7:00 - 9:00 AM).</summary>
         public bool Flexi;
 
+        /// <summary>
+        /// This is the No Late / Undertime box: the day keeps its times, but no Late and no Undertime are counted
+        /// (for example a Friday when everyone went back to 7-4 or 8-5).
+        /// </summary>
+        public bool NoLateUndertime;
+
         /// <summary>This is true when Late or Undertime was typed in by hand (then a reason is needed).</summary>
         public bool IsTyped
         {
@@ -61,7 +67,7 @@ namespace Dat2DTR
 
         public bool IsEmpty
         {
-            get { return !IsTyped && !Flexi; }
+            get { return !IsTyped && !Flexi && !NoLateUndertime; }
         }
 
         public DayAdjustment Clone()
@@ -153,10 +159,13 @@ namespace Dat2DTR
             get { return _adjustments.Count; }
         }
 
-        // This is the file: one line per day:   ID,date,late minutes,undertime minutes,flexi,reason   (empty = the computed value)
-        //                                    e.g. 070126005,2026-09-08,,0,,"Work suspended at 3:00 PM"
-        //                                         070126005,2026-09-09,,,FLEXI,""
-        // This is also how older files without the flexi column are read: there the reason (in "quotes") comes right after the minutes.
+        // This is the file: one line per day:   ID,date,late minutes,undertime minutes,flexi,no late / undertime,reason
+        //                                    (empty = the computed value)
+        //                                    e.g. 070126005,2026-09-08,,0,,,"Work suspended at 3:00 PM"
+        //                                         070126005,2026-09-09,,,FLEXI,,""
+        //                                         070126005,2026-09-11,,,,NOLATEUT,""
+        // This is also how older files are read: without the flexi column (the reason in "quotes" right after the minutes),
+        // and without the no late / undertime column (the reason right after the flexi column).
 
         public void LoadAdjustments(string path)
         {
@@ -181,6 +190,15 @@ namespace Dat2DTR
                     string flexi = comma < 0 ? rest : rest.Substring(0, comma);
                     adjustment.Flexi = flexi.Trim().Equals("FLEXI", StringComparison.OrdinalIgnoreCase);
                     rest = comma < 0 ? "" : rest.Substring(comma + 1);
+
+                    // This is the no late / undertime column (version 1.7.0 on), when the reason does not come right away.
+                    if (rest.Trim().Length > 0 && !rest.TrimStart().StartsWith("\""))
+                    {
+                        comma = rest.IndexOf(',');
+                        string noLate = comma < 0 ? rest : rest.Substring(0, comma);
+                        adjustment.NoLateUndertime = noLate.Trim().Equals(NoLateMark, StringComparison.OrdinalIgnoreCase);
+                        rest = comma < 0 ? "" : rest.Substring(comma + 1);
+                    }
                 }
                 adjustment.Reason = Unquote(rest);
                 if (cells[0].Trim().Length > 0 && !adjustment.IsEmpty)
@@ -188,16 +206,20 @@ namespace Dat2DTR
             }
         }
 
+        /// <summary>This is what is written in the file for a day ticked No Late / Undertime.</summary>
+        private const string NoLateMark = "NOLATEUT";
+
         public void SaveAdjustments(string path)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("ID,Date,Late (minutes),Undertime (minutes),Flexi-Time,Reason");
+            sb.AppendLine("ID,Date,Late (minutes),Undertime (minutes),Flexi-Time,No Late / Undertime,Reason");
             foreach (var pair in _adjustments.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase))
             {
                 string[] key = pair.Key.Split('|');
                 DayAdjustment a = pair.Value;
                 sb.AppendLine(key[0] + "," + key[1] + "," + WriteMinutes(a.LateMinutes) + "," + WriteMinutes(a.UndertimeMinutes) +
-                              "," + (a.Flexi ? "FLEXI" : "") + ",\"" + a.Reason.Replace("\"", "\"\"") + "\"");
+                              "," + (a.Flexi ? "FLEXI" : "") + "," + (a.NoLateUndertime ? NoLateMark : "") +
+                              ",\"" + a.Reason.Replace("\"", "\"\"") + "\"");
             }
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));
         }

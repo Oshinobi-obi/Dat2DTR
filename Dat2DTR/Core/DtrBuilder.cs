@@ -69,6 +69,10 @@ namespace Dat2DTR
     ///     Working 7:30 AM - 4:30 PM -> B and C are both 30 minutes short, so B is kept: 30 minutes undertime.
     ///     Schedule A (10 working hours) has no other schedule of the same length, so it stays on Schedule A.
     ///     A day that is NOT ticked follows the person's own schedule: 7:00 AM - 4:00 PM on Schedule B = 1 hour undertime.
+    ///
+    /// 11. NO LATE / UNDERTIME (a day ticked "No Late / Undertime" in Edit DTR): the day keeps its times, but no Late and no
+    ///     Undertime are counted, printed or deducted - for example a Friday when everyone went back to 7-4 or 8-5.
+    ///     What would have been counted stays visible in Edit DTR. It does not change ABSENT (a day with no scans).
     /// </summary>
     public static class DtrBuilder
     {
@@ -149,8 +153,18 @@ namespace Dat2DTR
         {
             day.ComputedLateMinutes = day.LateMinutes;
             day.ComputedUndertimeMinutes = day.UndertimeMinutes;
-            if (adjustment.LateMinutes.HasValue) day.LateMinutes = adjustment.LateMinutes.Value;
-            if (adjustment.UndertimeMinutes.HasValue) day.UndertimeMinutes = adjustment.UndertimeMinutes.Value;
+            day.NoLateUndertime = adjustment.NoLateUndertime;
+            if (adjustment.NoLateUndertime)
+            {
+                // This is Rule 11: a day ticked No Late / Undertime keeps its times, and nothing is counted.
+                day.LateMinutes = 0;
+                day.UndertimeMinutes = 0;
+            }
+            else
+            {
+                if (adjustment.LateMinutes.HasValue) day.LateMinutes = adjustment.LateMinutes.Value;
+                if (adjustment.UndertimeMinutes.HasValue) day.UndertimeMinutes = adjustment.UndertimeMinutes.Value;
+            }
             day.IsAdjusted = day.LateMinutes != day.ComputedLateMinutes || day.UndertimeMinutes != day.ComputedUndertimeMinutes;
             day.AdjustReason = adjustment.Reason.Trim();
         }

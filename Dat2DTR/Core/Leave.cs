@@ -759,6 +759,12 @@ namespace Dat2DTR
         /// </summary>
         public decimal? OpeningSpl, OpeningWl;
 
+        /// <summary>
+        /// This is the Mandatory / Forced Leave LEFT at the start of the month (still to be taken this year, 5 days a year),
+        /// typed by a person in Edit Leave (null = not typed: worked out from the leaves filed this year).
+        /// </summary>
+        public decimal? OpeningFl;
+
         /// <summary>This is the credits earned in the month, typed by a person (null = the usual 1.25).</summary>
         public decimal? EarnedVl, EarnedSl;
 
@@ -780,7 +786,7 @@ namespace Dat2DTR
         {
             get
             {
-                return !OpeningVl.HasValue && !OpeningSl.HasValue && !OpeningSpl.HasValue && !OpeningWl.HasValue &&
+                return !OpeningVl.HasValue && !OpeningSl.HasValue && !OpeningSpl.HasValue && !OpeningWl.HasValue && !OpeningFl.HasValue &&
                        !EarnedVl.HasValue && !EarnedSl.HasValue &&
                        !LateMinutes.HasValue && !UndertimeMinutes.HasValue && !DayCharge.HasValue;
             }
@@ -982,6 +988,10 @@ namespace Dat2DTR
                     item.OpeningWl = ReadDecimal(cells[11]);
                 }
 
+                // This is the Forced Leave left (added after SPL and WL: older files do not have this column).
+                if (cells.Length > 12)
+                    item.OpeningFl = ReadDecimal(cells[12]);
+
                 if (!item.IsEmpty)
                     _items[Key(id, month.Year, month.Month)] = item;
             }
@@ -990,7 +1000,7 @@ namespace Dat2DTR
         public void Save(string path)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("ID,Month,Opening VL,Opening SL,Earned VL,Earned SL,Late minutes,Undertime minutes,Day charge,Data through,Opening SPL,Opening WL");
+            sb.AppendLine("ID,Month,Opening VL,Opening SL,Earned VL,Earned SL,Late minutes,Undertime minutes,Day charge,Data through,Opening SPL,Opening WL,Opening FL");
             foreach (var pair in _items.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase))
             {
                 LedgerMonth m = pair.Value;
@@ -1005,7 +1015,7 @@ namespace Dat2DTR
                     m.UndertimeMinutes.HasValue ? m.UndertimeMinutes.Value.ToString(CultureInfo.InvariantCulture) : "",
                     Write(m.DayCharge),
                     m.DataThrough.HasValue ? m.DataThrough.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "",
-                    Write(m.OpeningSpl), Write(m.OpeningWl)
+                    Write(m.OpeningSpl), Write(m.OpeningWl), Write(m.OpeningFl)
                 }));
             }
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));

@@ -272,6 +272,14 @@ namespace Dat2DTR
             Bullet("A day that is NOT ticked follows the person's own schedule. Example on Schedule B: in at 7:00 AM, out at 4:00 PM = 1 hour undertime.");
             Bullet("Forgetting to scan at lunch is fine: a day with only the arrival and the departure is judged on those two times.");
 
+            SubHeading("No Late / Undertime");
+            Paragraph("Tick the No Late / Undertime box of a day on which no Late and no Undertime should be counted, for example a Friday " +
+                      "when everyone went back to 7-4 or 8-5. The times of the day stay on the DTR, but its Late and Undertime are left empty, " +
+                      "are not added to the totals, are not deducted from the leave credits and are not in the Reports. " +
+                      "The Result column still shows what would have been counted.");
+            Bullet("While the box is ticked, the Late and Undertime boxes of that day cannot be typed in. Untick it to count the day again.");
+            Bullet("It does not change ABSENT: a working day with no scans is still absent. For a holiday or a suspension, use Edit Leave.");
+
             // This is the "Edit Leave" section ------------------------------------------------------------
             Heading("Edit Leave: filing a leave and computing the leave credits");
             Paragraph("Use this when an employee filed a leave. The program writes the leave on the DTR, deducts it from the " +
@@ -292,6 +300,10 @@ namespace Dat2DTR
             Note("Special and Wellness (below Vacation Leave and Sick Leave): the Special Privilege Leave and Wellness Leave LEFT at the start of the month, " +
                  "for days taken before the program was used. For example, someone who already used 2 SPL this year has 1 left: type 1. " +
                  "Leave them empty and the program counts the SPL and WL filed this year by itself. They start again every January 1.");
+            Note("Force/Mandatory (below Special and Wellness): the Mandatory / Forced Leave LEFT at the start of the month, the days still to " +
+                 "be taken this year (5 a year). For example, someone who already took 2 days of Forced Leave has 3 left: type 3. " +
+                 "Empty = counted from the Forced Leave filed this year. It is used by the Computation, the Leave Summary, the certificate " +
+                 "and the Forced Leave reminder.");
             Step(5, "Read the Computation on the right.",
                  "It shows line by line what was earned, what was deducted and the new balance. It changes while you choose.");
             Step(6, "Click \"Save\".",
@@ -336,8 +348,9 @@ namespace Dat2DTR
                  "suspended from 1:00 PM and out at 12:26 PM = 34 minutes undertime; out at 11:30 AM = 1 hour 30 minutes.");
 
             SubHeading("Seeing the Computation of Leaves");
-            Bullet("Above the DTR there are two buttons:  DTR  and  Computation of Leaves.  " +
-                   "Click \"Computation of Leaves\" to see the leave page of the employee. Click \"DTR\" to go back.");
+            Bullet("Above the DTR there are three tabs:  DTR,  Computation of Leaves  and  Certificate of Leave Credits.  " +
+                   "Click \"Computation of Leaves\" to see the leave page of the employee, or \"Certificate of Leave Credits\" to see the certificate " +
+                   "exactly as it will be printed. Click \"DTR\" to go back.");
             Bullet("The top of the page is the leave card of the year, one row for each month. The VACATION part has: " +
                    "Earned, Enjoyed, Net, Leave Date/s, SPL, WL (Wellness Leave), CTO, SOLO (Solo Parent Leave), Late and Undertime. " +
                    "The SICK part has: Earned, Enjoyed, Net and Leave Date/s. The month you are working on is yellow.");
@@ -407,7 +420,9 @@ namespace Dat2DTR
                 SubBullet("Schedule " + schedule.Letter + " (" + schedule.OfficialHoursText + "):  a whole day of leave = " +
                           LeaveRules.FormatShort(charge) + ",  half a day = " + LeaveRules.FormatShort(charge / 2));
             }
-            Bullet("If the Vacation Leave credits are not enough, the rest is without pay. It is shown in the computation as \"without pay\".");
+            Bullet("If the Vacation Leave credits are not enough, the rest is without pay. The credits never go below zero. The computation " +
+                   "first shows, with a minus sign, what the balance would have come to (for example  Not enough credits: the balance would be  -1.812), " +
+                   "then the days without pay that make up for it (1.812), so the balance at the end is 0.000.");
             Bullet("An employee with days without pay earns less that month. The CSC table of computation for leave without pay is used " +
                    "(for example 1 day without pay = 1.208 earned, 6 days = 1.000, 30 days = 0).");
             Bullet("Special Privilege Leave (3 days a year) and Wellness Leave (5 days a year) are NOT deducted from the leave credits. " +
@@ -480,10 +495,13 @@ namespace Dat2DTR
                    "ask first: only the report on screen, or all five. The pages are sideways (landscape), each report starts on a new " +
                    "page, and the headings are repeated on every page.");
             SubHeading("Certificate of Leave Credits");
-            Bullet("Click \"Print...\" or \"Save To...\" and choose \"Certificate of Leave Credits\". One page per employee, " +
+            Bullet("To see it: click the \"Certificate of Leave Credits\" tab above the DTR. It shows the certificate of the employee on screen, " +
+                   "exactly as it will be printed today. \"Edit Certificate Details...\" beside the tab changes the names and positions.");
+            Bullet("To print or save it: click \"Print...\" or \"Save To...\" and choose \"Certificate of Leave Credits\". One page per employee, " +
                    "with the VL and SL balance and the total, ready to sign (Prepared by / Certified correct). It is saved as a PDF.");
             Bullet("The names and positions under \"Prepared by\" and \"Certified correct\" are changed with \"Edit Certificate Details...\" " +
-                   "(at the bottom of the \"What do you want to print?\" / \"save?\" window). The preview on the right changes as you type. " +
+                   "(beside the Certificate of Leave Credits tab, or at the bottom of the \"What do you want to print?\" / \"save?\" window). " +
+                   "The preview on the right changes as you type. " +
                    "They are kept for next time. " +
                    "A box left empty is blank on the certificate, to fill in by hand. At first, Prepared by is " +
                    LeaveCertificate.DefaultPreparedByName + ", " + LeaveCertificate.DefaultPreparedByPosition + ".");

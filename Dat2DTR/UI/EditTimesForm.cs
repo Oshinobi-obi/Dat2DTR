@@ -6,6 +6,7 @@ namespace Dat2DTR
     /// The Late and Undertime of a day can also be typed in (for example when work was
     /// suspended at 3:00 PM); a reason is then required, and the computed value stays visible.
     /// A day can be ticked Flexi-Time: it then starts when the person arrived (see DtrBuilder rule 10).
+    /// A day can be ticked No Late / Undertime: its times stay, but nothing is counted (see DtrBuilder rule 11).
     /// (A leave is filed in the "Edit Leave" window instead, so that it is deducted.)
     ///
     /// Nothing is changed in the .dat file. What is typed here is kept separately
@@ -14,9 +15,9 @@ namespace Dat2DTR
     internal sealed class EditTimesForm : Form
     {
         // This is the column numbers of the table.
-        private const int ColDay = 0, ColFirstTime = 1, ColLastTime = 4, ColFlexi = 5, ColRemark = 6,
-                          ColLateHours = 7, ColLateMinutes = 8, ColUndertimeHours = 9, ColUndertimeMinutes = 10,
-                          ColReason = 11, ColResult = 12;
+        private const int ColDay = 0, ColFirstTime = 1, ColLastTime = 4, ColFlexi = 5, ColNoLate = 6, ColRemark = 7,
+                          ColLateHours = 8, ColLateMinutes = 9, ColUndertimeHours = 10, ColUndertimeMinutes = 11,
+                          ColReason = 12, ColResult = 13;
 
         /// <summary>This is true while the program itself writes into the table (so a tick box it sets is not taken as a click).</summary>
         private bool _showing;
@@ -109,7 +110,9 @@ namespace Dat2DTR
                        "Late / Undertime: type the Hours and Minutes, like on the DTR, and a Reason (for example 0 and 0 when work was suspended at 3:00 PM). " +
                        "Empty both boxes to use the computed value.  " +
                        "Flexi-Time: tick the days the person worked the hours of another schedule (for example 7-4 instead of 8-5); " +
-                       "the schedule that fits the times is found by itself and written in the Remark (click the heading to tick every day).\r\n" +
+                       "the schedule that fits the times is found by itself and written in the Remark (click the heading to tick every day).  " +
+                       "No Late / Undertime: tick a day to count no Late and no Undertime on it; the times stay " +
+                       "(for example a Friday when everyone went back to 7-4 or 8-5).\r\n" +
                        schedule.Description;
             how.ForeColor = Theme.TextMuted;
             how.SetBounds(16, 38, 1228, 54);
@@ -147,6 +150,13 @@ namespace Dat2DTR
             flexi.ToolTipText = "Tick = the day is computed with the schedule that fits its times (for example 7-4 instead of 8-5). " +
                                 "Click the heading to tick or untick every working day.";
             _grid.Columns.Add(flexi);
+            var noLate = new DataGridViewCheckBoxColumn();
+            noLate.HeaderText = "No Late /\r\nUndertime";
+            noLate.Width = 78;
+            noLate.SortMode = DataGridViewColumnSortMode.NotSortable;
+            noLate.ToolTipText = "Tick = no Late and no Undertime are counted on this day; the times stay as they are " +
+                                 "(for example a Friday when everyone went back to 7-4 or 8-5).";
+            _grid.Columns.Add(noLate);
             AddColumn("Remark", 120, false).Tag = GridFit.FreeText;
             AddNumberColumn("LATE\r\nHours", 56);
             AddNumberColumn("LATE\r\nMinutes", 62);
@@ -178,7 +188,8 @@ namespace Dat2DTR
             _grid.CurrentCellDirtyStateChanged += (sender, e) =>
             {
                 // This is so a tick counts at once (not only when leaving the box).
-                if (_grid.IsCurrentCellDirty && _grid.CurrentCell != null && _grid.CurrentCell.ColumnIndex == ColFlexi)
+                if (_grid.IsCurrentCellDirty && _grid.CurrentCell != null &&
+                    (_grid.CurrentCell.ColumnIndex == ColFlexi || _grid.CurrentCell.ColumnIndex == ColNoLate))
                     _grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
             };
             _grid.CellValueChanged += Grid_CellValueChanged;
@@ -335,7 +346,7 @@ namespace Dat2DTR
                 if (!_now[i].SameAs(_startNow[i])) return true;
                 DayAdjustment a = _adjusted[i], b = _startAdjusted[i];
                 if (a.LateMinutes != b.LateMinutes || a.UndertimeMinutes != b.UndertimeMinutes || a.Reason.Trim() != b.Reason.Trim() ||
-                    a.Flexi != b.Flexi)
+                    a.Flexi != b.Flexi || a.NoLateUndertime != b.NoLateUndertime)
                     return true;
             }
             return false;
@@ -395,7 +406,7 @@ namespace Dat2DTR
         private DtrDay Compute(int i)
         {
             DtrDay day = ComputeTimes(i);
-            if (!_adjusted[i].IsTyped)
+            if (!_adjusted[i].IsTyped && !_adjusted[i].NoLateUndertime)
                 return day;
             day = day.Clone();
             DtrBuilder.ApplyAdjustment(day, _adjusted[i]);
@@ -443,10 +454,17 @@ namespace Dat2DTR
             Say(tick ? "Every working day is ticked Flexi-Time." : "Flexi-Time is unticked for every day.", false);
         }
 
-        /// <summary>This is when a Flexi-Time box was ticked or unticked.</summary>
+        /// <summary>This is when a Flexi-Time or a No Late / Undertime box was ticked or unticked.</summary>
         private void Grid_CellValueChanged(object? sender, DataGridViewCellEventArgs e)
         {
-            if (_showing || e.RowIndex < 0 || e.ColumnIndex != ColFlexi)
+            if (_showing || e.RowIndex < 0)
+                return;
+            if (e.ColumnIndex == ColNoLate)
+            {
+                NoLateChanged(e.RowIndex);
+                return;
+            }
+            if (e.ColumnIndex != ColFlexi)
                 return;
             int i = e.RowIndex;
             bool ticked = Equals(_grid.Rows[i].Cells[ColFlexi].Value, true);
@@ -459,6 +477,32 @@ namespace Dat2DTR
             Say("Day " + (i + 1) + (!ticked ? " follows the person's own schedule again." :
                                     shown.IsFlexi ? " is Flexi-Time: " + shown.FlexiRemark.Substring("Flexi-Time: ".Length) + " fits its times." :
                                     " is ticked Flexi-Time; it is used once the day has times."), false);
+        }
+
+        /// <summary>
+        /// This is when a No Late / Undertime box was ticked or unticked. Ticking it also empties a Late / Undertime typed in
+        /// by hand on that day (nothing is counted anyway).
+        /// </summary>
+        private void NoLateChanged(int i)
+        {
+            bool ticked = Equals(_grid.Rows[i].Cells[ColNoLate].Value, true);
+            if (ticked == _adjusted[i].NoLateUndertime)
+                return;
+            _adjusted[i].NoLateUndertime = ticked;
+            if (ticked)
+            {
+                _adjusted[i].LateMinutes = null;
+                _adjusted[i].UndertimeMinutes = null;
+            }
+            ShowRow(i);
+            ShowTotals();
+            DtrDay shown = Compute(i);
+            Say("Day " + (i + 1) + (!ticked ? ": Late and Undertime are counted again." :
+                                    ": no Late and no Undertime are counted" +
+                                    (shown.ComputedLateMinutes + shown.ComputedUndertimeMinutes > 0
+                                        ? " (it would have been late " + Duration(shown.ComputedLateMinutes) + ", undertime " +
+                                          Duration(shown.ComputedUndertimeMinutes) + ")."
+                                        : ".")), false);
         }
 
         /// <summary>This is where one day is written into its row and the boxes that were changed are coloured.</summary>
@@ -488,6 +532,15 @@ namespace Dat2DTR
             flexiCell.ReadOnly = restDay && !_adjusted[i].Flexi;
             flexiCell.Style.BackColor = _adjusted[i].Flexi ? Theme.Highlight : normalBack;
 
+            // This is the No Late / Undertime box (only on working days: nothing is counted on the other days anyway).
+            bool noLate = _adjusted[i].NoLateUndertime;
+            DataGridViewCell noLateCell = row.Cells[ColNoLate];
+            _showing = true;
+            noLateCell.Value = noLate;
+            _showing = false;
+            noLateCell.ReadOnly = restDay && !noLate;
+            noLateCell.Style.BackColor = noLate ? Theme.Highlight : normalBack;
+
             // This is the Remark: what was typed, or (when nothing was typed) the schedule a Flexi-Time day fits, in blue.
             DataGridViewCell remarkCell = row.Cells[ColRemark];
             bool autoRemark = _now[i].Remark.Trim().Length == 0 && day.IsFlexi;
@@ -501,6 +554,12 @@ namespace Dat2DTR
             bool lateTyped = adjusted.LateMinutes.HasValue, undertimeTyped = adjusted.UndertimeMinutes.HasValue;
             ShowHoursMinutes(row.Cells[ColLateHours], row.Cells[ColLateMinutes], day.LateMinutes, lateTyped, normalBack);
             ShowHoursMinutes(row.Cells[ColUndertimeHours], row.Cells[ColUndertimeMinutes], day.UndertimeMinutes, undertimeTyped, normalBack);
+            for (int c = ColLateHours; c <= ColUndertimeMinutes; c++)
+            {
+                // This is a day ticked No Late / Undertime: the four boxes stay empty and cannot be typed in.
+                row.Cells[c].ReadOnly = noLate;
+                if (noLate) row.Cells[c].Style.BackColor = Theme.Panel;
+            }
             row.Cells[ColReason].Value = adjusted.Reason;
             Mark(row.Cells[ColReason], adjusted.Reason.Trim().Length > 0, normalBack);
 
@@ -518,7 +577,11 @@ namespace Dat2DTR
                           DtrSettings.FormatTime(day.FlexiOut) + (day.FlexiSchedule == _schedule.Letter ? " (own schedule fits best)" : ""));
             else if (_adjusted[i].Flexi && !restDay)
                 parts.Add("Flexi-Time (no times on this day yet)");
-            if (lateTyped || undertimeTyped)
+            if (noLate)
+                parts.Add("No Late / Undertime" + (day.ComputedLateMinutes + day.ComputedUndertimeMinutes > 0
+                    ? " (not counted: late " + Duration(day.ComputedLateMinutes) + ", undertime " + Duration(day.ComputedUndertimeMinutes) + ")"
+                    : ""));
+            else if (lateTyped || undertimeTyped)
                 parts.Add("Computed: late " + Duration(day.IsAdjusted ? day.ComputedLateMinutes : day.LateMinutes) +
                           ", undertime " + Duration(day.IsAdjusted ? day.ComputedUndertimeMinutes : day.UndertimeMinutes));
             if (day.Warning.Length > 0) parts.Add("Check: " + day.Warning);
