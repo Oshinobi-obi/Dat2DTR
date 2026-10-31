@@ -54,6 +54,8 @@ namespace Dat2DTR
         private const int StyleBalance = 28;          // This is the VL / SL balance: bold, centred, 3 decimals, line underneath
         private const int LeaveBoldCenter = 29;       // This is bold, centred (the History of Availment heading)
         private const int LeaveLineBelow = 30;        // This is an empty cell with a line underneath (the line across the page)
+        private const int LeaveWrapCell = 31;         // This is left, borders, long text wraps onto more lines (the dates of a report)
+        private const int ReportHead = 32;            // This is like LeaveHead, but a long heading wraps onto two lines
 
         private const int FirstDayRow = 9;
         private const int LastDayRow = 39;        // This is 31 rows
@@ -101,6 +103,190 @@ namespace Dat2DTR
                 for (int i = 0; i < contents.Count; i++)
                     AddFile(zip, "xl/worksheets/sheet" + (i + 1) + ".xml", contents[i]);
             }
+        }
+
+        /// <summary>
+        /// This is the leave summary of everyone saved as an Excel workbook with one worksheet:
+        /// one row per employee with the balances and the leave used this year (see LeaveSummary).
+        /// </summary>
+        /// <param name="title">This is the heading, e.g. "Leave balances at the end of October 2026".</param>
+        public static void SaveSummary(string path, string title, IList<LeaveSummaryRow> rows, DtrPaper paper)
+        {
+            using (var file = new FileStream(path, FileMode.Create, FileAccess.Write))
+            using (var zip = new ZipArchive(file, ZipArchiveMode.Create))
+            {
+                AddFile(zip, "[Content_Types].xml", ContentTypesXml(1));
+                AddFile(zip, "_rels/.rels", RootRelsXml);
+                AddFile(zip, "xl/workbook.xml", WorkbookXml(new List<string> { "Leave summary" }));
+                AddFile(zip, "xl/_rels/workbook.xml.rels", WorkbookRelsXml(1));
+                AddFile(zip, "xl/styles.xml", StylesXml);
+                AddFile(zip, "xl/worksheets/sheet1.xml", SummaryWorksheetXml(title, rows, paper));
+            }
+        }
+
+        /// <summary>
+        /// This is the attendance reports (late and no Time-In on Mondays, late and undertime in the month) saved as one
+        /// Excel workbook, one worksheet per report (see AttendanceReports).
+        /// </summary>
+        public static void SaveReports(string path, IList<AttendanceReport> reports, DtrPaper paper)
+        {
+            var names = reports.Select(r => r.ShortName).ToList();
+            using (var file = new FileStream(path, FileMode.Create, FileAccess.Write))
+            using (var zip = new ZipArchive(file, ZipArchiveMode.Create))
+            {
+                AddFile(zip, "[Content_Types].xml", ContentTypesXml(reports.Count));
+                AddFile(zip, "_rels/.rels", RootRelsXml);
+                AddFile(zip, "xl/workbook.xml", WorkbookXml(names));
+                AddFile(zip, "xl/_rels/workbook.xml.rels", WorkbookRelsXml(reports.Count));
+                AddFile(zip, "xl/styles.xml", StylesXml);
+                for (int i = 0; i < reports.Count; i++)
+                    AddFile(zip, "xl/worksheets/sheet" + (i + 1) + ".xml", ReportWorksheetXml(reports[i], paper));
+            }
+        }
+
+        /// <summary>This is one report as a worksheet: the title, the explanation, the headings in row 4, one row per employee.</summary>
+        private static string ReportWorksheetXml(AttendanceReport report, DtrPaper paper)
+        {
+            const string columns = "BCDEFGHIJKLMN";
+            int count = report.Headings.Length;
+            var rows = new StringBuilder();
+            rows.Append(Row(1, 20, Text("B1", report.Title, LeaveBold)));
+            rows.Append(Row(2, 16.5, Text("B2", report.Note, LeaveText)));
+
+            var heading = new List<string>();
+            for (int c = 0; c < count; c++)
+                heading.Add(Text(columns[c] + "4", report.Headings[c], ReportHead));
+            rows.Append(Row(4, 32, heading.ToArray()));
+
+            int r = 5;
+            foreach (object[] values in report.Rows)
+            {
+                var cells = new List<string>();
+                double height = 16.5;
+                for (int c = 0; c < count && c < values.Length; c++)
+                {
+                    string cell = columns[c].ToString() + r;
+                    object value = values[c];
+                    if (value is int)
+                    {
+                        cells.Add(Number(cell, (int)value, LeaveCell));
+                        continue;
+                    }
+                    string text = Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";
+                    double width = c < report.Widths.Length ? report.Widths[c] : 12;
+                    if (c == 2)
+                    {
+                        cells.Add(Text(cell, text, LeaveMonthName));      // This is the name
+                    }
+                    else if (width >= 30)
+                    {
+                        cells.Add(Text(cell, text, LeaveWrapCell));       // This is the dates: as many lines as needed
+                        int lines = Math.Max(1, (int)Math.Ceiling(text.Length * 1.15 / Math.Max(1, width - 2)));
+                        height = Math.Max(height, 15 * lines + 2);
+                    }
+                    else
+                    {
+                        cells.Add(Text(cell, text, LeaveCell));
+                    }
+                }
+                rows.Append(Row(r, height, cells.ToArray()));
+                r++;
+            }
+            if (report.Rows.Count == 0)
+            {
+                rows.Append(Row(r, 16.5, Text("B" + r, "Nobody this month.", LeaveText)));
+                r++;
+            }
+
+            var xml = new StringBuilder();
+            xml.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n");
+            xml.Append("<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">");
+            xml.Append("<sheetPr><pageSetUpPr fitToPage=\"1\"/></sheetPr>");
+            xml.Append("<dimension ref=\"A1:").Append(columns[count - 1]).Append(Math.Max(5, r - 1)).Append("\"/>");
+            xml.Append("<sheetViews><sheetView showGridLines=\"0\" workbookViewId=\"0\">");
+            xml.Append("<pane ySplit=\"4\" topLeftCell=\"A5\" activePane=\"bottomLeft\" state=\"frozen\"/>");   // This is so the headings stay in view
+            xml.Append("</sheetView></sheetViews>");
+            xml.Append("<sheetFormatPr defaultRowHeight=\"15\"/>");
+            xml.Append("<cols>");
+            xml.Append("<col min=\"1\" max=\"1\" width=\"2.5\" customWidth=\"1\"/>");     // This is A  (empty)
+            for (int c = 0; c < count; c++)
+            {
+                string at = (c + 2).ToString(CultureInfo.InvariantCulture);
+                double width = c < report.Widths.Length ? report.Widths[c] : 12;
+                xml.Append("<col min=\"").Append(at).Append("\" max=\"").Append(at).Append("\" width=\"")
+                   .Append(width.ToString(CultureInfo.InvariantCulture)).Append("\" customWidth=\"1\"/>");
+            }
+            xml.Append("</cols>");
+            xml.Append("<sheetData>").Append(rows).Append("</sheetData>");
+            xml.Append("<printOptions horizontalCentered=\"1\"/>");
+            xml.Append("<pageMargins left=\"0.4\" right=\"0.4\" top=\"0.5\" bottom=\"0.5\" header=\"0.3\" footer=\"0.3\"/>");
+            xml.Append("<pageSetup paperSize=\"").Append(PaperInfo.ExcelCodeOf(paper))
+               .Append("\" orientation=\"landscape\" fitToWidth=\"1\" fitToHeight=\"0\"/>");
+            xml.Append("</worksheet>");
+            return xml.ToString();
+        }
+
+        /// <summary>This is the worksheet of the leave summary: B = ID ... L = Reminders.</summary>
+        private static string SummaryWorksheetXml(string title, IList<LeaveSummaryRow> list, DtrPaper paper)
+        {
+            var rows = new StringBuilder();
+            rows.Append(Row(1, 20, Text("B1", title, LeaveBold)));
+            rows.Append(Row(2, 16.5, Text("B2", "VL and SL are leave credits; CTO and SOLO are days left; SPL, WL and Forced Leave are days used " +
+                                                  "this year (SPL 3, WL 5 and Forced Leave 5 days a year). Empty = the balance is not known yet.", LeaveText)));
+
+            string[] head = { "ID", "Name", "Schedule", "VL balance", "SL balance", "CTO left", "SOLO left",
+                              "SPL used", "WL used", "Forced Leave used", "Reminders" };
+            const string columns = "BCDEFGHIJKL";
+            var heading = new List<string>();
+            for (int c = 0; c < head.Length; c++)
+                heading.Add(Text(columns[c] + "4", head[c], LeaveHead));
+            rows.Append(Row(4, 18, heading.ToArray()));
+
+            int r = 5;
+            foreach (LeaveSummaryRow row in list)
+            {
+                var cells = new List<string>();
+                cells.Add(Text("B" + r, row.EmployeeId, LeaveCell));
+                cells.Add(Text("C" + r, row.EmployeeName.Length > 0 ? row.EmployeeName : "(no name yet)", LeaveMonthName));
+                cells.Add(Text("D" + r, row.Schedule, LeaveCell));
+                cells.Add(row.Vl.HasValue ? Amount("E" + r, row.Vl.Value, LeaveNumber) : Blank("E" + r, LeaveNumber));
+                cells.Add(row.Sl.HasValue ? Amount("F" + r, row.Sl.Value, LeaveNumber) : Blank("F" + r, LeaveNumber));
+                cells.Add(Amount("G" + r, row.Cto, LeaveCell));
+                cells.Add(Amount("H" + r, row.Solo, LeaveCell));
+                cells.Add(Amount("I" + r, row.SplUsed, LeaveCell));
+                cells.Add(Amount("J" + r, row.WellnessUsed, LeaveCell));
+                cells.Add(Amount("K" + r, row.ForcedUsed, LeaveCell));
+                cells.Add(Text("L" + r, row.Reminders, LeaveMonthName));
+                rows.Append(Row(r, 16.5, cells.ToArray()));
+                r++;
+            }
+
+            var xml = new StringBuilder();
+            xml.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n");
+            xml.Append("<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">");
+            xml.Append("<sheetPr><pageSetUpPr fitToPage=\"1\"/></sheetPr>");
+            xml.Append("<dimension ref=\"A1:L").Append(Math.Max(5, r - 1)).Append("\"/>");
+            xml.Append("<sheetViews><sheetView showGridLines=\"0\" workbookViewId=\"0\">");
+            xml.Append("<pane ySplit=\"4\" topLeftCell=\"A5\" activePane=\"bottomLeft\" state=\"frozen\"/>");   // This is so the headings stay in view
+            xml.Append("</sheetView></sheetViews>");
+            xml.Append("<sheetFormatPr defaultRowHeight=\"15\"/>");
+            xml.Append("<cols>");
+            xml.Append("<col min=\"1\" max=\"1\" width=\"2.5\" customWidth=\"1\"/>");     // This is A  (empty)
+            xml.Append("<col min=\"2\" max=\"2\" width=\"13\" customWidth=\"1\"/>");      // This is B  ID
+            xml.Append("<col min=\"3\" max=\"3\" width=\"34\" customWidth=\"1\"/>");      // This is C  name
+            xml.Append("<col min=\"4\" max=\"4\" width=\"9\" customWidth=\"1\"/>");       // This is D  schedule
+            xml.Append("<col min=\"5\" max=\"6\" width=\"11\" customWidth=\"1\"/>");      // This is E-F  VL, SL
+            xml.Append("<col min=\"7\" max=\"10\" width=\"9.5\" customWidth=\"1\"/>");    // This is G-J  CTO, SOLO, SPL, WL
+            xml.Append("<col min=\"11\" max=\"11\" width=\"19\" customWidth=\"1\"/>");    // This is K  Forced Leave
+            xml.Append("<col min=\"12\" max=\"12\" width=\"95\" customWidth=\"1\"/>");    // This is L  reminders
+            xml.Append("</cols>");
+            xml.Append("<sheetData>").Append(rows).Append("</sheetData>");
+            xml.Append("<printOptions horizontalCentered=\"1\"/>");
+            xml.Append("<pageMargins left=\"0.4\" right=\"0.4\" top=\"0.5\" bottom=\"0.5\" header=\"0.3\" footer=\"0.3\"/>");
+            xml.Append("<pageSetup paperSize=\"").Append(PaperInfo.ExcelCodeOf(paper))
+               .Append("\" orientation=\"landscape\" fitToWidth=\"1\" fitToHeight=\"0\"/>");
+            xml.Append("</worksheet>");
+            return xml.ToString();
         }
 
         private static void AddFile(ZipArchive zip, string name, string content)
@@ -848,7 +1034,7 @@ namespace Dat2DTR
               "<border><left/><right/><top style=\"medium\"><color auto=\"1\"/></top><bottom/><diagonal/></border>" +   // This is 3 thick line above
             "</borders>" +
             "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>" +
-            "<cellXfs count=\"31\">" +
+            "<cellXfs count=\"33\">" +
               Xf(0, 0, "left", false, 0) +      // This is 0  StyleNormal
               Xf(2, 0, "left", false, 0) +      // This is 1  StyleTitle
               Xf(3, 0, "right", false, 0) +     // This is 2  StyleFormNumber
@@ -880,6 +1066,8 @@ namespace Dat2DTR
               Xf(7, 2, "center", false, 0, 164, 0) +    // This is 28 StyleBalance
               Xf(7, 0, "center", false, 0) +            // This is 29 LeaveBoldCenter
               Xf(6, 2, "center", false, 0) +            // This is 30 LeaveLineBelow
+              Xf(6, 1, "left", true, 1) +               // This is 31 LeaveWrapCell
+              Xf(7, 1, "center", true, 0, 0, 3) +       // This is 32 ReportHead
             "</cellXfs>" +
             "<cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles>" +
             "</styleSheet>";

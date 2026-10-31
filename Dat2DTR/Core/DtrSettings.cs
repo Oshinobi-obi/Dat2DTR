@@ -32,6 +32,21 @@ namespace Dat2DTR
         /// <summary>This is the folder that was used last time, so the Open/Save windows start there.</summary>
         public string LastFolder = "";
 
+        /// <summary>
+        /// This is who signs the Certificate of Leave Credits: "Prepared by" and "Certified correct", each a name and a position
+        /// (changed with "Edit Certificate Details..."). An empty one is left blank on the certificate, to fill in by hand.
+        /// </summary>
+        public string PreparedByName = LeaveCertificate.DefaultPreparedByName;
+        public string PreparedByPosition = LeaveCertificate.DefaultPreparedByPosition;
+        public string CertifiedByName = "";
+        public string CertifiedByPosition = "";
+
+        /// <summary>
+        /// This is true when "Remember my choice" was ticked in the second question before deleting employees: that second
+        /// question is then not asked again (the first one, with the names, always is). Turned back on in Employee Names.
+        /// </summary>
+        public bool SkipSecondDeleteQuestion;
+
         /// <summary>This is how a number becomes a schedule: 0 = A, 1 = B, 2 = C, 3 = D. Any other number gives Schedule A.</summary>
         public WorkSchedule GetSchedule(int index)
         {
@@ -118,6 +133,11 @@ namespace Dat2DTR
                             if (Enum.TryParse(value, out paper)) s.Paper = paper;
                             break;
                         case "LastFolder": s.LastFolder = value; break;
+                        case "PreparedByName": s.PreparedByName = value; break;
+                        case "PreparedByPosition": s.PreparedByPosition = value; break;
+                        case "CertifiedByName": s.CertifiedByName = value; break;
+                        case "CertifiedByPosition": s.CertifiedByPosition = value; break;
+                        case "SkipSecondDeleteQuestion": s.SkipSecondDeleteQuestion = value == "1"; break;
                         case "Version": int.TryParse(value, out version); break;
                     }
                 }
@@ -173,6 +193,11 @@ namespace Dat2DTR
             sb.AppendLine("CountLateFromOfficialTime=" + (CountLateFromOfficialTime ? "1" : "0"));
             sb.AppendLine("Paper=" + Paper);
             sb.AppendLine("LastFolder=" + LastFolder);
+            sb.AppendLine("PreparedByName=" + OneLine(PreparedByName));
+            sb.AppendLine("PreparedByPosition=" + OneLine(PreparedByPosition));
+            sb.AppendLine("CertifiedByName=" + OneLine(CertifiedByName));
+            sb.AppendLine("CertifiedByPosition=" + OneLine(CertifiedByPosition));
+            sb.AppendLine("SkipSecondDeleteQuestion=" + (SkipSecondDeleteQuestion ? "1" : "0"));
             sb.AppendLine("Version=" + SettingsVersion);
 
             try
@@ -181,6 +206,12 @@ namespace Dat2DTR
             }
             catch (IOException) { }                 // This is on purpose: not being able to save settings
             catch (UnauthorizedAccessException) { } // This is because it should never stop the user from working
+        }
+
+        /// <summary>This is a typed text made safe for the settings file: one line, no spaces at the ends.</summary>
+        private static string OneLine(string text)
+        {
+            return (text ?? "").Replace("\r", " ").Replace("\n", " ").Trim();
         }
 
         private static TimeSpan ParseTime(string text, TimeSpan fallback)

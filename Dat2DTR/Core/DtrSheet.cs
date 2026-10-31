@@ -14,6 +14,9 @@ namespace Dat2DTR
         public TimeSpan? PmDeparture;
 
         public int LateMinutes;
+
+        /// <summary>This is the part of the late that is from the A.M. Arrival (Time-In), without coming back late from lunch.</summary>
+        public int MorningLateMinutes;
         public int UndertimeMinutes;
 
         /// <summary>This is true for a working day with no scans at all.</summary>
@@ -60,6 +63,28 @@ namespace Dat2DTR
 
         /// <summary>This is the time work was suspended from (no late or undertime after it), or null.</summary>
         public TimeSpan? SuspendedFrom;
+
+        /// <summary>This is true for a Flexi-Time day (ticked in Edit DTR), with the schedule it was computed with, e.g. "C", 7:00 AM - 4:00 PM.</summary>
+        public bool IsFlexi;
+        public string FlexiSchedule = "";
+        public TimeSpan FlexiIn, FlexiOut;
+
+        /// <summary>This is the remark of a Flexi-Time day shown in Edit DTR, e.g. "Flexi-Time: Schedule C (7-4)".</summary>
+        public string FlexiRemark
+        {
+            get
+            {
+                if (!IsFlexi) return "";
+                return "Flexi-Time: Schedule " + FlexiSchedule + " (" + Short(FlexiIn) + "-" + Short(FlexiOut) + ")";
+            }
+        }
+
+        private static string Short(TimeSpan time)
+        {
+            int hour = time.Hours % 12;
+            if (hour == 0) hour = 12;
+            return time.Minutes == 0 ? hour.ToString() : hour + ":" + time.Minutes.ToString("00");
+        }
 
         public bool HasLeave
         {

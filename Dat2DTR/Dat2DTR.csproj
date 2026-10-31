@@ -8,7 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Product>Dat2DTR</Product>
     <AssemblyTitle>Dat2DTR - Daily Time Record Maker</AssemblyTitle>
-    <Version>1.0.0</Version>
+    <!-- This is the version shown on Dat2DTR.exe in Windows. Keep it the same as the newest entry of the version history in Core\AppInfo.cs -->
+    <Version>1.6.0</Version>
     <!-- This is the logo shown on Dat2DTR.exe in Windows Explorer and on the taskbar -->
     <ApplicationIcon>Assets\Dat2DTR.ico</ApplicationIcon>
   </PropertyGroup>
@@ -19,6 +20,14 @@
     <!-- This is the DepEd NCR seal and the "One NCR, Stronger Together" banner shown in the program (see Theme.GetImage) -->
     <EmbeddedResource Include="Assets\DepEd-NCR-seal.png" LogicalName="DepEd-NCR-seal.png" />
     <EmbeddedResource Include="Assets\One-NCR-banner-plate.png" LogicalName="One-NCR-banner-plate.png" />
+    <!-- This is the DepEd logo at the top of the Certificate of Leave Credits (see CertificateLogo), a JPEG made from DepEd-Logo.webp -->
+    <EmbeddedResource Include="Assets\DepEd-Logo.jpg" LogicalName="DepEd-Logo.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- This is the certificate fonts (Old English Text MT, Trajan Pro) in the Fonts folder. They are licensed fonts, so they
+         are copied next to Dat2DTR.exe but not built into it, and the Fonts folder is left out of GitHub (see .gitignore). -->
+    <None Update="Fonts\*.ttf" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
 </Project>

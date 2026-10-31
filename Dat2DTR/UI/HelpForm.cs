@@ -153,7 +153,7 @@ namespace Dat2DTR
                       "and which work schedule each person follows.");
             Step(1, "Open the .dat file first.", "This way all the ID numbers in the file are listed for you.");
             Step(2, "Click \"Employee Names...\" at the bottom left.",
-                 "A table opens with three columns: Biometric ID, Name on the DTR and Work schedule.");
+                 "A table opens with the columns Delete, Biometric ID, Name on the DTR and Work schedule.");
             Step(3, "Type each person's name beside the ID.", "Type it the way it should appear on the DTR. Example:  DELA CRUZ, JUAN M");
             Step(4, "Choose the work schedule of each person.",
                  "Click the box in the Work schedule column and pick Schedule A, B, C or D. New people start on Schedule A.");
@@ -161,6 +161,12 @@ namespace Dat2DTR
             Note("Already have the list in Excel? Save it as a CSV file with the columns ID, Name and (if you want) Schedule (the letter A, B, C or D), " +
                  "then use \"Import list...\". Use \"Export list...\" to copy the list to another computer.");
             Note("A new employee shows as \"(no name yet)\" in the list. Add the name the same way.");
+            Note("To delete employees (for example someone who left): tick their Delete box, click \"Delete ticked...\", answer the two questions " +
+                 "(the second one can be turned off with \"Remember my choice\"; tick \"Ask a second time before deleting\" below the table " +
+                 "to turn it on again), then click \"Save\". " +
+                 "EVERYTHING about them is erased: name, schedule, leaves, balances, CTO, Solo Parent Leave, times typed in and their kept scans. " +
+                 "A backup of everything is saved first in Documents (Dat2DTR-before-delete-....zip), so it can be undone with Backup / Restore. " +
+                 "If a .dat file with their scans is opened again, they show up again with no name.");
 
             // This is the "Once a year: the holidays" section ------------------------------------------------------------
             Heading("Once a year: the holidays");
@@ -187,8 +193,11 @@ namespace Dat2DTR
             Step(2, "Click \"Open .dat File...\"  (number 1 on the screen).",
                  "Find the file and click Open. You can also drag the file into the window. " +
                  "Beside the button you will see the file name, how many scans and employees it has, and the dates it covers.");
-            Step(3, "Choose the month  (number 2 on the screen).",
-                 "The program already picks the most likely month. Change it only if it is not the month you want.");
+            Step(3, "Choose the year and the month  (number 2 on the screen).",
+                 "The program already picks the most likely month. Change it only if it is not the month you want: pick the year " +
+                 "on the left, then the month (the month list shows the months of that year). " +
+                 "The months of the files opened before are in the list too: every file opened is kept on this computer, " +
+                 "so opening the September file does not take away August.");
             Step(4, "Look at the list of employees on the left.",
                  "Each row shows the person's hours (for example 7-6 or 8-5) and the total Late and Undertime for the month. " +
                  "To find someone quickly, type part of the name or the ID in the box above the list. " +
@@ -248,6 +257,21 @@ namespace Dat2DTR
                  "(for example  Day 8 - undertime 13m -> none (Work suspended at 3:00 PM)),  so anyone can see what was changed and why.");
             Note("To go back to the computed value, empty both boxes (Hours and Minutes), or click \"Undo this day\".");
 
+            SubHeading("Flexi-Time");
+            Paragraph("Some employees may work the hours of another schedule on some days, for example 7:00 AM - 4:00 PM instead of " +
+                      "their 8:00 AM - 5:00 PM. Tick the Flexi-Time box of each such day (click the Flexi-Time heading to tick or untick " +
+                      "every working day). The program finds the schedule that fits the times of the day and writes it in the Remark, " +
+                      "for example  Flexi-Time: Schedule C (7-4).");
+            Bullet("Example on Schedule B (8:00 - 5:00): in at 7:00 AM, out at 4:00 PM -> Schedule C (7:00 - 4:00) = not late, no undertime. " +
+                   "In at 9:00 AM, out at 6:00 PM -> Schedule D (9:00 - 6:00).");
+            Bullet("Only schedules with the same working hours are tried (8 hours for B, C and D). The one with the least late and " +
+                   "undertime is used; when two are the same, the person's own schedule is kept. Example: in at 7:30 AM, out at 4:30 PM " +
+                   "is 30 minutes short of both 7-4 and 8-5, so it stays on 8-5: 30 minutes undertime.");
+            Bullet("The grace period and the Monday rule are those of the schedule used. Schedule A (10 hours) has no other schedule of " +
+                   "the same length, so it stays on Schedule A.");
+            Bullet("A day that is NOT ticked follows the person's own schedule. Example on Schedule B: in at 7:00 AM, out at 4:00 PM = 1 hour undertime.");
+            Bullet("Forgetting to scan at lunch is fine: a day with only the arrival and the departure is judged on those two times.");
+
             // This is the "Edit Leave" section ------------------------------------------------------------
             Heading("Edit Leave: filing a leave and computing the leave credits");
             Paragraph("Use this when an employee filed a leave. The program writes the leave on the DTR, deducts it from the " +
@@ -265,6 +289,9 @@ namespace Dat2DTR
                  "On the right, type the Vacation Leave and the Sick Leave balance at the end of last month " +
                  "(copy the Net from the employee's leave card). You do this once for each employee. " +
                  "After that the program carries the balance over every month by itself.");
+            Note("Special and Wellness (below Vacation Leave and Sick Leave): the Special Privilege Leave and Wellness Leave LEFT at the start of the month, " +
+                 "for days taken before the program was used. For example, someone who already used 2 SPL this year has 1 left: type 1. " +
+                 "Leave them empty and the program counts the SPL and WL filed this year by itself. They start again every January 1.");
             Step(5, "Read the Computation on the right.",
                  "It shows line by line what was earned, what was deducted and the new balance. It changes while you choose.");
             Step(6, "Click \"Save\".",
@@ -305,6 +332,8 @@ namespace Dat2DTR
                  "The day stays an ordinary working day until 3:00 PM - late, undertime and ABSENT as usual - and no undertime is counted after it. " +
                  "Nothing is deducted for the suspension. The yellow message shows \"Work suspended: Day 8 from 3:00 PM\".");
             Note("For one employee, choose Suspended in Edit Leave and pick \"From 3:00 PM\" under How long.");
+            Note("Leaving before the suspension time is undertime, counted up to that time. A time in the lunch break works the same: " +
+                 "suspended from 1:00 PM and out at 12:26 PM = 34 minutes undertime; out at 11:30 AM = 1 hour 30 minutes.");
 
             SubHeading("Seeing the Computation of Leaves");
             Bullet("Above the DTR there are two buttons:  DTR  and  Computation of Leaves.  " +
@@ -418,15 +447,69 @@ namespace Dat2DTR
             Heading("Printing or saving several employees at once");
             Step(1, "Tick the box beside each name you want.", "\"Tick all\" ticks everyone in the list. \"Untick all\" clears the ticks.");
             Step(2, "Click \"Print...\" or \"Save To...\".", "");
-            Step(3, "Choose what you want:  DTR only,  Computation of Leaves only,  or Both.",
-                 "Save To also offers \"Biometrics file (.dat)\": the scans of the chosen employees in the chosen month, " +
-                 "saved as a new .dat file exactly as they were in the opened file. Times typed in with Edit DTR and leaves are not in it.");
+            Step(3, "Choose what you want:  DTR only,  Computation of Leaves only,  Both,  or Certificate of Leave Credits.",
+                 "Save To also offers \"Biometrics file (.dat)\": the scans of the chosen employees saved as a new .dat file, exactly as " +
+                 "the device wrote them - only the month on screen, its whole year, or every month kept on this computer. " +
+                 "Times typed in with Edit DTR and leaves are not in it.");
             Step(4, "Answer the question \"Whose?\"",
                  "Only this one = the employee you are looking at.   The ones I ticked = everyone with a tick.   Everyone = all employees in the list.");
             Note("In a PDF each employee gets one page for each part you chose. In an Excel file each employee gets one sheet for each part " +
                  "(see the tabs at the bottom of Excel).");
             Note("The same works for the work schedule: tick several people, then pick the schedule above the DTR, " +
                  "and you are asked whether to change only this person, the ticked ones, or everyone.");
+
+            // This is the "Leave Summary, certificates and reminders" section ------------------------------------------------------------
+            Heading("Leave Summary, certificates and reminders");
+            SubHeading("Leave Summary of everyone");
+            Bullet("Click \"Leave Summary...\" below the list. One table shows every employee of the month: the VL, SL, CTO and " +
+                   "Solo Parent balance at the end of the month, and the SPL, Wellness and Forced Leave used this year.");
+            Bullet("Click a heading to sort (for example by VL balance). \"Save to Excel...\" saves the same table.");
+            Bullet("An empty VL / SL means the balance is not known yet: type the balance brought forward once in Edit Leave.");
+            SubHeading("Reports: late and no Time-In on Mondays, late and undertime");
+            Bullet("Click \"Reports...\" below the list. Five reports of the whole office for the month on screen, one tab each:");
+            SubBullet("1. Late on Mondays: late at Time-In (A.M. Arrival) on a Monday, how many Mondays and how late.");
+            SubBullet("2. No Time-In on Mondays: absent, or came in only in the afternoon, and how many Mondays.");
+            SubBullet("3. Mondays (1 + 2): both together, one row per employee.");
+            SubBullet("4. Late this month: every day late (Time-In or back from lunch), how many days and the total.");
+            SubBullet("5. Undertime this month: every day with undertime, how many days and the total.");
+            Bullet("Each day is written with its times, for example  Sep 21 - In 7:11, Out 6:05 PM (11m). " +
+                   "A day late from lunch also shows the time back:  In 8:00, Back 1:15 PM, Out 5:00 PM (15m).");
+            Bullet("A Monday on leave, a holiday or a whole-day suspension is not counted. Late and undertime are the ones on the DTR " +
+                   "(also when they were typed in by hand in Edit DTR). The most times come first; click a heading to sort.");
+            Bullet("\"Save to Excel...\" saves all five reports in one Excel file, one worksheet each. \"Save as PDF...\" and \"Print...\" " +
+                   "ask first: only the report on screen, or all five. The pages are sideways (landscape), each report starts on a new " +
+                   "page, and the headings are repeated on every page.");
+            SubHeading("Certificate of Leave Credits");
+            Bullet("Click \"Print...\" or \"Save To...\" and choose \"Certificate of Leave Credits\". One page per employee, " +
+                   "with the VL and SL balance and the total, ready to sign (Prepared by / Certified correct). It is saved as a PDF.");
+            Bullet("The names and positions under \"Prepared by\" and \"Certified correct\" are changed with \"Edit Certificate Details...\" " +
+                   "(at the bottom of the \"What do you want to print?\" / \"save?\" window). The preview on the right changes as you type. " +
+                   "They are kept for next time. " +
+                   "A box left empty is blank on the certificate, to fill in by hand. At first, Prepared by is " +
+                   LeaveCertificate.DefaultPreparedByName + ", " + LeaveCertificate.DefaultPreparedByPosition + ".");
+            Bullet("The table lists every leave: Vacation Leave, Sick Leave and their total, then Mandatory / Forced Leave, Special Privilege Leave " +
+                   "and Wellness Leave left for the year, then CTO and Solo Parent Leave left.");
+            Bullet("The balance is as of the end of the month on screen. If that month is not over yet, the end of the month before is used, " +
+                   "so the certificate never shows credits that are not earned yet.");
+            Bullet("When a balance is not known yet, the program asks first; that certificate has empty boxes to fill in by hand.");
+            Bullet("At the top is the DepEd logo. The heading uses Old English Text MT (Republic of the Philippines, Department of Education) and Trajan Pro " +
+                   "(National Capital Region). They are taken from the Fonts folder next to Dat2DTR.exe, or from the fonts installed in Windows. " +
+                   "Without them the heading is printed in Arial.");
+            SubHeading("Reminders in the yellow bar (also in the Leave Summary)");
+            Bullet("Forced Leave: from November, when the 5 days of the year are not all used. Unused days are forfeited after December 31. " +
+                   "Only for employees with " + LeaveRules.FormatShort(LeaveReminders.ForcedLeaveFrom) + " or more days of Vacation Leave (CSC rule).");
+            Bullet("CTO and Solo Parent Leave that expire within the next " + LeaveReminders.ExpiryDaysAhead + " days and are not used yet.");
+
+            // This is the "Backup and Restore" section ------------------------------------------------------------
+            Heading("Backup and Restore");
+            Paragraph("Everything Dat2DTR keeps (names, times typed in, leaves, balances, CTO, Solo Parent Leave, holidays, office hours " +
+                      "and the scans of every .dat file opened) " +
+                      "is on this computer only. Back it up now and then.");
+            Step(1, "Click \"Backup / Restore...\" below the list, then \"Back up now\".",
+                 "Choose where to save it. The file has today's date in its name, for example " + DataBackup.SuggestedName(DateTime.Today) + ".");
+            Step(2, "Keep a copy somewhere else too.", "For example on a USB drive or in Google Drive.");
+            Note("To put a backup back (on a new or reformatted computer): \"Backup / Restore...\", then \"Restore from a backup\" and pick the .zip. " +
+                 "What is on the computer at that moment is saved first in Documents (Dat2DTR-before-restore-...zip), so it can be undone.");
 
             // This is the "How Late and Undertime are computed" section ------------------------------------------------------------
             Heading("How Late and Undertime are computed");
@@ -449,8 +532,9 @@ namespace Dat2DTR
             Bullet("The two scans around lunch time  =  A.M. Departure and P.M. Arrival");
             Bullet("Two scans within one minute count as one (the finger was scanned twice).");
             Bullet("The In / Out button of the device is ignored, because people often forget to press it.");
-            Note("If a day has only one scan, or one lunch scan is missing, the program shows what it has and asks you to check that day. " +
-                 "It does not guess the missing time. Use \"Edit DTR...\" to type it in.");
+            Note("Forgetting to scan at lunch is fine: a day with only the arrival and the departure (or one lunch scan) is judged on the " +
+                 "arrival and the departure, with no warning. If a day has only one scan, the program shows what it has and asks you to check " +
+                 "that day. It does not guess the missing time. Use \"Edit DTR...\" to type it in.");
 
             // This is the "Changing the office hours" section ------------------------------------------------------------
             Heading("Changing the office hours, grace period or working days");
@@ -489,8 +573,20 @@ namespace Dat2DTR
                      "An employee can have at most " + LeaveRules.FormatShort(LeaveKinds.CtoMaxDays) + " days of CTO at one time. " +
                      "Give more only after some of it was used or has expired. (Solo Parent Leave: at most " +
                      LeaveRules.FormatShort(LeaveKinds.SoloMaxDays) + " days at one time.)");
+            Question("Which version is this, and who do I contact for changes?",
+                     "Click \"About\" at the top right. It shows the version (also in the title bar), the developer and how to reach them, " +
+                     "and the version history: what changed in each version. Mention the version when you ask for a change.");
+            Question("What is the clock at the bottom right?",
+                     "It is the date and time in the Philippines (UTC+8), taken from this computer's clock, so it is right even if Windows " +
+                     "is set to another time zone. If it is wrong, the clock of the computer itself is wrong: fix it in the Windows date and time settings. " +
+                     "It is only shown on screen; it changes nothing on the DTR.");
+            Question("Is anything lost when I open another .dat file?",
+                     "No. The scans of every file opened are kept on this computer, month by month, so the months of before stay in " +
+                     "\"Choose the month\" (also after the program is closed). The same scan in two files is kept once. " +
+                     "Names, times typed in, Flexi-Time, leaves, balances, CTO, Solo Parent Leave and holidays are kept in their own files " +
+                     "and do not change when a file is opened. \"Backup / Restore...\" saves all of it, the kept scans included.");
             Question("Someone forgot to scan at lunch.",
-                     "Click \"Edit DTR...\" and type the missing times. The yellow message for that day goes away.");
+                     "That is fine. The day is judged on the arrival and the departure: leaving at the end of the office hours means no undertime.");
             Question("An employee is missing from the list.",
                      "The list shows people who scanned at least once in the chosen month, or who have a leave filed in it. " +
                      "Check that the right month is chosen. For someone who did not scan at all, " +
@@ -544,6 +640,16 @@ namespace Dat2DTR
                        " means leaving at " + DtrSettings.FormatTime(w.TimeOut + TimeSpan.FromMinutes(Math.Min(14, w.GraceMinutes))) +
                        " or later. Leaving earlier = " + Math.Min(14, w.GraceMinutes) + " minutes late. " +
                        "(Not when the afternoon is on leave or suspended.)");
+            int monday = w.GraceOn(DayOfWeek.Monday);
+            if (monday != w.GraceMinutes)
+                Bullet("Mondays:  the grace period never goes past " + DtrSettings.FormatTime(WorkSchedule.MondayGraceUntil) + ", so " +
+                       (monday == 0 ? timeIn + " must be met sharp on a Monday. Example: arriving at " +
+                                      DtrSettings.FormatTime(w.TimeIn + TimeSpan.FromMinutes(1)) + " on a Monday = 1 minute late."
+                                    : "on a Monday only up to " + DtrSettings.FormatTime(w.TimeIn + TimeSpan.FromMinutes(monday)) + " is not late.") +
+                       " Tuesday to Friday have the full " + w.GraceMinutes + " minutes.");
+            else if (w.GraceMinutes > 0)
+                Bullet("Mondays:  the same " + w.GraceMinutes + " minutes (up to " + DtrSettings.FormatTime(WorkSchedule.MondayGraceUntil) +
+                       " is not late). Schedules that start later (8:00 AM, 9:00 AM) have no grace period on Mondays.");
             Bullet("Late:  coming back from lunch after " + lunchEnd + ", counted from " + lunchEnd + ".  " +
                    "Example: back at " + lunchLateTime + " = 10 minutes late.");
             Bullet("Undertime:  leaving before " + lunchStart + " in the morning, or before " + timeOut + " in the afternoon.  " +

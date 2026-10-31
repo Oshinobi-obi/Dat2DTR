@@ -361,3 +361,11 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# This is the certificate fonts (Old English Text MT, Trajan Pro). They are licensed fonts (Monotype, Adobe),
+# so they stay on the office computers and are not put on GitHub.
+Dat2DTR/Fonts/
+
+# This is the sample Certificate of Leave Credits PDFs. A certificate carries the licensed fonts inside it,
+# so it is not put on GitHub either (anyone could take the fonts out of the PDF).
+Dat2DTR/Samples/Certificate of Leave Credits*.pdf

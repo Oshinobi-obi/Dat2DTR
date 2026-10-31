@@ -12,7 +12,7 @@ No internet, no database and no extra libraries are needed.
 ## How to use it
 
 1. **Open .dat File...** - choose the file exported from the biometrics device (or drag it into the window).
-2. **Choose the month.**
+2. **Choose the year and the month** (the month list shows the months of the year picked beside it).
 3. Click an employee on the left to see the DTR, then **Print...** or **Save To...** (PDF or Excel).
 
 If an employee filed a leave, click **Edit Leave...** before printing (see below).
@@ -21,6 +21,12 @@ To print or save several employees at once, tick the boxes beside their names fi
 
 The `.dat` file only has ID numbers. Click **Employee Names...** once, type the name for each ID and
 choose the person's work schedule (or import a list: `ID,Name,Schedule`). The program remembers them.
+
+To delete employees (for example someone who left), tick their **Delete** box in Employee Names, click
+**Delete ticked...**, answer the two questions (the second can be skipped from then on with *Remember my choice*;
+*Ask a second time before deleting*, below the table, turns it back on), then **Save**. Everything about them is erased (name, schedule, leaves, balances, CTO,
+Solo Parent Leave, times typed in, Flexi-Time and kept scans); a backup is saved first in Documents
+(`Dat2DTR-before-delete-....zip`) so it can be undone with Backup / Restore.
 
 ## Four work schedules
 
@@ -40,6 +46,28 @@ For a group, tick them and use Edit Leave for the ticked employees.
 
 New employees start on Schedule A. The hours, lunch break, grace period and working days of each
 schedule can be changed in **Office Hours...**
+
+## The months of every file opened
+
+The month is chosen with two lists: the **year** (every year that has scans) and the **month** (the months of that
+year, newest first), so the list stays short however many years are kept.
+
+Every `.dat` file opened is **kept** on this computer, month by month, in `%AppData%\Dat2DTR\scans`
+(`2026-08.dat`, `2026-09.dat`... in the device's own layout, plus `covered.csv`: the dates each file covered).
+So after opening the August file and then the September file, both months are in the month list, and the
+kept months are there again the next time the program starts, without opening a file. Opening a file only
+**adds**: the same scan in two files is kept once, and nothing typed in, filed or computed is ever lost
+(those are kept in their own files - see below). A day no opened file covered stays blank (never ABSENT).
+The kept scans are in the backup too. The `.dat` files themselves are never changed.
+
+## Version and About
+
+The **clock** at the bottom right of the main window shows the date and time in the Philippines (UTC+8), from the
+computer's clock (so it is right even when Windows is set to another time zone). It is only shown on screen.
+
+**About** (top right) shows the version (also in the title bar, e.g. `Dat2DTR 1.6.0`), the developer and how to
+contact them, and the version history. The version is always the newest entry of the history in `Core/AppInfo.cs`;
+for a new version add an entry at the top there and put the same number in `Dat2DTR.csproj` (`Version`).
 
 ## Holidays
 
@@ -61,6 +89,8 @@ Kept in `%AppData%\Dat2DTR\holidays.csv`.
 
 ## Edit DTR
 
+Edit DTR and Edit Leave open maximized (filling the screen); "Restore" in the title bar gives the normal size.
+
 **Edit DTR...** (above the DTR) opens a table with one row per day. Use it to type in a scan that
 was forgotten, correct a wrong time, or type a remark such as `HOLIDAY` on a day with no
 times (it is printed in place of ABSENT). Late and Undertime are computed again from what was typed.
@@ -72,8 +102,18 @@ LATE Minutes, UNDERTIME Hours, UNDERTIME Minutes** - so type the hours and minut
 value stays visible in the Result column, and every changed day is listed in the yellow message.
 Empty both boxes (Hours and Minutes) to go back to the computed value.
 
+**Flexi-Time** (a tick box per day; click the heading to tick or untick every working day): the person may work the
+hours of another schedule on that day, for example 7:00 AM - 4:00 PM instead of 8:00 AM - 5:00 PM. The program tries
+every schedule with the same working hours (8 hours for B, C and D; lunch not counted), uses the one with the least late +
+undertime (a tie keeps the person's own schedule), and writes it in the Remark column, e.g. `Flexi-Time: Schedule C (7-4)`.
+7:00 - 4:00 on Schedule B -> Schedule C, not late, no undertime. 7:30 - 4:30 -> stays on B (30 minutes undertime either way).
+Schedule A (10 hours) has no other schedule of the same length. A day that is not ticked follows the person's own schedule.
+
+**Forgotten lunch scans** are fine: a day with only the arrival and the departure (or one lunch scan) is judged on the
+arrival and the departure, with no warning.
+
 The `.dat` file is never changed. Typed values are kept in `%AppData%\Dat2DTR\corrections.csv`
-(times) and `adjustments.csv` (Late / Undertime), and days typed in by hand are listed on screen
+(times) and `adjustments.csv` (Late / Undertime and Flexi-Time), and days typed in by hand are listed on screen
 (the employee gets a `*` in the list).
 
 ## Edit Leave and the Computation of Leaves
@@ -81,7 +121,10 @@ The `.dat` file is never changed. Typed values are kept in `%AppData%\Dat2DTR\co
 **Edit Leave...** (above the DTR) opens a table with one row per day. On the day of the leave, pick the
 kind of leave and whether it was a whole day or half a day. The first time, also type the employee's
 **balance brought forward** (Vacation and Sick Leave, from the leave card). After that the balance is
-carried over from month to month automatically.
+carried over from month to month automatically. Below them, **Special** and **Wellness** take the Special Privilege Leave and
+Wellness Leave *left* at the start of the month (for days used before the program was used; e.g. 2 SPL used = type 1).
+Empty = counted from the SPL and WL filed this year. The typed numbers are kept in `leave-ledger.csv` and count for
+the rest of that year (both start again every January 1).
 
 | Kind of leave | What happens |
 |---|---|
@@ -105,7 +148,8 @@ saved without WFH or IDLAR.
 
 **Work suspended from a time:** for the ticked employees choose Suspended and How long = *From a time* (for example
 3:00 PM). The day is ordinary until then and no undertime is counted after it. For one employee, pick *From 3:00 PM*
-under How long in Edit Leave.
+under How long in Edit Leave. Leaving before the suspension time is undertime, counted up to it - also when the time is in the
+lunch break (suspended from 1:00 PM, out at 12:26 PM = 34 minutes).
 
 **The same leave for many employees:** tick them in the list, click **Edit Leave...** and choose *The ... I ticked*.
 Pick the days, the leave (for example Holiday), how long and WFH / IDLAR, then **Apply**. Days that are not working
@@ -140,8 +184,9 @@ kept as a record. CTO and Solo Parent Leave cannot be filed in Edit Leave withou
 (for ticked employees, those without enough are skipped and listed).
 
 **Print...** and **Save To...** first ask what you want: *DTR only*, *Computation of Leaves only*, or *Both*.
-**Save To...** can also save the scans of the chosen employees and month as a new **.dat file**, line for line
-as in the opened file (times typed in with Edit DTR and leaves are not in it).
+**Save To...** can also save the scans of the chosen employees as a new **.dat file**, line for line as the device
+wrote them - only the month on screen, its whole year, or every month kept (times typed in with Edit DTR and leaves are
+not in it).
 
 The Computation of Leaves shows the **VL** and **SL** left at the end of the month at the top right,
 and what was used this year under the table.
@@ -154,6 +199,36 @@ A day that is ABSENT with no leave filed is **not** deducted; it is listed so a 
 Leaves are kept in `%AppData%\Dat2DTR\leaves.csv` (`ID,Date,Leave,Part,WFH,IDLAR`), the remembered months in `leave-ledger.csv`,
 the CTO given in `cto.csv`, the Solo Parent Leave given in `solo-parent.csv`.
 
+## Leave Summary, certificates, reminders and backups
+
+- **Leave Summary...** (below the list): every employee of the month in one table - VL, SL, CTO and Solo Parent
+  balance at the end of the month, SPL, Wellness and Forced Leave used this year, and reminders. Sortable;
+  **Save to Excel...** saves it.
+- **Reports...** (below the list): five attendance reports of the whole office for the month on screen - 1. late at
+  Time-In on Mondays, 2. no Time-In on Mondays (absent or afternoon only), 3. both together, 4. late in the month,
+  5. undertime in the month - each with how many times, the total and the dates with their times
+  (e.g. `Sep 21 - In 7:11, Out 6:05 PM (11m)`). A Monday on leave or a holiday is not
+  counted. **Save to Excel...** saves all five, one worksheet each; **Save as PDF...** and **Print...** give the report on
+  screen or all five, on sideways (landscape) pages with the headings repeated on every page.
+- **Certificate of Leave Credits** (a choice in Print / Save To): one page per employee with a table of every
+  leave - Vacation Leave, Sick Leave and their total, Mandatory / Forced Leave, Special Privilege Leave and Wellness
+  Leave left for the year, CTO and Solo Parent Leave - ready to sign, saved as PDF. The paragraphs are justified.
+  The names and positions of "Prepared by" and "Certified correct" are changed with **Edit Certificate Details...**
+  (bottom of the Print / Save To choice window) and kept in `settings.ini`; an empty one is blank on the certificate.
+  At first Prepared by is MARY GRACE E. SACRAMENTO, Administrative Officer - IV. The line under each signature says Position. As of the end of the month on screen, or the end of the
+  month before when that month is not over yet. An unknown balance is left as an empty box.
+  At the top is the DepEd logo (`Assets\DepEd-Logo.jpg`, built into the program; made from `DepEd-Logo.webp`, which
+  Windows printing cannot read). The heading uses **Old English Text MT** (Republic of the Philippines, Department of Education) and
+  **Trajan Pro** (NATIONAL CAPITAL REGION), read from `Dat2DTR\Fonts\*.ttf` (copied next to the .exe when it is
+  built), from `%AppData%\Dat2DTR\Fonts`, or from the fonts installed in Windows; the PDF carries them inside.
+  They are licensed fonts, so the `Fonts` folder is **not** on GitHub (see `.gitignore`): on a new computer, put the
+  two `.ttf` files in that folder. Without them the heading is printed in Helvetica / Arial.
+- **Reminders** in the yellow bar: Forced Leave not all used (from November, for employees with 10 or more
+  days of VL), and CTO / Solo Parent Leave that expires within 30 days.
+- **Backup / Restore...**: all the saved files in one `.zip` with the date in its name
+  (`Dat2DTR-backup-2026-10-27.zip`). Restoring saves what is there first in Documents
+  (`Dat2DTR-before-restore-...zip`), then puts the backup back and reloads everything.
+
 ## Rules used for Late and Undertime
 
 Shown for Schedule A (7:00 AM - 6:00 PM, lunch 12:00 - 1:00 PM, grace period 15 minutes).
@@ -164,6 +239,8 @@ The grace period can be changed per schedule in **Office Hours...**; "how Late i
 |---|---|
 | Late (morning) | Arriving after 7:15 AM is late, counted from 7:00 AM. |
 | Grace period | Arriving 7:01 - 7:15 AM is not late only if the minutes are made up: arriving 7:14 AM means leaving at 6:14 PM or later. Leaving at 6:08 PM = 14 minutes late (no undertime). Not applied when the afternoon is on leave or suspended. |
+| Mondays | The grace period never goes past 7:15 AM. A 7:00 AM start keeps it; 8:00 AM (Schedule B) and 9:00 AM (Schedule D) must be met sharp on Mondays (8:01 = 1 minute late). Tuesday to Friday have the full 15 minutes. |
+| Flexi-Time | Only on days ticked in Edit DTR (see above). |
 | Late (afternoon) | Coming back from lunch after 1:00 PM, counted from 1:00 PM. |
 | Undertime | Leaving before 12:00 PM in the morning or before 6:00 PM in the afternoon. |
 | Half day | A half day with no scans at all (when the other half has scans) = 5 hours undertime. |
@@ -199,10 +276,20 @@ person can check them. The program does not guess.
 | `Core/HolidayCalendar.cs` | The holidays used for every employee (saved in `%AppData%\Dat2DTR\holidays.csv`) |
 | `Core/Leave.cs` | The kinds of leave, the filed leaves and the remembered months |
 | `Core/LeaveCalculator.cs` | **The leave rules** - how leave, late and undertime are deducted |
+| `Core/LeaveSummary.cs` | The Leave Summary of everyone, and the reminders (Forced Leave, CTO / Solo Parent expiring) |
+| `Core/AttendanceReports.cs` | The five attendance reports (Mondays, late, undertime) |
+| `Core/LeaveCertificate.cs` | What goes on the Certificate of Leave Credits |
+| `Core/DataBackup.cs` | Backup and Restore of the saved files (one .zip) |
+| `Core/AppInfo.cs` | The version, the developer and the version history (About) |
+| `Core/PhilippineTime.cs` | The date and time in the Philippines (UTC+8) for the clock at the bottom right |
 | `Rendering/DtrPageRenderer.cs` | **How the form looks** - used by the preview, the printer and the PDF |
 | `Rendering/LeavePageRenderer.cs` | How the Computation of Leaves page looks |
+| `Rendering/ReportRenderer.cs` | How the attendance reports look when printed or saved as PDF |
+| `Rendering/CertificateRenderer.cs` | How the Certificate of Leave Credits looks |
+| `Rendering/TrueTypeFont.cs` | Reads the certificate fonts (.ttf) and finds them (Fonts folder, then Windows) |
+| `Rendering/JpegImage.cs` | The DepEd logo of the certificate (a JPEG, drawn in the PDF and when printing) |
 | `Export/PdfDocument.cs`, `Export/XlsxWriter.cs` | Write the PDF and Excel files |
-| `UI/` | The other windows (Edit DTR, Edit Leave, Edit Leave for ticked employees, CTO / Solo Parent given, Holidays, Office Hours, Employee Names, How it works) |
+| `UI/` | The other windows (Edit DTR, Edit Leave, Edit Leave for ticked employees, CTO / Solo Parent given, Holidays, Office Hours, Employee Names, Leave Summary, Reports, Backup / Restore, How it works) |
 | `Assets/` | The logo: `Dat2DTR.ico` (program icon), plus SVG and PNG versions |
 
 ## Making the downloadable .exe

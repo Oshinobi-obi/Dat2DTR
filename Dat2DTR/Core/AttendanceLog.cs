@@ -12,6 +12,10 @@ namespace Dat2DTR
     ///
     /// We only keep the ID and the date/time. The "in/out" code in the file is NOT
     /// used, because people often do not press the In/Out key on the device.
+    ///
+    /// A log can also hold the scans of SEVERAL files (all the files ever opened, see ScanArchive). Then it also
+    /// knows which dates the files covered, so a day between two files is not marked ABSENT (see IsCovered).
+    /// The same scan in two files (same ID and time) is kept once.
     /// </summary>
     public sealed class AttendanceLog
     {
@@ -29,6 +33,12 @@ namespace Dat2DTR
             new List<KeyValuePair<DateTime, KeyValuePair<string, string>>>();   // This is time -> (ID, line)
 
         public string FilePath { get; private set; } = "";
+
+        // This is "ID|time" of every scan, so the same scan from two files is kept once.
+        private readonly HashSet<string> _seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // This is the dates the files covered (from the first to the last scan of each file), joined where they touch.
+        private readonly List<KeyValuePair<DateTime, DateTime>> _covered = new List<KeyValuePair<DateTime, DateTime>>();
 
         /// <summary>This is how many lines were understood as a scan.</summary>
         public int RecordCount { get; private set; }
@@ -51,6 +61,32 @@ namespace Dat2DTR
         {
             var log = new AttendanceLog();
             log.FilePath = path;
+            log.ReadFile(path);
+            foreach (var list in log._scans.Values)
+                list.Sort();
+            return log;
+        }
+
+        /// <summary>
+        /// This is a log of several files together (the month files kept by ScanArchive), with the dates they covered.
+        /// The same scan in two files is kept once.
+        /// </summary>
+        public static AttendanceLog LoadMany(IEnumerable<string> paths, IEnumerable<KeyValuePair<DateTime, DateTime>> covered)
+        {
+            var log = new AttendanceLog();
+            foreach (string path in paths)
+                log.ReadFile(path);
+            foreach (var list in log._scans.Values)
+                list.Sort();
+            foreach (var range in covered)
+                log.AddCovered(range.Key, range.Value);
+            return log;
+        }
+
+        /// <summary>This is where the lines of one file are added to the log.</summary>
+        private void ReadFile(string path)
+        {
+            AttendanceLog log = this;
 
             // This is FileShare.ReadWrite: it lets us read the file even if another program has it open.
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -70,11 +106,80 @@ namespace Dat2DTR
                         log.SkippedLineCount++;
                 }
             }
+        }
 
-            foreach (var list in log._scans.Values)
-                list.Sort();
+        /// <summary>This is a range of dates a file covered (from its first to its last scan).</summary>
+        public void AddCovered(DateTime from, DateTime to)
+        {
+            DateTime a = from.Date, b = to.Date;
+            if (b < a) return;
+            // This is where ranges that overlap or touch are joined into one.
+            var all = new List<KeyValuePair<DateTime, DateTime>>(_covered) { new KeyValuePair<DateTime, DateTime>(a, b) };
+            all.Sort((x, y) => x.Key.CompareTo(y.Key));
+            _covered.Clear();
+            foreach (var range in all)
+            {
+                int last = _covered.Count - 1;
+                if (last >= 0 && range.Key <= _covered[last].Value.AddDays(1))
+                {
+                    if (range.Value > _covered[last].Value)
+                        _covered[last] = new KeyValuePair<DateTime, DateTime>(_covered[last].Key, range.Value);
+                }
+                else
+                {
+                    _covered.Add(range);
+                }
+            }
+        }
 
-            return log;
+        /// <summary>This is the ranges of dates the files covered, joined where they touch, oldest first.</summary>
+        public List<KeyValuePair<DateTime, DateTime>> GetCovered()
+        {
+            if (_covered.Count == 0 && RecordCount > 0)
+                return new List<KeyValuePair<DateTime, DateTime>> { new KeyValuePair<DateTime, DateTime>(FirstDate, LastDate) };
+            return new List<KeyValuePair<DateTime, DateTime>>(_covered);
+        }
+
+        /// <summary>
+        /// This is true when a file covered this date (it was between the first and the last scan of a file). Only such
+        /// a day can be ABSENT: a day no file covered is unknown, so it stays blank.
+        /// </summary>
+        public bool IsCovered(DateTime date)
+        {
+            DateTime d = date.Date;
+            return GetCovered().Any(r => d >= r.Key && d <= r.Value);
+        }
+
+        /// <summary>
+        /// This is where the data of a month starts: the first date of the covered range that reaches into the month
+        /// (it may start in the month before). Used to tell whether the whole month is there.
+        /// </summary>
+        public DateTime CoveredFrom(DateTime month)
+        {
+            var ranges = RangesOf(month);
+            return ranges.Count > 0 ? ranges.Min(r => r.Key) : FirstDate;
+        }
+
+        /// <summary>This is where the data of a month ends: the last date of the covered range that reaches into the month.</summary>
+        public DateTime CoveredThrough(DateTime month)
+        {
+            var ranges = RangesOf(month);
+            return ranges.Count > 0 ? ranges.Max(r => r.Value) : LastDate;
+        }
+
+        private List<KeyValuePair<DateTime, DateTime>> RangesOf(DateTime month)
+        {
+            DateTime start = new DateTime(month.Year, month.Month, 1), end = start.AddMonths(1).AddDays(-1);
+            return GetCovered().Where(r => r.Key <= end && r.Value >= start).ToList();
+        }
+
+        /// <summary>This is every scan line of one month, exactly as it was in the file, oldest first (for ScanArchive).</summary>
+        public List<string> LinesOf(DateTime month)
+        {
+            return _lines.Where(l => l.Key.Year == month.Year && l.Key.Month == month.Month)
+                         .OrderBy(l => l.Key)
+                         .Select(l => l.Value.Value.TrimEnd('\r', '\n'))
+                         .ToList();
         }
 
         /// <summary>This is where a log is built from scans that are already in memory (used for testing).</summary>
@@ -128,13 +233,20 @@ namespace Dat2DTR
         /// </summary>
         public int SaveDat(string path, IEnumerable<string> employeeIds, DateTime month)
         {
+            DateTime first = new DateTime(month.Year, month.Month, 1);
+            return SaveDat(path, employeeIds, first, first.AddMonths(1).AddDays(-1));
+        }
+
+        /// <summary>This is the same for the months from "from" to "to" (a whole year, or every month kept), in time order.</summary>
+        public int SaveDat(string path, IEnumerable<string> employeeIds, DateTime from, DateTime to)
+        {
             var wanted = new HashSet<string>(employeeIds, StringComparer.OrdinalIgnoreCase);
             var sb = new System.Text.StringBuilder();
             int count = 0;
 
             foreach (var entry in _lines.OrderBy(l => l.Key))
             {
-                if (entry.Key.Year != month.Year || entry.Key.Month != month.Month) continue;
+                if (entry.Key.Date < from.Date || entry.Key.Date > to.Date) continue;
                 if (!wanted.Contains(entry.Value.Key)) continue;
                 sb.Append(entry.Value.Value.TrimEnd('\r', '\n')).Append("\r\n");
                 count++;
@@ -146,6 +258,8 @@ namespace Dat2DTR
 
         private void Add(string id, DateTime time, string line)
         {
+            if (!_seen.Add(id + "|" + time.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)))
+                return;   // This is the same scan again (it was in another file too)
             _lines.Add(new KeyValuePair<DateTime, KeyValuePair<string, string>>(time, new KeyValuePair<string, string>(id, line)));
 
             List<DateTime>? list;

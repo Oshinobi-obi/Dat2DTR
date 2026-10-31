@@ -78,6 +78,34 @@ namespace Dat2DTR
             pdf.Save(path, title);
         }
 
+        /// <summary>This is one PDF file with one Certificate of Leave Credits per page.</summary>
+        public static void SaveCertificatesPdf(string path, IList<LeaveCertificate> certificates, DtrPaper paper)
+        {
+            var pdf = new PdfDocument();
+            foreach (LeaveCertificate certificate in certificates)
+            {
+                PdfPage page = pdf.AddPage(PaperInfo.WidthOf(paper), PaperInfo.HeightOf(paper));
+                CertificateRenderer.Draw(page, certificate, page.Width, page.Height);
+            }
+            string title = certificates.Count == 1
+                ? "Certificate of Leave Credits - " + (certificates[0].EmployeeName.Length > 0 ? certificates[0].EmployeeName : certificates[0].EmployeeId)
+                : "Certificates of Leave Credits";
+            pdf.Save(path, title);
+        }
+
+        /// <summary>This is one PDF file with the attendance reports, sideways (landscape), each report starting on a new page.</summary>
+        public static void SaveReportsPdf(string path, IList<AttendanceReport> reports, DtrPaper paper)
+        {
+            var pdf = new PdfDocument();
+            double width = PaperInfo.HeightOf(paper), height = PaperInfo.WidthOf(paper);   // This is landscape: the long side across
+            foreach (ReportPage report in ReportRenderer.Paginate(reports, width, height))
+            {
+                PdfPage page = pdf.AddPage(width, height);
+                ReportRenderer.Draw(page, report, page.Width, page.Height);
+            }
+            pdf.Save(path, reports.Count == 1 ? reports[0].Title : "Attendance Reports");
+        }
+
         /// <summary>
         /// This is one Excel workbook, one worksheet per employee. When leave cards are given (one per DTR,
         /// in the same order), each DTR worksheet is followed by a leave card worksheet.

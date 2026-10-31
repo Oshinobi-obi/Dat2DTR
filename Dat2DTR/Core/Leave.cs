@@ -453,6 +453,16 @@ namespace Dat2DTR
             return ids;
         }
 
+        /// <summary>This is where everything kept about one employee is removed (Employee Names, Delete). Returns how many were removed.</summary>
+        public int RemoveEmployee(string employeeId)
+        {
+            string prefix = EmployeeDirectory.NormalizeId(employeeId) + "|";
+            List<string> keys = _items.Keys.Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList();
+            foreach (string key in keys)
+                _items.Remove(key);
+            return keys.Count;
+        }
+
         public int Count
         {
             get { return _items.Count; }
@@ -627,6 +637,14 @@ namespace Dat2DTR
         /// <summary>This is the same as LeaveStore.LoadFailed.</summary>
         public bool LoadFailed { get; private set; }
 
+        /// <summary>This is where the CTO and Solo Parent Leave given to one employee are removed (Employee Names, Delete).</summary>
+        public int RemoveEmployee(string employeeId)
+        {
+            string key = EmployeeDirectory.NormalizeId(employeeId);
+            int removed = (_items.Remove(key) ? 1 : 0) + (_solo.Remove(key) ? 1 : 0);
+            return removed;
+        }
+
         public int Count
         {
             get { return _items.Values.Sum(l => l.Count) + _solo.Values.Sum(l => l.Count); }
@@ -735,6 +753,12 @@ namespace Dat2DTR
         /// <summary>This is the balance at the START of the month, typed by a person (null = not typed).</summary>
         public decimal? OpeningVl, OpeningSl;
 
+        /// <summary>
+        /// This is the Special Privilege Leave and Wellness Leave LEFT at the start of the month, typed by a person in Edit Leave
+        /// (null = not typed: worked out from the leaves filed this year). Used for days taken before the program was used.
+        /// </summary>
+        public decimal? OpeningSpl, OpeningWl;
+
         /// <summary>This is the credits earned in the month, typed by a person (null = the usual 1.25).</summary>
         public decimal? EarnedVl, EarnedSl;
 
@@ -756,7 +780,8 @@ namespace Dat2DTR
         {
             get
             {
-                return !OpeningVl.HasValue && !OpeningSl.HasValue && !EarnedVl.HasValue && !EarnedSl.HasValue &&
+                return !OpeningVl.HasValue && !OpeningSl.HasValue && !OpeningSpl.HasValue && !OpeningWl.HasValue &&
+                       !EarnedVl.HasValue && !EarnedSl.HasValue &&
                        !LateMinutes.HasValue && !UndertimeMinutes.HasValue && !DayCharge.HasValue;
             }
         }
@@ -872,6 +897,16 @@ namespace Dat2DTR
             return ids;
         }
 
+        /// <summary>This is where everything kept about one employee is removed (Employee Names, Delete). Returns how many were removed.</summary>
+        public int RemoveEmployee(string employeeId)
+        {
+            string prefix = EmployeeDirectory.NormalizeId(employeeId) + "|";
+            List<string> keys = _items.Keys.Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList();
+            foreach (string key in keys)
+                _items.Remove(key);
+            return keys.Count;
+        }
+
         public int Count
         {
             get { return _items.Count; }
@@ -940,6 +975,13 @@ namespace Dat2DTR
                 if (LeaveFileText.TryReadDate(cells[9], out through))
                     item.DataThrough = through;
 
+                // This is the SPL and WL left (added later: older files do not have these two columns).
+                if (cells.Length > 11)
+                {
+                    item.OpeningSpl = ReadDecimal(cells[10]);
+                    item.OpeningWl = ReadDecimal(cells[11]);
+                }
+
                 if (!item.IsEmpty)
                     _items[Key(id, month.Year, month.Month)] = item;
             }
@@ -948,7 +990,7 @@ namespace Dat2DTR
         public void Save(string path)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("ID,Month,Opening VL,Opening SL,Earned VL,Earned SL,Late minutes,Undertime minutes,Day charge,Data through");
+            sb.AppendLine("ID,Month,Opening VL,Opening SL,Earned VL,Earned SL,Late minutes,Undertime minutes,Day charge,Data through,Opening SPL,Opening WL");
             foreach (var pair in _items.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase))
             {
                 LedgerMonth m = pair.Value;
@@ -962,7 +1004,8 @@ namespace Dat2DTR
                     m.LateMinutes.HasValue ? m.LateMinutes.Value.ToString(CultureInfo.InvariantCulture) : "",
                     m.UndertimeMinutes.HasValue ? m.UndertimeMinutes.Value.ToString(CultureInfo.InvariantCulture) : "",
                     Write(m.DayCharge),
-                    m.DataThrough.HasValue ? m.DataThrough.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : ""
+                    m.DataThrough.HasValue ? m.DataThrough.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "",
+                    Write(m.OpeningSpl), Write(m.OpeningWl)
                 }));
             }
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));

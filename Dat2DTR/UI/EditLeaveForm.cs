@@ -41,6 +41,7 @@ namespace Dat2DTR
         private readonly DataGridView _grid = new DataGridView();
         private readonly DataGridView _summary = new DataGridView();
         private readonly TextBox _openingVl = new TextBox(), _openingSl = new TextBox();
+        private readonly TextBox _openingSpl = new TextBox(), _openingWl = new TextBox();   // This is the SPL and WL left, typed by hand
         private readonly TextBox _earnedVl = new TextBox(), _earnedSl = new TextBox();
         private readonly Label _carried = new Label();
         private readonly TextBox _notes = new TextBox();
@@ -174,17 +175,21 @@ namespace Dat2DTR
 
             side.Controls.Add(SideHeading("Balance brought forward from " + previousMonth, 10));
             AddBoxRow(side, 36, _openingVl, _openingSl);
+            AddBoxRow(side, 64, _openingSpl, _openingWl, "Special", "Wellness");
+            var tip = new ToolTip();
+            tip.SetToolTip(_openingSpl, "Special Privilege Leave LEFT at the start of the month (3 days a year). Empty = worked out from the leaves filed.");
+            tip.SetToolTip(_openingWl, "Wellness Leave LEFT at the start of the month (5 days a year). Empty = worked out from the leaves filed.");
 
             _carried.ForeColor = Theme.TextMuted;
-            _carried.SetBounds(12, 64, 396, 36);
+            _carried.SetBounds(12, 92, 396, 62);   // This is room for 4 lines, in case a line wraps on a small screen
             side.Controls.Add(_carried);
 
-            side.Controls.Add(SideHeading("Credits earned this month", 106));
-            AddBoxRow(side, 132, _earnedVl, _earnedSl);
+            side.Controls.Add(SideHeading("Credits earned this month", 158));
+            AddBoxRow(side, 184, _earnedVl, _earnedSl);
 
-            side.Controls.Add(SideHeading("Computation of " + attendance.MonthText, 166));
+            side.Controls.Add(SideHeading("Computation of " + attendance.MonthText, 218));
 
-            _summary.SetBounds(12, 190, 396, 244);
+            _summary.SetBounds(12, 242, 396, 192);
             _summary.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             _summary.BackgroundColor = Color.White;
             _summary.BorderStyle = BorderStyle.FixedSingle;
@@ -290,17 +295,20 @@ namespace Dat2DTR
             CancelButton = cancel;
             ResumeLayout(false);
             PerformLayout();
+            WindowState = FormWindowState.Maximized;   // This is so the window opens filling the screen (Restore gives the normal size)
 
             // This is where everything is filled in ----
             _filling = true;
             LedgerMonth? month = _ledger.Get(attendance.EmployeeId, attendance.Month.Year, attendance.Month.Month);
             _openingVl.Text = month != null && month.OpeningVl.HasValue ? LeaveRules.FormatShort(month.OpeningVl.Value) : "";
             _openingSl.Text = month != null && month.OpeningSl.HasValue ? LeaveRules.FormatShort(month.OpeningSl.Value) : "";
+            _openingSpl.Text = month != null && month.OpeningSpl.HasValue ? LeaveRules.FormatShort(month.OpeningSpl.Value) : "";
+            _openingWl.Text = month != null && month.OpeningWl.HasValue ? LeaveRules.FormatShort(month.OpeningWl.Value) : "";
             _earnedVl.Text = LeaveRules.FormatShort(month != null && month.EarnedVl.HasValue ? month.EarnedVl.Value : LeaveRules.MonthlyCredit);
             _earnedSl.Text = LeaveRules.FormatShort(month != null && month.EarnedSl.HasValue ? month.EarnedSl.Value : LeaveRules.MonthlyCredit);
             _filling = false;
 
-            foreach (TextBox box in new[] { _openingVl, _openingSl, _earnedVl, _earnedSl })
+            foreach (TextBox box in new[] { _openingVl, _openingSl, _openingSpl, _openingWl, _earnedVl, _earnedSl })
                 box.TextChanged += Box_TextChanged;
 
             for (int i = 0; i < attendance.Days.Count; i++)
@@ -424,11 +432,12 @@ namespace Dat2DTR
             return label;
         }
 
-        /// <summary>This is one line with two boxes:  Vacation Leave [    ]   Sick Leave [    ]</summary>
-        private static void AddBoxRow(Panel side, int y, TextBox vacation, TextBox sick)
+        /// <summary>This is one line with two boxes:  Vacation Leave [    ]   Sick Leave [    ]  (or other names given).</summary>
+        private static void AddBoxRow(Panel side, int y, TextBox vacation, TextBox sick,
+                                      string firstName = "Vacation Leave", string secondName = "Sick Leave")
         {
             var vacationLabel = new Label();
-            vacationLabel.Text = "Vacation Leave";
+            vacationLabel.Text = firstName;
             vacationLabel.TextAlign = ContentAlignment.MiddleLeft;
             vacationLabel.SetBounds(12, y, 92, 23);
 
@@ -437,9 +446,9 @@ namespace Dat2DTR
             vacation.MaxLength = 9;
 
             var sickLabel = new Label();
-            sickLabel.Text = "Sick Leave";
+            sickLabel.Text = secondName;
             sickLabel.TextAlign = ContentAlignment.MiddleLeft;
-            sickLabel.SetBounds(216, y, 66, 23);
+            sickLabel.SetBounds(190, y, 92, 23);
 
             sick.SetBounds(284, y, 78, 23);
             sick.TextAlign = HorizontalAlignment.Right;
@@ -691,7 +700,7 @@ namespace Dat2DTR
 
         // This is the balance boxes ================================================================
 
-        /// <summary>This is where the four boxes are read. Returns the name of the first box that is not a number, or "".</summary>
+        /// <summary>This is where the six boxes are read. Returns the name of the first box that is not a number, or "".</summary>
         private string ReadBoxes()
         {
             string problem = "";
@@ -703,6 +712,13 @@ namespace Dat2DTR
 
             if (Check(_openingSl, out value)) month.OpeningSl = value;
             else if (problem.Length == 0) problem = "the Sick Leave balance";
+
+            // This is the SPL and WL left: a number from 0 up to the days a year (3 and 5), or empty.
+            if (CheckYearly(_openingSpl, LeaveType.SpecialPrivilege, out value)) month.OpeningSpl = value;
+            else if (problem.Length == 0) problem = "the Special Privilege Leave left";
+
+            if (CheckYearly(_openingWl, LeaveType.Wellness, out value)) month.OpeningWl = value;
+            else if (problem.Length == 0) problem = "the Wellness Leave left";
 
             // This is the rule: an empty box, or the usual 1.25, means "nothing special typed".
             if (Check(_earnedVl, out value)) month.EarnedVl = value == LeaveRules.MonthlyCredit ? null : value;
@@ -722,6 +738,28 @@ namespace Dat2DTR
             return ok;
         }
 
+        /// <summary>This is what to tell about a box that is not right, e.g. "Please type a number for the Sick Leave balance, for example 12.5".</summary>
+        private static string ProblemText(string problem)
+        {
+            if (problem == "the Special Privilege Leave left")
+                return "Please type how many days of Special Privilege Leave are left: a number from 0 to " +
+                       LeaveKinds.Get(LeaveType.SpecialPrivilege).YearlyLimit + ", for example 2 or 1.5";
+            if (problem == "the Wellness Leave left")
+                return "Please type how many days of Wellness Leave are left: a number from 0 to " +
+                       LeaveKinds.Get(LeaveType.Wellness).YearlyLimit + ", for example 4 or 2.5";
+            return "Please type a number for " + problem + ", for example 12.5";
+        }
+
+        /// <summary>This is one SPL / WL box: empty, or a number from 0 up to the days a year of that leave (pale red otherwise).</summary>
+        private static bool CheckYearly(TextBox box, LeaveType type, out decimal? value)
+        {
+            bool ok = LeaveRules.TryParseCredits(box.Text, out value) &&
+                      (!value.HasValue || (value.Value >= 0 && value.Value <= LeaveKinds.Get(type).YearlyLimit));
+            box.BackColor = ok ? Color.White : Color.FromArgb(255, 220, 220);
+            if (!ok) value = null;
+            return ok;
+        }
+
         private void Box_TextChanged(object? sender, EventArgs e)
         {
             if (_filling) return;
@@ -729,7 +767,7 @@ namespace Dat2DTR
 
             string problem = ReadBoxes();
             if (problem.Length > 0)
-                Say("Please type a number for " + problem + ", for example 12.5", true);
+                Say(ProblemText(problem), true);
             else
                 Say("", false);
             Recompute();
@@ -774,6 +812,8 @@ namespace Dat2DTR
             _carried.Text =
                 "Vacation Leave: " + StartText(month.VlStart, month.VlStartTyped) + "      " +
                 "Sick Leave: " + StartText(month.SlStart, month.SlStartTyped) + "\r\n" +
+                "Special left: " + YearlyStartText(card.SplUsed - month.SplDays, LeaveType.SpecialPrivilege, card.SplStartTyped) + "    " +
+                "Wellness left: " + YearlyStartText(card.WellnessUsed - month.WellnessDays, LeaveType.Wellness, card.WellnessStartTyped) + "\r\n" +
                 (month.VlStart.HasValue && month.SlStart.HasValue
                     ? "Type a number above only if the balance has to be corrected."
                     : "Type it once, from the employee's leave card.");
@@ -804,6 +844,13 @@ namespace Dat2DTR
             _notes.BackColor = card.Notes.Count > 0 ? Theme.NoticeBack : Theme.Panel;
         }
 
+        /// <summary>This is "2 (typed)" or "3 (from the leaves filed)": the SPL / WL left at the start of the month.</summary>
+        private static string YearlyStartText(decimal usedBefore, LeaveType type, decimal? typed)
+        {
+            if (typed.HasValue) return LeaveRules.FormatShort(typed.Value) + " (typed)";
+            return LeaveRules.FormatShort(LeaveKinds.Get(type).YearlyLimit - usedBefore) + " (from leaves filed)";
+        }
+
         private static string StartText(decimal? start, bool typed)
         {
             if (!start.HasValue) return "not known yet";
@@ -824,7 +871,7 @@ namespace Dat2DTR
             if (problem.Length > 0)
             {
                 MessageBox.Show(this,
-                    "Please type a number for " + problem + ", for example 12.5\n\n" +
+                    ProblemText(problem) + "\n\n" +
                     "Leave the box empty if you do not know it yet.",
                     "Edit Leave", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;

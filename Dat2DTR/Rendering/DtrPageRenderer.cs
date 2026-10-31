@@ -17,6 +17,21 @@ namespace Dat2DTR
     }
 
     /// <summary>
+    /// This is a canvas that can also write text in a TrueType font read from a file (the PDF page and the
+    /// printer). Used for the heading of the Certificate of Leave Credits.
+    /// </summary>
+    public interface IDtrFontCanvas
+    {
+        void DrawText(string text, double x, double baseline, double size, TrueTypeFont font, int rgb);
+    }
+
+    /// <summary>This is a canvas that can also draw a JPEG picture in a box (the logo on the certificate).</summary>
+    public interface IDtrImageCanvas
+    {
+        void DrawImage(JpegImage image, double x, double y, double width, double height);
+    }
+
+    /// <summary>
     /// This is where one Daily Time Record (Civil Service Form No. 48) is drawn on a canvas.
     ///
     /// This is the ONLY place that decides how the form looks. The preview on screen,

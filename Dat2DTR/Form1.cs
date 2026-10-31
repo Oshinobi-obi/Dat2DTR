@@ -44,6 +44,9 @@ namespace Dat2DTR
 
         private AttendanceLog? _log;
 
+        /// <summary>This is the .dat file opened last ("" = none yet): "Save the scans" never writes over it.</summary>
+        private string _openedPath = "";
+
         /// <summary>This is one DTR per employee for the chosen month.</summary>
         private List<DtrSheet> _sheets = new List<DtrSheet>();
 
@@ -60,10 +63,39 @@ namespace Dat2DTR
         /// <summary>This is true while the program itself is changing the list (so events are ignored).</summary>
         private bool _updating;
 
+        /// <summary>This is the "Leave Summary..." and "Backup / Restore..." buttons, in a second row below the list.</summary>
+        private readonly Button btnSummary = new Button();
+        private readonly Button btnBackup = new Button();
+        private readonly Button btnReports = new Button();
+
+        /// <summary>This is "About" on the navy bar at the top: the version, the developer and the version history.</summary>
+        private readonly Button btnAbout = new Button();
+
+        /// <summary>This is the clock at the bottom right: the date and time in the Philippines (see PhilippineTime).</summary>
+        private readonly ToolStripStatusLabel lblClock = new ToolStripStatusLabel();
+        private readonly System.Windows.Forms.Timer _clockTimer = new System.Windows.Forms.Timer();
+
+        /// <summary>This is the year beside the month list: the month list shows only the months of that year.</summary>
+        private readonly ComboBox cboYear = new ComboBox();
+
         public Form1()
         {
             InitializeComponent();
             Icon = Theme.GetAppIcon();
+
+            // This is the clock at the right end of the status bar, after the office hours. It is checked every second,
+            // so it changes as soon as the minute changes.
+            lblClock.BorderSides = ToolStripStatusLabelBorderSides.Left;
+            lblClock.BorderStyle = Border3DStyle.Etched;
+            lblClock.Padding = new Padding(6, 0, 0, 0);
+            lblClock.ToolTipText = "The date and time in the Philippines (UTC+8), from this computer's clock";
+            statusStrip.ShowItemToolTips = true;
+            statusStrip.Items.Add(lblClock);
+            ShowClock();
+            _clockTimer.Interval = 1000;
+            _clockTimer.Tick += (sender, e) => ShowClock();
+            _clockTimer.Start();
+            FormClosed += (sender, e) => { _clockTimer.Stop(); _clockTimer.Dispose(); };
 
             // This is the DepEd NCR seal and the "One NCR" banner, built into the program.
             picSeal.SetImage(Theme.GetImage(Theme.SealImage));
@@ -81,6 +113,26 @@ namespace Dat2DTR
             ShowViewButtons();
             Theme.StyleHeaderButton(btnSettings);
             Theme.StyleHeaderButton(btnHelp);
+
+            // This is the second row of buttons below the list. They are put in place when the window opens
+            // (see PlaceSecondRow), after Windows has scaled the window for the screen.
+            btnSummary.Text = "Leave Summary...";
+            btnSummary.UseVisualStyleBackColor = true;
+            btnSummary.Enabled = false;
+            btnSummary.Click += btnSummary_Click;
+            toolTip.SetToolTip(btnSummary, "Everyone's VL, SL, CTO and Solo Parent balance, and the leave used this year");
+            btnBackup.Text = "Backup / Restore...";
+            btnBackup.UseVisualStyleBackColor = true;
+            btnBackup.Click += btnBackup_Click;
+            toolTip.SetToolTip(btnBackup, "Save everything Dat2DTR keeps on this computer in one .zip file, or put a backup back");
+            btnReports.Text = "Reports...";
+            btnReports.UseVisualStyleBackColor = true;
+            btnReports.Enabled = false;
+            btnReports.Click += btnReports_Click;
+            toolTip.SetToolTip(btnReports, "Late and no Time-In on Mondays, late and undertime this month, for the whole office");
+            pnlLeftBottom.Controls.Add(btnSummary);
+            pnlLeftBottom.Controls.Add(btnReports);
+            pnlLeftBottom.Controls.Add(btnBackup);
 #if NET
             txtSearch.PlaceholderText = "Search name or ID";
 #endif
@@ -116,9 +168,188 @@ namespace Dat2DTR
                     "Dat2DTR", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
             SizeListColumns();
+            PlaceSecondRow();
+            PlaceYearBox();
+            PlaceAboutButton();
             preview.SetPaper(_settings.Paper);
             ShowRules();
             ShowEmployeeList();
+            ShowKeptScans(true);
+        }
+
+        /// <summary>This is the clock text, written again only when it changes (once a minute).</summary>
+        private void ShowClock()
+        {
+            string text = PhilippineTime.ClockText(PhilippineTime.Now);
+            if (lblClock.Text != text)
+                lblClock.Text = text;
+        }
+
+        /// <summary>
+        /// This is where "About" is put on the navy bar, left of "Office Hours...", with the banner moved left to make room.
+        /// The version is also written in the title bar, e.g. "Dat2DTR 1.5.0 - Daily Time Record Maker".
+        /// </summary>
+        private void PlaceAboutButton()
+        {
+            Text = "Dat2DTR " + AppInfo.Version + " - Daily Time Record Maker";
+            btnAbout.Text = "About";
+            btnAbout.Font = btnHelp.Font;
+            Theme.StyleHeaderButton(btnAbout);
+            btnAbout.Click += (sender, e) =>
+            {
+                using (var dialog = new AboutForm())
+                    dialog.ShowDialog(this);
+            };
+            toolTip.SetToolTip(btnAbout, "Version " + AppInfo.Version + ", who made the program and how to contact them, and the version history");
+            int gap = btnHelp.Left - btnSettings.Right;
+            int width = TextRenderer.MeasureText("About", btnHelp.Font).Width + btnHelp.Height;
+            btnAbout.SetBounds(btnSettings.Left - gap - width, btnSettings.Top, width, btnSettings.Height);
+            btnAbout.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            picBanner.Left -= width + gap;
+            pnlHeader.Controls.Add(btnAbout);
+        }
+
+        /// <summary>
+        /// This is where the year list is put in front of the month list (in the space the month list had), measured
+        /// from the month list after Windows has scaled the window, so it fits on any screen scaling.
+        /// </summary>
+        private void PlaceYearBox()
+        {
+            cboYear.DropDownStyle = ComboBoxStyle.DropDownList;
+            cboYear.Font = cboMonth.Font;
+            cboYear.Enabled = false;
+            cboYear.MaxDropDownItems = 12;
+            cboYear.TabIndex = cboMonth.TabIndex;
+            cboMonth.TabIndex = cboYear.TabIndex + 1;   // This is so Tab goes from the year to the month
+            cboYear.SelectedIndexChanged += cboYear_SelectedIndexChanged;
+            toolTip.SetToolTip(cboYear, "The year: the month list beside it shows the months of this year");
+            cboMonth.MaxDropDownItems = 12;
+            cboMonth.Parent!.Controls.Add(cboYear);
+
+            int gap = cboMonth.Height / 4;
+            int yearWidth = TextRenderer.MeasureText("2026", cboMonth.Font).Width + SystemInformation.VerticalScrollBarWidth + cboMonth.Height / 2;
+            int right = cboMonth.Right;
+            cboYear.SetBounds(cboMonth.Left, cboMonth.Top, yearWidth, cboMonth.Height);
+            cboMonth.SetBounds(cboYear.Right + gap, cboMonth.Top, right - cboYear.Right - gap, cboMonth.Height);
+            cboYear.Anchor = cboMonth.Anchor;
+        }
+
+        /// <summary>This is a new year picked: its months are shown, and the newest of them is picked.</summary>
+        private void cboYear_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (_updating || _log == null || cboYear.SelectedItem == null) return;
+            int year = (int)cboYear.SelectedItem;
+            DateTime newest = _log.GetMonths().FirstOrDefault(m => m.Year == year);
+            _updating = true;
+            FillMonths(year, newest);
+            _updating = false;
+            _ticked.Clear();
+            BuildSheets();
+        }
+
+        /// <summary>This is where the month list is filled with the months of one year (newest first), with one picked.</summary>
+        private void FillMonths(int year, DateTime picked)
+        {
+            cboMonth.Items.Clear();
+            if (_log == null) return;
+            foreach (DateTime month in _log.GetMonths().Where(m => m.Year == year))
+            {
+                var item = new MonthItem(month);
+                cboMonth.Items.Add(item);
+                if (month == picked)
+                    cboMonth.SelectedItem = item;
+            }
+            if (cboMonth.SelectedIndex < 0 && cboMonth.Items.Count > 0)
+                cboMonth.SelectedIndex = 0;
+        }
+
+        /// <summary>This is "October 2026".</summary>
+        private static string MonthName(DateTime month)
+        {
+            return month.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// This is where the scans kept on this computer (every .dat file opened before, see ScanArchive) are shown, so
+        /// their months can be chosen without opening a file. Nothing happens when nothing is kept yet.
+        /// </summary>
+        /// <param name="atStart">This is true when the program starts (the newest month is picked); false keeps the chosen month.</param>
+        private void ShowKeptScans(bool atStart)
+        {
+            AttendanceLog? kept;
+            try
+            {
+                kept = ScanArchive.Load();
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                lblStatus.Text = "The scans kept on this computer could not be read: " + ex.Message;
+                return;
+            }
+            if (kept == null)
+                return;
+
+            var chosen = cboMonth.SelectedItem as MonthItem;
+            DateTime month = !atStart && chosen != null ? chosen.Month : kept.SuggestMonth();
+            List<DateTime> months = kept.GetMonths();
+            ShowLog(kept, months.Contains(month) ? month : kept.SuggestMonth(),
+                    "Scans kept on this computer\r\n" + KeptText(kept));
+            lblStatus.Text = "The scans of the files opened before are ready: " + months.Count +
+                             (months.Count == 1 ? " month" : " months") + " to choose from. Open a .dat file to add more.";
+        }
+
+        /// <summary>This is "12,345 scans, 85 employees, August 2026 to October 2026".</summary>
+        private static string KeptText(AttendanceLog log)
+        {
+            List<DateTime> months = log.GetMonths();
+            string first = months.Count > 0 ? months[months.Count - 1].ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture) : "";
+            string last = months.Count > 0 ? months[0].ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture) : "";
+            return log.RecordCount.ToString("N0") + " scans,  " + log.EmployeeCount + " employees,  " +
+                   (first == last ? first : first + " to " + last);
+        }
+
+        /// <summary>
+        /// This is where the second row of buttons (Leave Summary, Reports, Backup / Restore) is put under the first row,
+        /// measured from the buttons already there, so it fits on any screen scaling. The tick box and the hint
+        /// move down to make room.
+        /// </summary>
+        private void PlaceSecondRow()
+        {
+            int gap = btnUntickAll.Left - btnTickAll.Right;
+            int top = btnTickAll.Bottom + gap;
+            int shift = btnTickAll.Height + gap;
+            btnSummary.SetBounds(btnTickAll.Left, top, btnUntickAll.Right - btnTickAll.Left, btnTickAll.Height);
+            btnSummary.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            btnReports.SetBounds(btnHolidays.Left, top, btnHolidays.Width, btnTickAll.Height);
+            btnReports.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            btnBackup.SetBounds(btnNames.Left, top, btnNames.Width, btnTickAll.Height);
+            btnBackup.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            chkNoScans.Top += shift;
+            lblHint.Top += shift;
+            pnlLeftBottom.Height += shift;
+        }
+
+        /// <summary>
+        /// This is where every saved file is read again (after a backup was restored): settings, names,
+        /// times typed in, leaves, balances, CTO, Solo Parent Leave and holidays. The DTRs are made again.
+        /// </summary>
+        private void ReloadAllData()
+        {
+            _settings = DtrSettings.Load();
+            _names = EmployeeDirectory.LoadDefault();
+            _corrections = CorrectionStore.LoadDefault();
+            _leaves = LeaveStore.LoadDefault();
+            _ledger = LeaveLedger.LoadDefault();
+            _cto = CtoStore.LoadDefault();
+            _holidays = HolidayCalendar.LoadDefault();
+            _holidaysUnreadable = _holidays.LoadFailed;
+            preview.SetPaper(_settings.Paper);
+            ShowRules();
+            if (_log != null)
+                BuildSheets();
+            else
+                ShowEmployeeList();
+            ShowKeptScans(false);   // This is the kept scans of the backup (a restore can bring other months)
         }
 
         /// <summary>
@@ -208,40 +439,73 @@ namespace Dat2DTR
                 return;
             }
 
-            _log = log;
-            _ticked.Clear();
+            // This is where the scans of the file are kept with the ones of the files opened before (see ScanArchive),
+            // so the months of before stay in the list. If they cannot be kept, only this file is used.
+            AttendanceLog all = log;
+            string keptProblem = "";
+            try
+            {
+                Cursor = Cursors.WaitCursor;
+                all = ScanArchive.Add(log);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                keptProblem = ex.Message;
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
 
             _settings.LastFolder = Path.GetDirectoryName(path) ?? "";
             _settings.Save();
+            _openedPath = path;
 
-            lblFile.Text = Path.GetFileName(path) + "\r\n" +
-                           log.RecordCount.ToString("N0") + " scans,  " + log.EmployeeCount + " employees,  " +
-                           log.FirstDate.ToString("MMM d, yyyy") + " to " + log.LastDate.ToString("MMM d, yyyy");
-            lblFile.ForeColor = Theme.TextStrong;
+            ShowLog(all, log.SuggestMonth(),
+                    Path.GetFileName(path) + "\r\n" +
+                    log.RecordCount.ToString("N0") + " scans,  " + log.EmployeeCount + " employees,  " +
+                    log.FirstDate.ToString("MMM d, yyyy") + " to " + log.LastDate.ToString("MMM d, yyyy"));
             toolTip.SetToolTip(lblFile, path);
 
-            // This is where the month list is filled and the most likely month is picked.
-            DateTime suggested = log.SuggestMonth();
+            int months = all.GetMonths().Count;
+            string skipped = log.SkippedLineCount == 0 ? "" :
+                " " + log.SkippedLineCount + " line(s) that were not attendance records were skipped.";
+            lblStatus.Text = keptProblem.Length > 0
+                ? "File opened, but its scans could not be kept for next time: " + keptProblem + skipped
+                : "File opened and its scans kept: " + months + (months == 1 ? " month" : " months") + " to choose from." + skipped;
+            if (keptProblem.Length > 0)
+                MessageBox.Show(this, "The file is open, but its scans could not be kept on this computer for next time, " +
+                                "so the months of the files opened before are not in the list now.\n\n" + keptProblem,
+                                "Dat2DTR", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        /// <summary>This is where a log is shown: the text under "Open", the month list (with that month picked) and the DTRs.</summary>
+        private void ShowLog(AttendanceLog log, DateTime suggested, string fileText)
+        {
+            _log = log;
+            _ticked.Clear();
+
+            lblFile.Text = fileText;
+            lblFile.ForeColor = Theme.TextStrong;
+
+            // This is the year list (newest first) with the year of the suggested month, then the months of that year.
             _updating = true;
-            cboMonth.Items.Clear();
-            foreach (DateTime month in log.GetMonths())
-            {
-                var item = new MonthItem(month);
-                cboMonth.Items.Add(item);
-                if (month == suggested)
-                    cboMonth.SelectedItem = item;
-            }
-            if (cboMonth.SelectedIndex < 0 && cboMonth.Items.Count > 0)
-                cboMonth.SelectedIndex = 0;
+            List<DateTime> months = log.GetMonths();
+            if (!months.Contains(suggested) && months.Count > 0)
+                suggested = months[0];
+            cboYear.Items.Clear();
+            foreach (int year in months.Select(m => m.Year).Distinct())
+                cboYear.Items.Add(year);
+            cboYear.SelectedItem = suggested.Year;
+            if (cboYear.SelectedIndex < 0 && cboYear.Items.Count > 0)
+                cboYear.SelectedIndex = 0;
+            FillMonths(suggested.Year, suggested);
+            cboYear.Enabled = true;
             cboMonth.Enabled = true;
             _updating = false;
 
             txtSearch.Text = "";
             BuildSheets();
-
-            lblStatus.Text = log.SkippedLineCount == 0
-                ? "File opened."
-                : "File opened. " + log.SkippedLineCount + " line(s) that were not attendance records were skipped.";
         }
 
         // This is step 2: month and employees ================================================================
@@ -265,7 +529,8 @@ namespace Dat2DTR
             {
                 // This is the last day of the chosen month that the file covers.
                 DateTime monthEnd = chosen.Month.AddMonths(1).AddDays(-1);
-                DateTime dataThrough = _log.LastDate < monthEnd ? _log.LastDate.Date : monthEnd;
+                DateTime dataFrom = _log.CoveredFrom(chosen.Month), coveredTo = _log.CoveredThrough(chosen.Month);
+                DateTime dataThrough = coveredTo < monthEnd ? coveredTo.Date : monthEnd;
                 bool ledgerChanged = false;
 
                 foreach (string id in GetIdsToList(_log, chosen.Month))
@@ -284,10 +549,10 @@ namespace Dat2DTR
                     if (hasSomething &&
                         _ledger.Remember(id, chosen.Month.Year, chosen.Month.Month, sheet.TotalLateMinutes,
                                          sheet.TotalUndertimeMinutes, LeaveRules.DayCharge(schedule),
-                                         _log.FirstDate, dataThrough))
+                                         dataFrom, dataThrough))
                         ledgerChanged = true;
 
-                    _cards[id] = LeaveCalculator.Build(sheet, schedule, _leaves, _ledger, _cto, _log.FirstDate, _log.LastDate);
+                    _cards[id] = LeaveCalculator.Build(sheet, schedule, _leaves, _ledger, _cto, dataFrom, coveredTo);
                 }
 
                 if (ledgerChanged)
@@ -523,6 +788,11 @@ namespace Dat2DTR
                     string.Join(", ", sheet.LeaveDays.Select(d => "Day " + d.Day + " (" + LeaveKinds.Get(d.Leave).Code +
                         (d.LeavePart == LeavePart.WholeDay ? "" : " 1/2") + ")").ToArray()));
 
+            // This is the reminders: Forced Leave not used yet (from November), CTO / Solo Parent Leave about to expire.
+            if (sheet != null && card != null)
+                foreach (string reminder in LeaveReminders.For(card, _cto, _leaves, DateTime.Today))
+                    notices.Add("Reminder - " + reminder);
+
             lblNotice.Text = string.Join("        ", notices.ToArray());
             toolTip.SetToolTip(lblNotice, string.Join("\n\n", notices.ToArray()).Replace(";   ", "\n"));
             lblNotice.Visible = notices.Count > 0;
@@ -538,7 +808,9 @@ namespace Dat2DTR
             if (sheet != null)
             {
                 WorkSchedule schedule = _settings.GetSchedule(sheet.ScheduleIndex);
-                lblRules.Text = schedule.Description + "   |   Grace period " + schedule.GraceMinutes + " min";
+                int monday = schedule.GraceOn(DayOfWeek.Monday);
+                lblRules.Text = schedule.Description + "   |   Grace period " + schedule.GraceMinutes + " min" +
+                                (monday == schedule.GraceMinutes ? "" : monday == 0 ? " (none on Mondays)" : " (" + monday + " min on Mondays)");
             }
             else
             {
@@ -562,6 +834,8 @@ namespace Dat2DTR
             btnSave.Enabled = hasSheet;
             btnTickAll.Enabled = lvEmployees.Items.Count > 0;
             btnUntickAll.Enabled = lvEmployees.Items.Count > 0;
+            btnSummary.Enabled = _sheets.Count > 0;
+            btnReports.Enabled = _sheets.Count > 0;
             ShowCounts();
         }
 
@@ -660,7 +934,7 @@ namespace Dat2DTR
 
             int move;
             using (var dialog = new EditTimesForm(fromFile, _corrections, _leaves, schedule, _settings,
-                                                  log.FirstDate, log.LastDate))
+                                                  log.CoveredFrom(current.Month), log.CoveredThrough(current.Month)))
             {
                 dialog.SetNavigation(HasNeighbour(current.EmployeeId, -1), HasNeighbour(current.EmployeeId, +1));
                 if (dialog.ShowDialog(this) != DialogResult.OK)
@@ -795,7 +1069,7 @@ namespace Dat2DTR
             {
                 DtrSheet sheet = DtrBuilder.Build(log, current.EmployeeId, current.EmployeeName, current.Month,
                                                   schedule, _settings, _corrections, leaves);
-                return LeaveCalculator.Build(sheet, schedule, leaves, ledger, cto, log.FirstDate, log.LastDate);
+                return LeaveCalculator.Build(sheet, schedule, leaves, ledger, cto, log.CoveredFrom(current.Month), log.CoveredThrough(current.Month));
             };
 
             int move;
@@ -997,7 +1271,7 @@ namespace Dat2DTR
         /// <summary>This is where the user is asked what to print or save: the DTR, the Computation of Leaves, or both.</summary>
         private DtrPages AskWhichPages(string question, bool offerDatFile = false)
         {
-            using (var dialog = new PagesDialog(question, offerDatFile))
+            using (var dialog = new PagesDialog(question, offerDatFile, EditCertificateDetails))
             {
                 if (dialog.ShowDialog(this) != DialogResult.OK)
                     return DtrPages.Cancel;
@@ -1005,10 +1279,36 @@ namespace Dat2DTR
             }
         }
 
+        /// <summary>
+        /// This is "Edit Certificate Details...": the names and positions printed on the Certificate of Leave Credits
+        /// ("Prepared by" and "Certified correct"). They are saved with the settings, so they stay for next time.
+        /// </summary>
+        private void EditCertificateDetails(IWin32Window owner)
+        {
+            // This is the certificate of the employee on screen, for the live preview (a sample one when there is none).
+            DtrSheet? current = GetCurrentSheet();
+            LeaveCertificate? shown = current != null && _cards.ContainsKey(current.EmployeeId)
+                ? LeaveCertificate.Make(_cards[current.EmployeeId], DateTime.Today) : null;
+            using (var dialog = new CertificateDetailsForm(_settings.PreparedByName, _settings.PreparedByPosition,
+                                                           _settings.CertifiedByName, _settings.CertifiedByPosition, shown))
+            {
+                if (dialog.ShowDialog(owner) != DialogResult.OK)
+                    return;
+                string[] values = dialog.GetValues();
+                _settings.PreparedByName = values[0];
+                _settings.PreparedByPosition = values[1];
+                _settings.CertifiedByName = values[2];
+                _settings.CertifiedByPosition = values[3];
+                _settings.Save();
+                lblStatus.Text = "Certificate details saved.";
+            }
+        }
+
         /// <summary>This is "DTR", "Computation of Leaves" or "DTR and Computation of Leaves" - for file names and messages.</summary>
         private static string PagesName(DtrPages pages)
         {
             if (pages == DtrPages.LeaveOnly) return "Computation of Leaves";
+            if (pages == DtrPages.Certificate) return "Certificate of Leave Credits";
             if (pages == DtrPages.Both) return "DTR and Computation of Leaves";
             return "DTR";
         }
@@ -1066,11 +1366,84 @@ namespace Dat2DTR
         private void btnNames_Click(object? sender, EventArgs e)
         {
             IList<string> ids = _log == null ? new List<string>() : _log.GetAllEmployeeIds();
-            using (var dialog = new EmployeeNamesForm(_names, ids, _settings))
+            string safety = "";
+            Func<IList<string>, bool> backUpFirst = deleted =>
             {
-                if (dialog.ShowDialog(this) == DialogResult.OK)
+                // This is the backup of everything, made just before employees are deleted, so it can be undone.
+                safety = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "Dat2DTR-before-delete-" + DateTime.Now.ToString("yyyy-MM-dd-HHmm", System.Globalization.CultureInfo.InvariantCulture) + ".zip");
+                try
+                {
+                    DataBackup.Create(safety);
+                    return true;
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    MessageBox.Show(this, "The backup before deleting could not be made, so nothing was deleted or saved.\n\n" + ex.Message,
+                        "Employee Names", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
+            };
+            using (var dialog = new EmployeeNamesForm(_names, ids, _settings, backUpFirst))
+            {
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                    return;
+                List<string> deleted = dialog.GetDeletedIds();
+                if (deleted.Count > 0)
+                    EraseEmployees(deleted, safety);
+                else
                     BuildSheets();
             }
+        }
+
+        /// <summary>
+        /// This is where everything about deleted employees is erased (Employee Names, Delete): their leaves, leave balances,
+        /// CTO, Solo Parent Leave, times typed in, Late / Undertime / Flexi-Time and kept scans. (Their names were already
+        /// removed by the Employee Names window.) A backup was made just before, in "safety".
+        /// </summary>
+        private void EraseEmployees(List<string> ids, string safety)
+        {
+            foreach (string id in ids)
+            {
+                _names.Remove(id);
+                _leaves.RemoveEmployee(id);
+                _ledger.RemoveEmployee(id);
+                _cto.RemoveEmployee(id);
+                _corrections.RemoveEmployee(id);
+                _ticked.RemoveWhere(t => EmployeeDirectory.SameId(t, id));
+            }
+
+            string problem = "";
+            try
+            {
+                Cursor = Cursors.WaitCursor;
+                _names.SaveDefault();
+                _corrections.SaveDefault();
+                ScanArchive.RemoveEmployees(ids, ScanArchive.DefaultFolder);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                problem = ex.Message;
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+            SaveLeaveFiles(true);
+
+            // This is the kept scans read again (without the deleted employees); if nothing is kept, the list is emptied.
+            AttendanceLog? kept = null;
+            try { kept = ScanArchive.Load(); }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) { problem = ex.Message; }
+            if (kept != null)
+                ShowKeptScans(false);
+            else if (_log != null)
+                BuildSheets();
+
+            lblStatus.Text = (ids.Count == 1 ? "1 employee" : ids.Count + " employees") + " deleted. Backup made first: " + safety;
+            if (problem.Length > 0)
+                MessageBox.Show(this, "The employees were deleted, but not everything could be saved:\n\n" + problem +
+                                "\n\nThe backup made just before is here:\n" + safety, "Employee Names", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         private void btnSettings_Click(object? sender, EventArgs e)
@@ -1092,6 +1465,186 @@ namespace Dat2DTR
         {
             using (var dialog = new HelpForm(_settings))
                 dialog.ShowDialog(this);
+        }
+
+        /// <summary>This is the Leave Summary of everyone in the list for the chosen month.</summary>
+        private void btnSummary_Click(object? sender, EventArgs e)
+        {
+            if (_sheets.Count == 0)
+                return;
+            List<LeaveSummaryRow> rows = LeaveSummary.Make(_sheets, _cards, _cto, _leaves, DateTime.Today);
+            using (var dialog = new LeaveSummaryForm(_sheets[0].MonthText, rows, _settings.Paper, _settings.LastFolder))
+            {
+                dialog.ShowDialog(this);
+                if (dialog.GetSavedFolder().Length > 0)
+                {
+                    _settings.LastFolder = dialog.GetSavedFolder();
+                    _settings.Save();
+                }
+            }
+        }
+
+        /// <summary>
+        /// This is "Reports...": late and no Time-In on Mondays, both together, and late and undertime in the month,
+        /// for everyone in the list (the whole office) in the chosen month.
+        /// </summary>
+        private void btnReports_Click(object? sender, EventArgs e)
+        {
+            if (_sheets.Count == 0)
+                return;
+            List<AttendanceReport> reports = AttendanceReports.MakeAll(_sheets, _settings);
+            using (var dialog = new ReportsForm(_sheets[0].MonthText, reports, _settings.Paper, _settings.LastFolder))
+            {
+                dialog.ShowDialog(this);
+                if (dialog.GetSavedFolder().Length > 0)
+                {
+                    _settings.LastFolder = dialog.GetSavedFolder();
+                    _settings.Save();
+                }
+            }
+        }
+
+        /// <summary>This is "Backup / Restore...": back up the saved files into one .zip, or put a backup back.</summary>
+        private void btnBackup_Click(object? sender, EventArgs e)
+        {
+            BackupChoice choice;
+            using (var dialog = new BackupForm())
+            {
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                    return;
+                choice = dialog.GetChoice();
+            }
+            if (choice == BackupChoice.BackUp) BackUpNow();
+            else if (choice == BackupChoice.Restore) RestoreBackup();
+        }
+
+        /// <summary>This is where everything is saved in one .zip, with today's date in its name.</summary>
+        private void BackUpNow()
+        {
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Title = "Back up Dat2DTR";
+                dialog.Filter = "Dat2DTR backup (*.zip)|*.zip";
+                dialog.FileName = DataBackup.SuggestedName(DateTime.Today);
+                dialog.AddExtension = true;
+                dialog.OverwritePrompt = true;
+                dialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                string path = dialog.FileName;
+                if (!path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                    path += ".zip";
+                try
+                {
+                    Cursor = Cursors.WaitCursor;
+                    int count = DataBackup.Create(path);
+                    lblStatus.Text = "Backup saved: " + path;
+                    MessageBox.Show(this, "The backup was saved (" + count + (count == 1 ? " file" : " files") + "):\n\n" + path +
+                        "\n\nKeep a copy somewhere else too, for example on a USB drive or in Google Drive.",
+                        "Backup / Restore", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    MessageBox.Show(this, "The backup could not be saved.\n\n" + ex.Message,
+                        "Backup / Restore", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                finally
+                {
+                    Cursor = Cursors.Default;
+                }
+            }
+        }
+
+        /// <summary>
+        /// This is where a backup is put back. What is on this computer now is saved first in Documents
+        /// ("Dat2DTR-before-restore-...zip"), so the restore can be undone by restoring that file.
+        /// </summary>
+        private void RestoreBackup()
+        {
+            string path;
+            using (var dialog = new OpenFileDialog())
+            {
+                dialog.Title = "Restore a Dat2DTR backup";
+                dialog.Filter = "Dat2DTR backup (*.zip)|*.zip";
+                dialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                    return;
+                path = dialog.FileName;
+            }
+
+            DataBackup.Contents contents;
+            try
+            {
+                contents = DataBackup.Read(path);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is InvalidDataException)
+            {
+                MessageBox.Show(this, "The file could not be read as a backup.\n\n" + ex.Message,
+                    "Backup / Restore", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (!contents.IsBackup)
+            {
+                MessageBox.Show(this, "This .zip file is not a Dat2DTR backup, so nothing was changed.",
+                    "Backup / Restore", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string safety = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "Dat2DTR-before-restore-" + DateTime.Now.ToString("yyyy-MM-dd-HHmm", System.Globalization.CultureInfo.InvariantCulture) + ".zip");
+            DialogResult answer = MessageBox.Show(this,
+                "Restore this backup?\n\n" + Path.GetFileName(path) +
+                (contents.Made.Length > 0 ? "\nMade on " + contents.Made + (contents.Computer.Length > 0 ? " on " + contents.Computer : "") : "") +
+                "\n\nThe names, times typed in, leaves, balances, CTO, Solo Parent Leave, holidays and office hours on this computer " +
+                "are replaced by the ones in the backup.\n\nWhat is here now is saved first, here:\n" + safety,
+                "Backup / Restore", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
+            if (answer != DialogResult.Yes)
+                return;
+
+            try
+            {
+                Cursor = Cursors.WaitCursor;
+                DataBackup.Create(safety);
+                int count = DataBackup.Restore(path);
+                ReloadAllData();
+                lblStatus.Text = "Backup restored: " + Path.GetFileName(path);
+                MessageBox.Show(this, "The backup was restored (" + count + (count == 1 ? " file" : " files") + ").\n\n" +
+                    "What was here before is saved in:\n" + safety,
+                    "Backup / Restore", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is InvalidDataException)
+            {
+                MessageBox.Show(this, "The backup could not be restored. If one of the files is open in Excel, close it and try again.\n\n" +
+                    ex.Message + "\n\nWhat was here before is saved in:\n" + safety,
+                    "Backup / Restore", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ReloadAllData();
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+        }
+
+        /// <summary>
+        /// This is the Certificate of Leave Credits of each of these employees. When some balances are not known
+        /// yet, the user is asked first (those certificates have empty boxes). Returns null when the user stops.
+        /// </summary>
+        private List<LeaveCertificate>? GetCertificates(List<DtrSheet> sheets)
+        {
+            List<LeaveCertificate> certificates = sheets.Select(s => LeaveCertificate.Make(_cards[s.EmployeeId], DateTime.Today).SignedBy(_settings)).ToList();
+            int unknown = certificates.Count(c => !c.IsComplete);
+            if (unknown > 0)
+            {
+                DialogResult answer = MessageBox.Show(this,
+                    (certificates.Count == 1 ? "The" : unknown + " of the " + certificates.Count) +
+                    " leave balance" + (unknown == 1 ? " is" : "s are") + " not known yet, so the VL / SL box" + (unknown == 1 ? " is" : "es are") +
+                    " left empty to fill in by hand.\n\n(Type the balance brought forward once in Edit Leave to have it filled in.)\n\nContinue?",
+                    "Certificate of Leave Credits", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (answer != DialogResult.Yes)
+                    return null;
+            }
+            return certificates;
         }
 
         private void Form1_KeyDown(object? sender, KeyEventArgs e)
@@ -1172,12 +1725,22 @@ namespace Dat2DTR
                     // This is the pages in the order they are printed: for each employee the DTR,
                     // the Computation of Leaves, or the DTR followed by the Computation of Leaves.
                     var pages = new List<object>();
-                    foreach (DtrSheet sheet in sheets)
+                    if (what == DtrPages.Certificate)
                     {
-                        if (what != DtrPages.LeaveOnly)
-                            pages.Add(sheet);
-                        if (what != DtrPages.DtrOnly)
-                            pages.Add(_cards[sheet.EmployeeId]);
+                        List<LeaveCertificate>? certificates = GetCertificates(sheets);
+                        if (certificates == null)
+                            return;
+                        pages.AddRange(certificates);
+                    }
+                    else
+                    {
+                        foreach (DtrSheet sheet in sheets)
+                        {
+                            if (what != DtrPages.LeaveOnly)
+                                pages.Add(sheet);
+                            if (what != DtrPages.DtrOnly)
+                                pages.Add(_cards[sheet.EmployeeId]);
+                        }
                     }
 
                     int next = 0; // This is which page is printed next
@@ -1234,7 +1797,7 @@ namespace Dat2DTR
             }
         }
 
-        /// <param name="page">This is a DtrSheet (the DTR) or a LeaveCard (the Computation of Leaves).</param>
+        /// <param name="page">This is a DtrSheet (the DTR), a LeaveCard (the Computation of Leaves) or a LeaveCertificate.</param>
         private static void PrintOnePage(PrintPageEventArgs e, object page)
         {
             Graphics g = e.Graphics!;
@@ -1252,8 +1815,11 @@ namespace Dat2DTR
             using (var canvas = new GdiCanvas(g))
             {
                 var card = page as LeaveCard;
+                var certificate = page as LeaveCertificate;
                 if (card != null)
                     LeavePageRenderer.Draw(canvas, card, pageWidth, pageHeight);
+                else if (certificate != null)
+                    CertificateRenderer.Draw(canvas, certificate, pageWidth, pageHeight);
                 else
                     DtrPageRenderer.Draw(canvas, (DtrSheet)page, pageWidth, pageHeight);
             }
@@ -1285,7 +1851,9 @@ namespace Dat2DTR
             using (var dialog = new SaveFileDialog())
             {
                 dialog.Title = "Save the " + PagesName(what);
-                dialog.Filter = "PDF document (*.pdf)|*.pdf|Excel workbook (*.xlsx)|*.xlsx";
+                dialog.Filter = what == DtrPages.Certificate
+                    ? "PDF document (*.pdf)|*.pdf"
+                    : "PDF document (*.pdf)|*.pdf|Excel workbook (*.xlsx)|*.xlsx";
                 dialog.FileName = CleanFileName(PagesName(what) + " " + sheets[0].MonthText + " - " + who);
                 dialog.AddExtension = true;
                 dialog.OverwritePrompt = true;
@@ -1304,13 +1872,29 @@ namespace Dat2DTR
                     path += extension;
                 }
 
+                // This is the certificate: always a PDF, one page per employee.
+                List<LeaveCertificate>? certificates = null;
+                if (what == DtrPages.Certificate)
+                {
+                    certificates = GetCertificates(sheets);
+                    if (certificates == null)
+                        return;
+                    if (extension != ".pdf")
+                    {
+                        path = Path.ChangeExtension(path, ".pdf");
+                        extension = ".pdf";
+                    }
+                }
+
                 try
                 {
                     Cursor = Cursors.WaitCursor;
                     // This is DTR only: no leave cards.  Computation of Leaves only: no DTRs.  Both: each DTR, then its leave card.
                     List<LeaveCard>? cards = what == DtrPages.DtrOnly ? null : GetCards(sheets);
                     bool withDtr = what != DtrPages.LeaveOnly;
-                    if (extension == ".xlsx")
+                    if (certificates != null)
+                        DtrExporter.SaveCertificatesPdf(path, certificates, _settings.Paper);
+                    else if (extension == ".xlsx")
                         DtrExporter.SaveExcel(path, sheets, _settings.Paper, cards, withDtr);
                     else
                         DtrExporter.SavePdf(path, sheets, _settings.Paper, cards, withDtr);
@@ -1343,8 +1927,8 @@ namespace Dat2DTR
         }
 
         /// <summary>
-        /// This is where the scans of the chosen employees in the chosen month are saved as a new .dat file,
-        /// line for line the same as in the opened file.
+        /// This is where the scans of the chosen employees are saved as a new .dat file, line for line the same as
+        /// the device wrote them: the chosen month, the whole year, or every month kept on this computer.
         /// </summary>
         private void SaveDatFile()
         {
@@ -1352,11 +1936,44 @@ namespace Dat2DTR
             if (_log == null || chosen == null)
                 return;
 
+            // This is which months: the one on screen, its whole year, or every month kept.
+            List<DateTime> months = _log.GetMonths();
+            List<DateTime> yearMonths = months.Where(m => m.Year == chosen.Month.Year).ToList();
+            string monthName = MonthName(chosen.Month);
+            string allText = months.Count == 0 ? "" : MonthName(months[months.Count - 1]) + " to " + MonthName(months[0]);
+            int period = OptionDialog.Ask(this, "Which months do you want to save?", new[]
+            {
+                new KeyValuePair<string, string>("Only " + monthName, "The month on screen"),
+                new KeyValuePair<string, string>("The whole year " + chosen.Month.Year,
+                    yearMonths.Count + (yearMonths.Count == 1 ? " month" : " months") + " of " + chosen.Month.Year + " kept on this computer"),
+                new KeyValuePair<string, string>("All months kept (" + months.Count + ")", allText)
+            });
+            if (period < 0)
+                return;
+            DateTime from = chosen.Month, to = chosen.Month.AddMonths(1).AddDays(-1);
+            string periodName = monthName;
+            if (period == 1)
+            {
+                from = new DateTime(chosen.Month.Year, 1, 1);
+                to = new DateTime(chosen.Month.Year, 12, 31);
+                periodName = chosen.Month.Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+            else if (period == 2)
+            {
+                from = DateTime.MinValue;
+                to = DateTime.MaxValue;
+                periodName = allText;
+            }
+
             List<DtrSheet> sheets = AskWhichSheets("Whose scans do you want to save?");
             if (sheets.Count == 0)
                 return;
 
-            string who = sheets.Count == 1
+            // This is "everyone": for more than one month, also the people who scanned in other months only.
+            bool everyone = sheets.Count == _sheets.Count && _sheets.Count > 1;
+            List<string> ids = everyone && period > 0 ? _log.GetAllEmployeeIds() : sheets.Select(x => x.EmployeeId).ToList();
+
+            string who = everyone ? "everyone" : sheets.Count == 1
                 ? (sheets[0].EmployeeName.Length > 0 ? sheets[0].EmployeeName : "ID " + sheets[0].EmployeeId)
                 : sheets.Count + " employees";
 
@@ -1364,7 +1981,7 @@ namespace Dat2DTR
             {
                 dialog.Title = "Save the scans as a .dat file";
                 dialog.Filter = "Biometrics file (*.dat)|*.dat";
-                dialog.FileName = CleanFileName("Scans " + chosen.ToString() + " - " + who);
+                dialog.FileName = CleanFileName("Scans " + periodName + " - " + who);
                 dialog.DefaultExt = "dat";
                 dialog.AddExtension = true;
                 dialog.OverwritePrompt = true;
@@ -1379,8 +1996,8 @@ namespace Dat2DTR
                     path += ".dat";
 
                 // This is the rule: never write over the file that is open right now.
-                if (_log.FilePath.Length > 0 &&
-                    string.Equals(Path.GetFullPath(path), Path.GetFullPath(_log.FilePath), StringComparison.OrdinalIgnoreCase))
+                if (_openedPath.Length > 0 &&
+                    string.Equals(Path.GetFullPath(path), Path.GetFullPath(_openedPath), StringComparison.OrdinalIgnoreCase))
                 {
                     MessageBox.Show(this, "That is the file that is open right now. Please choose another name.",
                         "Dat2DTR", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1390,7 +2007,7 @@ namespace Dat2DTR
                 int lines;
                 try
                 {
-                    lines = _log.SaveDat(path, sheets.Select(s => s.EmployeeId), chosen.Month);
+                    lines = _log.SaveDat(path, ids, from, to);
                 }
                 catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
                 {
@@ -1444,9 +2061,10 @@ namespace Dat2DTR
 
             public DateTime Month { get; private set; }
 
+            /// <summary>This is "October": the year is in the year list beside it.</summary>
             public override string ToString()
             {
-                return Month.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+                return Month.ToString("MMMM", System.Globalization.CultureInfo.InvariantCulture);
             }
         }
 

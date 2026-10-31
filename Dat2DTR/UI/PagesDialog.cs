@@ -6,13 +6,14 @@ namespace Dat2DTR
         DtrOnly,
         LeaveOnly,
         Both,
-        DatFile         // This is the scans of the month, saved again as a .dat file (Save To only)
+        DatFile,        // This is the scans of the month, saved again as a .dat file (Save To only)
+        Certificate     // This is the Certificate of Leave Credits (VL and SL balance, to sign)
     }
 
     /// <summary>
     /// This is the small window that asks "What do you want to print?" (or save):
-    /// only the DTR, only the Computation of Leaves, or both - and, when saving,
-    /// also the scans as a .dat file.
+    /// only the DTR, only the Computation of Leaves, both, or the Certificate of Leave Credits -
+    /// and, when saving, also the scans as a .dat file.
     /// </summary>
     internal sealed class PagesDialog : Form
     {
@@ -20,7 +21,8 @@ namespace Dat2DTR
 
         /// <param name="questionText">This is the question at the top, e.g. "What do you want to print?"</param>
         /// <param name="offerDatFile">This is true to also offer "Biometrics file (.dat)" (for Save To).</param>
-        public PagesDialog(string questionText, bool offerDatFile = false)
+        /// <param name="editCertificateDetails">This is what "Edit Certificate Details..." does (null = no such button).</param>
+        public PagesDialog(string questionText, bool offerDatFile = false, Action<IWin32Window>? editCertificateDetails = null)
         {
             // This is the same order as a designer-made form, so it scales correctly on 125% / 150% screens.
             SuspendLayout();
@@ -52,6 +54,8 @@ namespace Dat2DTR
                           y, margin, width, buttonHeight) + gap;
             y = AddChoice(DtrPages.Both, "Both", "Each DTR, followed by its Computation of Leaves",
                           y, margin, width, buttonHeight) + gap;
+            y = AddChoice(DtrPages.Certificate, "Certificate of Leave Credits", "The VL and SL balance as of the end of the month, to sign",
+                          y, margin, width, buttonHeight) + gap;
             if (offerDatFile)
                 y = AddChoice(DtrPages.DatFile, "Biometrics file (.dat)", "The scans of the month, the same way the device saves them",
                               y, margin, width, buttonHeight) + gap;
@@ -62,6 +66,16 @@ namespace Dat2DTR
             cancel.SetBounds(margin + width - 96, y + 6, 96, 32);
             Controls.Add(cancel);
             CancelButton = cancel;
+
+            // This is the names and positions on the certificate ("Prepared by", "Certified correct"); this window stays open.
+            if (editCertificateDetails != null)
+            {
+                var details = new Button();
+                details.Text = "Edit Certificate Details...";
+                details.SetBounds(margin, y + 6, 200, 32);
+                details.Click += (sender, e) => editCertificateDetails(this);
+                Controls.Add(details);
+            }
 
             ClientSize = new Size(width + margin * 2, y + 6 + 32 + margin);
             ResumeLayout(false);

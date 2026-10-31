@@ -112,6 +112,13 @@ namespace Dat2DTR
             _entries.Clear();
         }
 
+        /// <summary>This is where one employee's name and schedule are removed (Employee Names, Delete).</summary>
+        public bool Remove(string id)
+        {
+            string key = NormalizeId(id);
+            return _entries.Remove(key) | _entries.Remove(id.Trim());
+        }
+
         /// <summary>This is every entry, sorted by ID.</summary>
         public List<EmployeeEntry> GetAll()
         {

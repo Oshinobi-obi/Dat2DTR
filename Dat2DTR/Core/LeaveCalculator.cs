@@ -273,6 +273,9 @@ namespace Dat2DTR
         /// <summary>This is the days used from January up to the open month.</summary>
         public decimal SplUsed, ForcedUsed, WellnessUsed, CtoUsed, SoloUsed;
 
+        /// <summary>This is the SPL and Wellness Leave left at the start of the open month when it was typed in Edit Leave (else null).</summary>
+        public decimal? SplStartTyped, WellnessStartTyped;
+
         /// <summary>This is the CTO of the open month: given, used, expired, and what is left.</summary>
         public CtoMonth Cto = new CtoMonth();
 
@@ -626,6 +629,10 @@ namespace Dat2DTR
                 }
             }
 
+            // This is the SPL and Wellness Leave left that was typed in Edit Leave (see ApplyTypedYearly).
+            card.SplUsed = ApplyTypedYearly(card, ledger, leaves, id, target, LeaveType.SpecialPrivilege, card.SplUsed);
+            card.WellnessUsed = ApplyTypedYearly(card, ledger, leaves, id, target, LeaveType.Wellness, card.WellnessUsed);
+
             card.Cto = CtoCalculator.Compute(cto.Get(id, LeaveType.Cto), leaves.GetAllOfKind(id, LeaveType.Cto), target);
             card.Solo = CtoCalculator.Compute(cto.Get(id, LeaveType.SoloParent), leaves.GetAllOfKind(id, LeaveType.SoloParent), target);
 
@@ -640,6 +647,37 @@ namespace Dat2DTR
             WriteBreakdown(card);
             WriteNotes(card, sheet, schedule, ledger, dataFrom);
             return card;
+        }
+
+        /// <summary>
+        /// This is the SPL or Wellness Leave used this year (January up to the open month) when a balance was typed in Edit
+        /// Leave: the latest month of the year (up to the open month) with a typed balance wins. The days used before it are
+        /// what the typed balance says (3 SPL a year, 1 typed as left = 2 used before), and the leaves filed from that month
+        /// on are added. With nothing typed this year, the days filed are used as they are.
+        /// </summary>
+        private static decimal ApplyTypedYearly(LeaveCard card, LeaveLedger ledger, LeaveStore leaves, string id, DateTime target,
+                                                LeaveType type, decimal filedUsed)
+        {
+            for (int m = target.Month; m >= 1; m--)
+            {
+                LedgerMonth? typed = ledger.Get(id, target.Year, m);
+                decimal? left = typed == null ? null : type == LeaveType.SpecialPrivilege ? typed.OpeningSpl : typed.OpeningWl;
+                if (!left.HasValue)
+                    continue;
+
+                decimal used = LeaveKinds.Get(type).YearlyLimit - left.Value;
+                for (int k = m; k <= target.Month; k++)
+                    foreach (var pair in leaves.GetMonth(id, target.Year, k))
+                        if (pair.Value.Type == type) used += pair.Value.Days;
+
+                if (m == target.Month)
+                {
+                    if (type == LeaveType.SpecialPrivilege) card.SplStartTyped = left;
+                    else card.WellnessStartTyped = left;
+                }
+                return used;
+            }
+            return filedUsed;
         }
 
         /// <summary>
@@ -860,8 +898,8 @@ namespace Dat2DTR
                 m.SlNet.HasValue ? LeaveRules.Format(m.SlNet.Value) : notKnown));
 
             // This is Special Privilege Leave and Wellness Leave: so many days a year ----
-            AddYearlyLeave(lines, card, LeaveType.SpecialPrivilege, "SPECIAL PRIVILEGE LEAVE (SPL)", card.SplUsed, m.SplDays, m.SplDates);
-            AddYearlyLeave(lines, card, LeaveType.Wellness, "WELLNESS LEAVE (WL)", card.WellnessUsed, m.WellnessDays, m.WellnessDates);
+            AddYearlyLeave(lines, card, LeaveType.SpecialPrivilege, "SPECIAL PRIVILEGE LEAVE (SPL)", card.SplUsed, m.SplDays, m.SplDates, card.SplStartTyped);
+            AddYearlyLeave(lines, card, LeaveType.Wellness, "WELLNESS LEAVE (WL)", card.WellnessUsed, m.WellnessDays, m.WellnessDates, card.WellnessStartTyped);
 
             // This is CTO and Solo Parent Leave: given, used, expired ----
             AddGivenLeave(lines, card, card.Cto, "CTO",
@@ -904,15 +942,19 @@ namespace Dat2DTR
         }
 
         /// <summary>This is a leave that is allowed so many days a year: used before, used now, and what is left.</summary>
+        /// <param name="typedStart">This is the balance left at the start of the month typed in Edit Leave, or null.</param>
         private static void AddYearlyLeave(List<LeaveLine> lines, LeaveCard card, LeaveType type, string heading,
-                                           decimal usedThisYear, decimal thisMonth, string dates)
+                                           decimal usedThisYear, decimal thisMonth, string dates, decimal? typedStart)
         {
             int limit = LeaveKinds.Get(type).YearlyLimit;
             decimal before = usedThisYear - thisMonth;
             decimal left = limit - usedThisYear;
 
             lines.Add(new LeaveLine(LeaveLineKind.Heading, heading + ",  " + limit + " DAYS A YEAR", ""));
-            lines.Add(new LeaveLine(LeaveLineKind.Item, "Used this year before " + card.Current.MonthName, Days(before)));
+            if (typedStart.HasValue)
+                lines.Add(new LeaveLine(LeaveLineKind.Item, "Left at the start of " + card.Current.MonthName + " (typed)", Days(typedStart.Value)));
+            else
+                lines.Add(new LeaveLine(LeaveLineKind.Item, "Used this year before " + card.Current.MonthName, Days(before)));
             lines.Add(new LeaveLine(LeaveLineKind.Item,
                 thisMonth > 0 ? "Used this month on " + dates : "Used this month",
                 thisMonth > 0 ? "- " + Days(thisMonth) : Days(0m)));

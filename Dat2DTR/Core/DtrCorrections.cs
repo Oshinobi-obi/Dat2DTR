@@ -40,6 +40,7 @@ namespace Dat2DTR
     /// This is the Late and Undertime of one day typed in by hand, in place of what the program computed
     /// (for example when work was suspended at 3:00 PM and everyone went home at 3:00).
     /// null = keep the computed value. The times of the day are not changed.
+    /// It also holds the Flexi-Time box of the day (see DtrBuilder rule 10).
     /// </summary>
     public sealed class DayAdjustment
     {
@@ -49,9 +50,18 @@ namespace Dat2DTR
         /// <summary>This is why it was changed, e.g. "Work suspended at 3:00 PM". Listed on screen, not printed.</summary>
         public string Reason = "";
 
+        /// <summary>This is the Flexi-Time box: the day starts when the person arrived (7:00 - 9:00 AM).</summary>
+        public bool Flexi;
+
+        /// <summary>This is true when Late or Undertime was typed in by hand (then a reason is needed).</summary>
+        public bool IsTyped
+        {
+            get { return LateMinutes.HasValue || UndertimeMinutes.HasValue; }
+        }
+
         public bool IsEmpty
         {
-            get { return !LateMinutes.HasValue && !UndertimeMinutes.HasValue; }
+            get { return !IsTyped && !Flexi; }
         }
 
         public DayAdjustment Clone()
@@ -100,6 +110,18 @@ namespace Dat2DTR
             get { return _items.Count; }
         }
 
+        /// <summary>This is where the times and the Late / Undertime / Flexi-Time typed for one employee are removed (Employee Names, Delete).</summary>
+        public int RemoveEmployee(string employeeId)
+        {
+            string prefix = EmployeeDirectory.NormalizeId(employeeId) + "|";
+            int removed = 0;
+            foreach (string key in _items.Keys.Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList())
+                removed += _items.Remove(key) ? 1 : 0;
+            foreach (string key in _adjustments.Keys.Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList())
+                removed += _adjustments.Remove(key) ? 1 : 0;
+            return removed;
+        }
+
         // This is the part with the Late / Undertime typed by hand ---------------------------------------
 
         // This is "normalized ID|yyyy-MM-dd" -> Late / Undertime typed by hand
@@ -131,8 +153,10 @@ namespace Dat2DTR
             get { return _adjustments.Count; }
         }
 
-        // This is the file: one line per day:   ID,date,late minutes,undertime minutes,reason   (empty = the computed value)
-        //                                    e.g. 070126005,2026-09-08,,0,"Work suspended at 3:00 PM"
+        // This is the file: one line per day:   ID,date,late minutes,undertime minutes,flexi,reason   (empty = the computed value)
+        //                                    e.g. 070126005,2026-09-08,,0,,"Work suspended at 3:00 PM"
+        //                                         070126005,2026-09-09,,,FLEXI,""
+        // This is also how older files without the flexi column are read: there the reason (in "quotes") comes right after the minutes.
 
         public void LoadAdjustments(string path)
         {
@@ -149,7 +173,16 @@ namespace Dat2DTR
                 var adjustment = new DayAdjustment();
                 adjustment.LateMinutes = ReadMinutes(cells[2]);
                 adjustment.UndertimeMinutes = ReadMinutes(cells[3]);
-                adjustment.Reason = cells.Length > 4 ? Unquote(cells[4]) : "";
+                string rest = cells.Length > 4 ? cells[4] : "";
+                if (rest.Trim().Length > 0 && !rest.TrimStart().StartsWith("\""))
+                {
+                    // This is the newer file: the flexi column, then the reason.
+                    int comma = rest.IndexOf(',');
+                    string flexi = comma < 0 ? rest : rest.Substring(0, comma);
+                    adjustment.Flexi = flexi.Trim().Equals("FLEXI", StringComparison.OrdinalIgnoreCase);
+                    rest = comma < 0 ? "" : rest.Substring(comma + 1);
+                }
+                adjustment.Reason = Unquote(rest);
                 if (cells[0].Trim().Length > 0 && !adjustment.IsEmpty)
                     _adjustments[Key(cells[0], date)] = adjustment;
             }
@@ -158,13 +191,13 @@ namespace Dat2DTR
         public void SaveAdjustments(string path)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("ID,Date,Late (minutes),Undertime (minutes),Reason");
+            sb.AppendLine("ID,Date,Late (minutes),Undertime (minutes),Flexi-Time,Reason");
             foreach (var pair in _adjustments.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase))
             {
                 string[] key = pair.Key.Split('|');
                 DayAdjustment a = pair.Value;
                 sb.AppendLine(key[0] + "," + key[1] + "," + WriteMinutes(a.LateMinutes) + "," + WriteMinutes(a.UndertimeMinutes) +
-                              ",\"" + a.Reason.Replace("\"", "\"\"") + "\"");
+                              "," + (a.Flexi ? "FLEXI" : "") + ",\"" + a.Reason.Replace("\"", "\"\"") + "\"");
             }
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));
         }

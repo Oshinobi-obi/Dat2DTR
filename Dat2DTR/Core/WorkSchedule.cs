@@ -26,6 +26,31 @@ namespace Dat2DTR
         /// </summary>
         public int GraceMinutes = 15;
 
+        /// <summary>
+        /// This is the Monday rule: on a Monday the grace period never goes past 7:15 AM. So a 7:00 AM start
+        /// keeps its 15 minutes, but 8:00 AM and 9:00 AM must be met sharp on Mondays (8:01 = 1 minute late).
+        /// Tuesday to Friday have the full grace period.
+        /// </summary>
+        public static readonly TimeSpan MondayGraceUntil = new TimeSpan(7, 15, 0);
+
+        /// <summary>
+        /// This is the hours of work in a day, without the lunch break: 8:00 AM - 5:00 PM = 8 hours, Schedule A = 10 hours.
+        /// A Flexi-Time day may use any schedule with the same working hours (see DtrBuilder rule 10).
+        /// </summary>
+        public TimeSpan WorkingHours
+        {
+            get { return (TimeOut - TimeIn) - (LunchEnd - LunchStart); }
+        }
+
+        /// <summary>This is the grace period on that day of the week, in minutes (shorter on a Monday, see MondayGraceUntil).</summary>
+        public int GraceOn(DayOfWeek day)
+        {
+            if (day != DayOfWeek.Monday)
+                return GraceMinutes;
+            int untilMondayLimit = (int)(MondayGraceUntil - TimeIn).TotalMinutes;
+            return Math.Max(0, Math.Min(GraceMinutes, untilMondayLimit));
+        }
+
         /// <summary>This is the working days, indexed by DayOfWeek (0 = Sunday ... 6 = Saturday).</summary>
         public bool[] WorkDays = { false, true, true, true, true, false, false };
 

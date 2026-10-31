@@ -12,6 +12,8 @@ namespace Dat2DTR
     ///       - last scan of the day   -> P.M. Departure (A.M. Departure if it is before 12:00)
     ///       - the two scans around lunch time -> A.M. Departure and P.M. Arrival
     ///       - two scans within one minute of each other count as one (double scan)
+    ///       - forgetting to scan at lunch is fine: with only the arrival and the departure (or only one
+    ///         lunch scan) the day is judged on the arrival and the departure, with no warning.
     ///
     ///  2. LATE
     ///       - A.M. Arrival up to 7:15 is NOT late, IF the minutes are made up at the end of the day:
@@ -20,6 +22,9 @@ namespace Dat2DTR
     ///         counted before 6:00 PM. (With the afternoon on leave or suspended there is nothing to
     ///         make up, so the grace period simply applies.)
     ///       - From 7:16 it is late, counted from 7:00.
+    ///       - MONDAYS: the grace period never goes past 7:15 AM. A 7:00 AM start keeps it, but 8:00 AM
+    ///         (Schedule B) and 9:00 AM (Schedule D) must be met sharp on a Monday: 8:01 = 1 minute late.
+    ///         Tuesday to Friday have the full 15 minutes.
     ///       - P.M. Arrival after 1:00 PM is late, counted from 1:00 PM.
     ///
     ///  3. UNDERTIME
@@ -51,8 +56,19 @@ namespace Dat2DTR
     ///
     ///  9. Work suspended FROM a time (Suspended "from 3:00 PM", usually filed for the ticked
     ///     employees): an ordinary day until that time, no late or undertime after it.
+    ///     Leaving before that time is undertime, counted up to it. When the time is in the lunch break
+    ///     (for example from 1:00 PM), the day ends at that time: leaving at 12:26 PM = 34 minutes undertime,
+    ///     leaving at 11:30 AM = 1 hour 30 minutes.
     ///     A holiday in the holiday calendar counts as a whole-day Holiday for everyone,
     ///     unless a leave is filed for that day.
+    ///
+    /// 10. FLEXI-TIME (a day ticked "Flexi-Time" in Edit DTR): the person may work the office hours of another
+    ///     schedule with the same number of working hours that day. The program picks the schedule that fits the
+    ///     times best (the least late + undertime; a tie keeps the person's own schedule), and computes the day with it.
+    ///     Example: Schedule B (8:00 - 5:00) working 7:00 AM - 4:00 PM -> Schedule C (7:00 - 4:00): not late, no undertime.
+    ///     Working 7:30 AM - 4:30 PM -> B and C are both 30 minutes short, so B is kept: 30 minutes undertime.
+    ///     Schedule A (10 working hours) has no other schedule of the same length, so it stays on Schedule A.
+    ///     A day that is NOT ticked follows the person's own schedule: 7:00 AM - 4:00 PM on Schedule B = 1 hour undertime.
     /// </summary>
     public static class DtrBuilder
     {
@@ -83,15 +99,17 @@ namespace Dat2DTR
 
                 // This is why only dates the file actually covers can be ABSENT: days before the first
                 // scan or after the last scan in the file are unknown, so they stay blank.
-                bool coveredByFile = day.Date >= log.FirstDate && day.Date <= log.LastDate;
+                bool coveredByFile = log.IsCovered(day.Date);
 
                 // This is for work from home without the IDLAR: it does not count yet, so the day is shown as if nothing was filed.
                 LeaveEntry? filed = leaves == null ? null : leaves.GetForDtr(employeeId, day.Date, schedule);
                 LeaveEntry? leave = filed != null && filed.Excuses ? filed : null;
                 DayCorrection? typed = corrections == null ? null : corrections.Get(employeeId, day.Date);
+                DayAdjustment? adjustment = corrections == null ? null : corrections.GetAdjustment(employeeId, day.Date);
+                bool flexi = adjustment != null && adjustment.Flexi;
                 if (typed != null)
                 {
-                    FillDay(day, typed, schedule, settings, coveredByFile, leave);
+                    FillDay(day, typed, schedule, settings, coveredByFile, leave, flexi);
                     day.IsEdited = true;
                 }
                 else
@@ -102,11 +120,10 @@ namespace Dat2DTR
                         AssignScans(scans, day, schedule);
                     if (leave != null && !leave.From.HasValue)
                         KeepScansInWorkedHalf(day, leave, schedule);
-                    FinishDay(day, schedule, settings, coveredByFile, leave);
+                    FinishDay(day, schedule, settings, coveredByFile, leave, flexi);
                 }
 
                 // This is the Late / Undertime typed in by hand (Edit DTR): it replaces what was computed.
-                DayAdjustment? adjustment = corrections == null ? null : corrections.GetAdjustment(employeeId, day.Date);
                 if (adjustment != null)
                     ApplyAdjustment(day, adjustment);
 
@@ -143,7 +160,7 @@ namespace Dat2DTR
         /// Also used by the Edit DTR window to show the result while the person types.
         /// </summary>
         public static void FillDay(DtrDay day, DayCorrection typed, WorkSchedule schedule,
-                                   DtrSettings settings, bool coveredByFile, LeaveEntry? leave = null)
+                                   DtrSettings settings, bool coveredByFile, LeaveEntry? leave = null, bool flexi = false)
         {
             day.AmArrival = typed.AmArrival;
             day.AmDeparture = typed.AmDeparture;
@@ -152,7 +169,24 @@ namespace Dat2DTR
             day.Note = typed.Remark.Trim();
             day.ScanCount = typed.Times.Count(t => t.HasValue);
             day.Warning = "";
-            FinishDay(day, schedule, settings, coveredByFile, leave);
+            FinishDay(day, schedule, settings, coveredByFile, leave, flexi);
+        }
+
+        /// <summary>
+        /// This is Late and Undertime computed again for a day that is already made (from the scans), with or without
+        /// Flexi-Time. Used by the Edit DTR window when the Flexi-Time box of a day is ticked or unticked.
+        /// </summary>
+        public static void Recompute(DtrDay day, WorkSchedule schedule, DtrSettings settings, bool coveredByFile,
+                                     LeaveEntry? leave, bool flexi)
+        {
+            FinishDay(day, schedule, settings, coveredByFile, leave, flexi);
+        }
+
+        /// <summary>This is the leave the DTR uses for a day: work from home without the IDLAR does not count yet.</summary>
+        public static LeaveEntry? LeaveForDtr(LeaveStore? leaves, string employeeId, DateTime date, WorkSchedule schedule)
+        {
+            LeaveEntry? filed = leaves == null ? null : leaves.GetForDtr(employeeId, date, schedule);
+            return filed != null && filed.Excuses ? filed : null;
         }
 
         /// <summary>
@@ -189,35 +223,52 @@ namespace Dat2DTR
         /// absent or not, late, undertime, and what a filed leave changes.
         /// </summary>
         private static void FinishDay(DtrDay day, WorkSchedule schedule, DtrSettings settings,
-                                      bool coveredByFile, LeaveEntry? leave)
+                                      bool coveredByFile, LeaveEntry? leave, bool flexi = false)
         {
             day.LateMinutes = 0;
+            day.MorningLateMinutes = 0;
             day.UndertimeMinutes = 0;
             day.IsAbsent = false;
             day.SuspendedFrom = null;
+            day.IsFlexi = false;
             day.IsCalendarHoliday = leave != null && leave.FromCalendar;
             day.HolidayName = leave != null ? leave.HolidayName : "";
+
+            // This is Rule 10: a Flexi-Time day is computed with the schedule that fits its times best.
+            if (flexi && day.ScanCount > 0 && schedule.IsWorkDay(day.Date.DayOfWeek) &&
+                !(leave != null && !leave.From.HasValue && leave.Part == LeavePart.WholeDay))
+            {
+                WorkSchedule best = BestFlexiSchedule(day, schedule, settings, coveredByFile, leave);
+                FinishDay(day, best, settings, coveredByFile, leave, false);
+                day.IsFlexi = true;
+                day.FlexiSchedule = best.Letter;
+                day.FlexiIn = best.TimeIn;
+                day.FlexiOut = best.TimeOut;
+                return;
+            }
 
             // This is Rule 9: work suspended FROM a time. Before that time it is an ordinary working day
             // (late, undertime, absent as usual); after it nothing is counted. From the start of the
             // day = the whole day is suspended.
             WorkSchedule hours = schedule;
+
             bool afternoonOff = false;
+            TimeSpan? dismissedInLunch = null;   // This is a suspension time in the lunch break (after 12:00, up to 1:00 PM)
             if (leave != null && leave.From.HasValue)
             {
                 TimeSpan from = leave.From.Value;
-                if (from <= schedule.TimeIn + TimeSpan.FromMinutes(schedule.GraceMinutes))
+                if (from <= schedule.TimeIn + TimeSpan.FromMinutes(schedule.GraceOn(day.Date.DayOfWeek)))
                 {
                     leave = new LeaveEntry(LeaveType.Suspended, LeavePart.WholeDay, leave.Wfh, leave.Idlar);
                 }
                 else
                 {
                     day.SuspendedFrom = from;
-                    if (from < schedule.TimeOut)
+                    if (from < hours.TimeOut)
                     {
-                        hours = schedule.Clone();
+                        hours = hours.Clone();
                         if (from <= schedule.LunchStart) { hours.LunchStart = from; afternoonOff = true; }
-                        else if (from < schedule.LunchEnd) afternoonOff = true;
+                        else if (from <= schedule.LunchEnd) { afternoonOff = true; dismissedInLunch = from; }
                         else hours.TimeOut = from;
                     }
                     leave = null;   // This is because the day itself is not a leave
@@ -261,6 +312,18 @@ namespace Dat2DTR
                     afternoonOff || (leave != null && leave.Part == LeavePart.Afternoon),
                     !day.SuspendedFrom.HasValue);   // This is false when released early by a suspension: nothing to make up
 
+            // This is a suspension time in the lunch break (e.g. from 1:00 PM): the day ends at that time, so leaving before it
+            // is undertime up to it. The morning (up to 12:00) is already counted above; this adds the part after 12:00.
+            if (isWorkDay && dismissedInLunch.HasValue)
+            {
+                TimeSpan? left = day.PmDeparture ?? day.AmDeparture;
+                if (left.HasValue && left.Value < dismissedInLunch.Value)
+                {
+                    TimeSpan from = left.Value > hours.LunchStart ? left.Value : hours.LunchStart;
+                    day.UndertimeMinutes += (int)Math.Round((dismissedInLunch.Value - from).TotalMinutes);
+                }
+            }
+
             // This is a half-day leave, but the person was at work in that half: someone should check ----
             if (leave != null)
             {
@@ -271,9 +334,8 @@ namespace Dat2DTR
 
                 if (timesInThatHalf)
                 {
-                    string warning = "half-day " + leave.Kind.Name + " in the " + (morning ? "morning" : "afternoon") +
-                                     ", but there are times in that half";
-                    day.Warning = day.Warning.Length == 0 ? warning : day.Warning + "; " + warning;
+                    AddWarning(day, "half-day " + leave.Kind.Name + " in the " + (morning ? "morning" : "afternoon") +
+                                    ", but there are times in that half");
                 }
             }
         }
@@ -342,8 +404,8 @@ namespace Dat2DTR
                     return;
                 }
 
+                // This is one lunch scan missing: that is fine (the day is judged on the arrival and the departure).
                 if (middle < lunchMiddle) day.AmDeparture = middle; else day.PmArrival = middle;
-                day.Warning = "one lunch scan is missing";
                 return;
             }
 
@@ -388,7 +450,9 @@ namespace Dat2DTR
         {
             TimeSpan late = TimeSpan.Zero;
             TimeSpan undertime = TimeSpan.Zero;
-            TimeSpan graceEnd = s.TimeIn + TimeSpan.FromMinutes(s.GraceMinutes);
+            // This is the grace period of the day: shorter on a Monday (see WorkSchedule.MondayGraceUntil).
+            int grace = day.Date == default(DateTime) ? s.GraceMinutes : s.GraceOn(day.Date.DayOfWeek);
+            TimeSpan graceEnd = s.TimeIn + TimeSpan.FromMinutes(grace);
 
             // This is the half-day rule: a half day with no scans at all counts as undertime. With only one scan we cannot
             // tell a half day from a forgotten scan, so that case is left for a person to check.
@@ -418,6 +482,8 @@ namespace Dat2DTR
                     undertime += s.LunchStart - s.TimeIn;
             }
 
+            TimeSpan morningLate = late;   // This is the late of the A.M. Arrival only (for the Monday report)
+
             // This is the afternoon ----
             if (!afternoonOnLeave)
             {
@@ -432,7 +498,44 @@ namespace Dat2DTR
             }
 
             day.LateMinutes = Math.Max(0, (int)Math.Round(late.TotalMinutes));
+            day.MorningLateMinutes = Math.Max(0, (int)Math.Round(morningLate.TotalMinutes));
             day.UndertimeMinutes = Math.Max(0, (int)Math.Round(undertime.TotalMinutes));
+        }
+
+        /// <summary>
+        /// This is Rule 10: the schedule a Flexi-Time day fits best. Only schedules with the same working hours as the
+        /// person's own (lunch not counted) and with that day as a working day are tried. The one with the least
+        /// late + undertime wins; a tie keeps the person's own schedule, then the first in the list (A, B, C, D).
+        /// </summary>
+        public static WorkSchedule BestFlexiSchedule(DtrDay day, WorkSchedule own, DtrSettings settings,
+                                                     bool coveredByFile, LeaveEntry? leave)
+        {
+            var candidates = new List<WorkSchedule> { own };
+            foreach (WorkSchedule other in settings.Schedules)
+                if (other != own && other.WorkingHours == own.WorkingHours && other.IsWorkDay(day.Date.DayOfWeek))
+                    candidates.Add(other);
+
+            WorkSchedule best = own;
+            int bestMinutes = int.MaxValue;
+            foreach (WorkSchedule candidate in candidates)
+            {
+                DtrDay trial = day.Clone();
+                FinishDay(trial, candidate, settings, coveredByFile, leave, false);
+                int minutes = trial.LateMinutes + trial.UndertimeMinutes;
+                if (minutes < bestMinutes)
+                {
+                    best = candidate;
+                    bestMinutes = minutes;
+                }
+            }
+            return best;
+        }
+
+        /// <summary>This is a warning added to the day, once (a day computed again does not get it twice).</summary>
+        private static void AddWarning(DtrDay day, string warning)
+        {
+            if (day.Warning.Length == 0) day.Warning = warning;
+            else if (!day.Warning.Contains(warning)) day.Warning += "; " + warning;
         }
 
         private static TimeSpan Middle(TimeSpan a, TimeSpan b)

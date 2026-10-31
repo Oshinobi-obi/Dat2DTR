@@ -8,7 +8,7 @@ namespace Dat2DTR
     ///
     /// The Graphics object must already be set up so that 1 unit = 1 point.
     /// </summary>
-    internal sealed class GdiCanvas : IDtrCanvas, IDisposable
+    internal sealed class GdiCanvas : IDtrCanvas, IDtrFontCanvas, IDtrImageCanvas, IDisposable
     {
         private readonly Graphics _graphics;
         private readonly FontFamily _family;
@@ -66,6 +66,117 @@ namespace Dat2DTR
             double ascent = size * _family.GetCellAscent(style) / _family.GetEmHeight(style);
 
             _graphics.DrawString(text, font, GetBrush(rgb), (float)x, (float)(baseline - ascent), _format);
+        }
+
+        /// <summary>
+        /// This is the font family of each font file, kept for as long as the program runs (finding one takes time).
+        /// The font installed in Windows is used when there is one (for example Old English Text MT comes with
+        /// Microsoft Office); otherwise the file itself is loaded. The collections are kept so their fonts stay usable.
+        /// </summary>
+        private static readonly Dictionary<string, FontFamily?> FileFamilies = new Dictionary<string, FontFamily?>(StringComparer.OrdinalIgnoreCase);
+        private static readonly List<System.Drawing.Text.PrivateFontCollection> Collections = new List<System.Drawing.Text.PrivateFontCollection>();
+
+        /// <summary>This is text in a TrueType font read from a file (the certificate heading).</summary>
+        public void DrawText(string text, double x, double baseline, double size, TrueTypeFont trueType, int rgb)
+        {
+            if (text.Length == 0)
+                return;
+
+            FontFamily? family = FamilyOf(trueType);
+            if (family == null)
+            {
+                DrawText(text, x, baseline, size, false, rgb);   // This is the fallback when Windows cannot read the file
+                return;
+            }
+
+            // This is the same as for Arial: GDI+ draws from the TOP of the letters, the page gives the baseline.
+            // The height above the baseline is taken from the font file (the same number Windows uses).
+            try
+            {
+                using (var font = new Font(family, (float)size, FontStyle.Regular, GraphicsUnit.World))
+                {
+                    double ascent = size * trueType.WinAscent / 1000.0;
+                    _graphics.DrawString(text, font, GetBrush(rgb), (float)x, (float)(baseline - ascent), _format);
+                }
+            }
+            catch (ArgumentException)
+            {
+                DrawText(text, x, baseline, size, false, rgb);   // This is the fallback when Windows refuses the font
+            }
+        }
+
+        /// <summary>This is the pictures already read, kept for as long as the program runs (with the bytes they came from).</summary>
+        private static readonly Dictionary<JpegImage, Image?> Pictures = new Dictionary<JpegImage, Image?>();
+
+        /// <summary>This is a JPEG picture in a box (top-left corner x, y), drawn smoothly.</summary>
+        public void DrawImage(JpegImage image, double x, double y, double width, double height)
+        {
+            Image? picture;
+            lock (Pictures)
+            {
+                if (!Pictures.TryGetValue(image, out picture))
+                {
+                    try
+                    {
+                        // This is a stream that stays open: GDI+ needs it for as long as the picture is used.
+                        picture = Image.FromStream(new MemoryStream(image.Data));
+                    }
+                    catch (ArgumentException)
+                    {
+                        picture = null;
+                    }
+                    Pictures[image] = picture;
+                }
+            }
+            if (picture == null)
+                return;
+
+            InterpolationMode before = _graphics.InterpolationMode;
+            _graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            _graphics.DrawImage(picture, (float)x, (float)y, (float)width, (float)height);
+            _graphics.InterpolationMode = before;
+        }
+
+        private static FontFamily? FamilyOf(TrueTypeFont trueType)
+        {
+            lock (FileFamilies)
+            {
+                FontFamily? family;
+                if (FileFamilies.TryGetValue(trueType.Path, out family))
+                    return family;
+
+                family = null;
+                try
+                {
+                    // This is the font installed in Windows, when it is there.
+                    using (var installed = new System.Drawing.Text.InstalledFontCollection())
+                        if (installed.Families.Any(f => string.Equals(f.Name, trueType.FamilyName, StringComparison.OrdinalIgnoreCase)))
+                            family = new FontFamily(trueType.FamilyName);
+                }
+                catch (ArgumentException) { family = null; }
+
+                if (family == null)
+                {
+                    // This is the font file itself (from the Fonts folder).
+                    try
+                    {
+                        var collection = new System.Drawing.Text.PrivateFontCollection();
+                        collection.AddFontFile(trueType.Path);
+                        Collections.Add(collection);
+                        if (collection.Families.Length > 0)
+                            family = collection.Families[0];
+                    }
+                    catch (Exception ex) when (ex is ArgumentException || ex is FileNotFoundException || ex is System.Runtime.InteropServices.ExternalException)
+                    {
+                        family = null;
+                    }
+                }
+
+                if (family != null && !family.IsStyleAvailable(FontStyle.Regular))
+                    family = null;
+                FileFamilies[trueType.Path] = family;
+                return family;
+            }
         }
 
         private Font GetFont(double size, FontStyle style)

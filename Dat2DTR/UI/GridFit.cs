@@ -98,6 +98,8 @@ namespace Dat2DTR
         /// </summary>
         public static void KeepOnScreen(Form form)
         {
+            if (form.WindowState == FormWindowState.Maximized)
+                return;   // This is a maximized window: it already fills the screen
             Rectangle area = Screen.FromControl(form).WorkingArea;
             if (form.Width <= area.Width && form.Height <= area.Height)
                 return;
